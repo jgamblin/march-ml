@@ -1,4 +1,4 @@
-cbbpy==2.1.2
+git+https://github.com/dcstats/CBBpy.git@2.1.3
 pandas>=2.0.0
 numpy>=2.0.0
 scikit-learn>=1.2.0
