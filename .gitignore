@@ -208,9 +208,17 @@ __marimo__/
 
 # ── Project-specific ──────────────────────────────────────────────────────────
 
-# Scraped + processed data (large, regenerated via --mode scrape/features)
+# Scraped + processed data — historical seasons committed; raw pickles excluded
 data/raw/
 data/processed/
+
+# Historical game CSVs (2021-2025) ARE committed — they never change.
+# Only the current season (2026) is scraped in CI.
+!data/processed/games_2021.csv
+!data/processed/games_2022.csv
+!data/processed/games_2023.csv
+!data/processed/games_2024.csv
+!data/processed/games_2025.csv
 
 # Trained model artifacts (regenerated via --mode train)
 models/
