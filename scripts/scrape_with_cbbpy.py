@@ -34,10 +34,10 @@ def ensure_dir(path):
     os.makedirs(path, exist_ok=True)
 
 
-def fetch_season(season, out_dir, raw_dir, fetch_pbp=False):
+def fetch_season(season, out_dir, raw_dir, fetch_box=False, fetch_pbp=False):
     print(f"Fetching season {season}...")
-    # fetch only info and box by default; pbp is optional and expensive
-    games_tuple = s.get_games_season(season, info=True, box=True, pbp=fetch_pbp)
+    # box scores are not used in the feature pipeline; skip by default to save time
+    games_tuple = s.get_games_season(season, info=True, box=fetch_box, pbp=fetch_pbp)
     # cbbpy returns tuple: (games_info_df, boxscores_df, pbp_df)
     if not isinstance(games_tuple, (list, tuple)) or len(games_tuple) < 1:
         raise RuntimeError("Unexpected return from cbbpy.get_games_season")
@@ -72,7 +72,8 @@ def main():
     p.add_argument("--out", default="data/processed", help="processed output dir")
     p.add_argument("--raw", default="data/raw", help="raw cache dir")
     p.add_argument("--seasons", nargs="*", type=int, help="explicit seasons to fetch (e.g. 2021 2022)")
-    p.add_argument("--pbp", action="store_true", help="fetch play-by-play in addition to boxscores (slow)")
+    p.add_argument("--box", action="store_true", help="fetch box scores (slow, not needed for feature pipeline)")
+    p.add_argument("--pbp", action="store_true", help="fetch play-by-play in addition to game info (very slow)")
     args = p.parse_args()
 
     ensure_dir(args.out)
@@ -83,10 +84,9 @@ def main():
 
     for season in seasons:
         try:
-            fetch_season(season, args.out, args.raw, fetch_pbp=args.pbp)
+            fetch_season(season, args.out, args.raw, fetch_box=args.box, fetch_pbp=args.pbp)
         except Exception as e:
             print(f"Error fetching season {season}: {e}", file=sys.stderr)
-
 
 if __name__ == "__main__":
     main()
