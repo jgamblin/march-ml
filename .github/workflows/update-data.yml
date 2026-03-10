@@ -74,26 +74,25 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
 
-      # ── 3. Cache completed seasons' processed CSVs ─────────────────────────
-      #   Key is fixed for the set of completed seasons (2021-2025).
-      #   These seasons are done — their data will never change.
-      #   The cache is only busted manually (increment cache-version below).
-      - name: Restore processed data cache (completed seasons)
-        id: processed_cache
+      # ── 3. Restore raw data cache ──────────────────────────────────────────
+      #   Caches data/raw pickles so repeat runs of full-rescrape are faster.
+      - name: Restore raw data cache
+        if: inputs.full_rescrape == 'true'
         uses: actions/cache@v4
         with:
-          path: data/processed
-          key: processed-seasons-2021-2025-v1
+          path: data/raw
+          key: raw-data-v1
 
       # ── 4. Scrape ──────────────────────────────────────────────────────────
-      #   Normal runs: only fetch the current season (fast, ~30 sec).
-      #   First run ever / full_rescrape=true: fetch all seasons (slow, ~20 min).
-      - name: Scrape current season only (fast path)
-        if: steps.processed_cache.outputs.cache-hit == 'true' && inputs.full_rescrape != 'true'
+      #   Historical seasons (2021-2025) are committed to the repo — no scraping needed.
+      #   Only the current season is scraped on each run (~30 sec, info only, no box scores).
+      #   Use manual full_rescrape=true to re-fetch all seasons if needed.
+      - name: Scrape current season (fast path)
+        if: inputs.full_rescrape != 'true'
         run: python scripts/scrape_with_cbbpy.py --seasons 2026 --out data/processed --raw data/raw
 
-      - name: Scrape all seasons (first run or full rescrape)
-        if: steps.processed_cache.outputs.cache-hit != 'true' || inputs.full_rescrape == 'true'
+      - name: Scrape all seasons (manual full rescrape only)
+        if: inputs.full_rescrape == 'true'
         run: python scripts/run_pipeline.py --mode scrape
 
       # ── 5. Build features ──────────────────────────────────────────────────
