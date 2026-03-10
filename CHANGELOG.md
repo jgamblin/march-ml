@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes to the ncaa-bets project are documented here.
+All notable changes to the **march-ml** project are documented here.
 
 ## [Sprint 2026-03] Data Science Audit — 14 Methodology Fixes
 
