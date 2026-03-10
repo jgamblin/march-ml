@@ -1,0 +1,10 @@
+# Sources for NCAA Division I men's basketball team list
+# Primary canonical source: Wikipedia (kept up-to-date with conference moves)
+https://en.wikipedia.org/wiki/List_of_NCAA_Division_I_men%27s_basketball_programs
+
+# Official NCAA directory (searchable, includes all institutions)
+https://web3.ncaa.org/directory/memberList?type=12
+
+# Notes:
+# - This file lists the authoritative web pages used to derive the D1 team list.
+# - Use `scripts/fetch_d1_list.py` to download & parse the Wikipedia page into a plain team list.

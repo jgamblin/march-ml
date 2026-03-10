@@ -1,0 +1,17 @@
+{
+  "_comment": "Fill in actual tournament results as they happen",
+  "_example": {
+    "winner": "Duke",
+    "loser": "North Dakota State",
+    "score": [
+      78,
+      65
+    ]
+  },
+  "first_round": [],
+  "second_round": [],
+  "sweet_16": [],
+  "elite_8": [],
+  "final_four": [],
+  "championship": []
+}
