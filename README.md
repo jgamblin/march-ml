@@ -1,4 +1,4 @@
-# ncaa-bets
+# march-ml
 
 NCAA men's basketball tournament prediction pipeline — scrape game data, engineer pre-tournament features, train a calibrated LR + XGBoost ensemble, simulate bracket outcomes with Monte Carlo, and generate strategy-aware pool entries.
 

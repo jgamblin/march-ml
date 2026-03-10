@@ -32,7 +32,7 @@ def clean_name(s: str) -> str:
 
 
 def fetch_wikipedia(url=WIKI_URL):
-    r = requests.get(url, headers={"User-Agent": "ncaa-bets-fetcher/1.0 (github.com)"})
+    r = requests.get(url, headers={"User-Agent": "march-ml-fetcher/1.0 (github.com)"})
     r.raise_for_status()
     return r.text
 

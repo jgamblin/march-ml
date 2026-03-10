@@ -42,7 +42,7 @@ REGIONS = ["South", "East", "West", "Midwest"]
 
 HEADERS = {
     "User-Agent": (
-        "Mozilla/5.0 (compatible; ncaa-bets-bot/1.0; "
+        "Mozilla/5.0 (compatible; march-ml-bot/1.0; "
         "+https://github.com)"
     )
 }
