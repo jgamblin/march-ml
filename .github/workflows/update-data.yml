@@ -3,6 +3,11 @@ name: Update Data, Retrain & Simulate
 # Runs every 6 hours to refresh game data, retrain the model, and publish
 # new simulation results. Can also be triggered manually or called by
 # the bracket-watch workflow (with an official bracket file).
+#
+# Data strategy:
+#   - Completed seasons (2021–2025) are cached in Actions; scraped once ever.
+#   - Current season (2026) is re-scraped on every run (games change daily).
+#   - Manual trigger with full_rescrape=true re-fetches all seasons.
 
 on:
   push:
@@ -26,6 +31,10 @@ on:
         description: 'Number of simulations to run'
         required: false
         default: '5000'
+      full_rescrape:
+        description: 'Re-scrape all historical seasons (slow, ~20 min)'
+        type: boolean
+        default: false
 
   # Called by bracket-watch.yml when a new official bracket is detected
   workflow_call:
@@ -65,24 +74,26 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
 
-      # ── 3. Restore raw data cache (cbbpy pickle files) ────────────────────
-      #   Key rotates weekly so we always fetch fresh data at least once/week.
-      #   On cache hit, scraper skips network calls for seasons already cached.
-      - name: Compute week key
-        id: week
-        run: echo "week=$(date +%Y-%W)" >> "$GITHUB_OUTPUT"
-
-      - name: Restore raw data cache
+      # ── 3. Cache completed seasons' processed CSVs ─────────────────────────
+      #   Key is fixed for the set of completed seasons (2021-2025).
+      #   These seasons are done — their data will never change.
+      #   The cache is only busted manually (increment cache-version below).
+      - name: Restore processed data cache (completed seasons)
+        id: processed_cache
         uses: actions/cache@v4
         with:
-          path: data/raw
-          key: raw-data-${{ runner.os }}-w${{ steps.week.outputs.week }}
-          restore-keys: raw-data-${{ runner.os }}-
+          path: data/processed
+          key: processed-seasons-2021-2025-v1
 
       # ── 4. Scrape ──────────────────────────────────────────────────────────
-      #   Always refresh the current season. Older seasons are served from the
-      #   data/raw pickle cache above and skip network calls.
-      - name: Scrape game data
+      #   Normal runs: only fetch the current season (fast, ~30 sec).
+      #   First run ever / full_rescrape=true: fetch all seasons (slow, ~20 min).
+      - name: Scrape current season only (fast path)
+        if: steps.processed_cache.outputs.cache-hit == 'true' && inputs.full_rescrape != 'true'
+        run: python scripts/scrape_with_cbbpy.py --seasons 2026 --out data/processed --raw data/raw
+
+      - name: Scrape all seasons (first run or full rescrape)
+        if: steps.processed_cache.outputs.cache-hit != 'true' || inputs.full_rescrape == 'true'
         run: python scripts/run_pipeline.py --mode scrape
 
       # ── 5. Build features ──────────────────────────────────────────────────
@@ -147,3 +158,4 @@ jobs:
           else
             echo "No changes to commit."
           fi
+
