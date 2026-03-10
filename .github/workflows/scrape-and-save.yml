@@ -1,0 +1,35 @@
+name: Scrape and save processed data
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 6 * * 1' # weekly on Monday at 06:00 UTC
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run scraper
+        run: |
+          python scripts/run_pipeline.py --mode scrape
+
+      - name: Upload processed data
+        uses: actions/upload-artifact@v4
+        with:
+          name: processed-data
+          path: data/processed
+
+# Note: For GPT-5 mini prompts to run in CI, configure a self-hosted runner with the model available.
