@@ -1,0 +1,145 @@
+name: Update Data, Retrain & Simulate
+
+# Runs every 6 hours to refresh game data, retrain the model, and publish
+# new simulation results. Can also be triggered manually or called by
+# the bracket-watch workflow (with an official bracket file).
+
+on:
+  schedule:
+    - cron: '0 */6 * * *'  # every 6 hours
+
+  workflow_dispatch:
+    inputs:
+      bracket_file:
+        description: 'Bracket CSV committed to repo (e.g. data/brackets/official_2026.csv)'
+        required: false
+        default: ''
+      official_bracket:
+        description: 'Parse bracket as official NCAA format'
+        type: boolean
+        default: false
+      sims:
+        description: 'Number of simulations to run'
+        required: false
+        default: '5000'
+
+  # Called by bracket-watch.yml when a new official bracket is detected
+  workflow_call:
+    inputs:
+      bracket_file:
+        type: string
+        required: false
+        default: ''
+      official_bracket:
+        type: boolean
+        default: false
+      sims:
+        type: string
+        default: '5000'
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write  # needed to commit results back to main
+
+    steps:
+      # ── 1. Checkout ────────────────────────────────────────────────────────
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # full history so git push works cleanly
+
+      # ── 2. Python env ──────────────────────────────────────────────────────
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      # ── 3. Restore raw data cache (cbbpy pickle files) ────────────────────
+      #   Key rotates weekly so we always fetch fresh data at least once/week.
+      #   On cache hit, scraper skips network calls for seasons already cached.
+      - name: Compute week key
+        id: week
+        run: echo "week=$(date +%Y-%W)" >> "$GITHUB_OUTPUT"
+
+      - name: Restore raw data cache
+        uses: actions/cache@v4
+        with:
+          path: data/raw
+          key: raw-data-${{ runner.os }}-w${{ steps.week.outputs.week }}
+          restore-keys: raw-data-${{ runner.os }}-
+
+      # ── 4. Scrape ──────────────────────────────────────────────────────────
+      #   Always refresh the current season. Older seasons are served from the
+      #   data/raw pickle cache above and skip network calls.
+      - name: Scrape game data
+        run: python scripts/run_pipeline.py --mode scrape
+
+      # ── 5. Build features ──────────────────────────────────────────────────
+      - name: Build features
+        run: python scripts/run_pipeline.py --mode features
+
+      # ── 6. Train model ─────────────────────────────────────────────────────
+      - name: Train model
+        run: |
+          python scripts/run_pipeline.py \
+            --mode train \
+            --include_regular_season \
+            --regular_season_weight 0.3
+
+      # ── 7. Simulate ────────────────────────────────────────────────────────
+      #   With official bracket: use committed bracket file.
+      #   Without bracket: adj_margin-based team selection (pre-bracket estimate).
+      - name: Simulate (with official bracket)
+        if: inputs.bracket_file != ''
+        run: |
+          python scripts/run_pipeline.py \
+            --mode simulate \
+            --bracket_file "${{ inputs.bracket_file }}" \
+            --sims ${{ inputs.sims || '5000' }}
+
+      - name: Simulate (adj_margin selection, no bracket)
+        if: inputs.bracket_file == ''
+        run: |
+          python scripts/run_pipeline.py \
+            --mode simulate \
+            --sims ${{ inputs.sims || '5000' }}
+
+      # ── 8. Generate charts ─────────────────────────────────────────────────
+      - name: Find latest sim output
+        id: latest_sim
+        run: |
+          latest=$(ls -t results/sim_*.json 2>/dev/null | head -1)
+          echo "path=${latest}" >> "$GITHUB_OUTPUT"
+
+      - name: Generate charts
+        if: steps.latest_sim.outputs.path != ''
+        run: |
+          python scripts/generate_charts.py \
+            --sim "${{ steps.latest_sim.outputs.path }}"
+
+      # ── 9. Commit results back to main ─────────────────────────────────────
+      #   Only commits files that changed. The [skip ci] tag prevents a loop.
+      #   We commit: simulation JSON, chart PNGs, and training summary.
+      - name: Commit updated results
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add \
+            results/sim_*.json \
+            results/charts/ \
+            models/training_summary.json \
+            || true
+          # Only push if there are actual changes
+          if ! git diff --staged --quiet; then
+            git commit -m "auto: refresh sim results $(date -u '+%Y-%m-%d %H:%M UTC') [skip ci]"
+            git push
+          else
+            echo "No changes to commit."
+          fi
