@@ -162,6 +162,60 @@ scripts/              all pipeline scripts (see table below)
 | `validate_artifacts.py` | Validates simulation JSON schema |
 | `generate_charts.py` | Generates accuracy and champion-probability charts |
 | `train_seed_stratified_models.py` | Per-seed-stratum model variants |
+| `fetch_official_bracket.py` | Polls ESPN API for official bracket on Selection Sunday |
+
+---
+
+## Automation (GitHub Actions)
+
+Three workflows keep the repo self-updating:
+
+| Workflow | Trigger | What it does |
+|---|---|---|
+| **update-data.yml** | Every 6 hours + manual | Scrape → features → train → 5000-sim → commit results |
+| **bracket-watch.yml** | Every 15 min on Selection Sunday + manual | Polls ESPN for bracket; triggers 10 000-sim run when found |
+| **scrape-and-save.yml** | Manual only (legacy) | Raw data artifact only, no retrain |
+
+### How results get committed back
+
+The `update-data.yml` job has `permissions: contents: write` and pushes three
+artefacts back to `main` after each run (only when files actually changed):
+
+```
+results/sim_*.json        — latest Monte Carlo simulation
+results/charts/           — champion-probability and accuracy charts
+models/training_summary.json — LOSO metrics from the most recent train
+```
+
+Auto-commit messages include `[skip ci]` to prevent recursive workflow
+triggers.
+
+### Raw-data caching
+
+`data/raw/` (cbbpy pickle files) is cached in GitHub Actions with a
+weekly-rotating key. This means scraping all five seasons costs one network
+round-trip per week; subsequent 6-hour runs skip the API calls entirely and
+rebuild features from cache.
+
+### Selection Sunday automation
+
+`bracket-watch.yml` polls ESPN's public tournament API every 15 minutes from
+March 14 evening through March 16 morning (UTC). When 68 real team names
+appear in the response (not "TBD"), the script:
+
+1. Writes `data/brackets/official_{year}.csv`
+2. Commits it to `main`
+3. Kicks off `update-data.yml` with `--bracket_file` and 10 000 sims
+
+To test manually:
+```bash
+python scripts/fetch_official_bracket.py --year 2026 --dry_run
+```
+
+To force a re-fetch even if the file already exists:
+```
+GitHub Actions → bracket-watch → Run workflow → force: true
+```
 
 ---
 

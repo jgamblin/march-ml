@@ -1,0 +1,143 @@
+name: Bracket Watch (Selection Sunday)
+
+# Polls for the official NCAA bracket release on and around Selection Sunday.
+# When a bracket is detected, it commits the bracket CSV and triggers a full
+# simulation run via update-data.yml.
+#
+# Schedule covers Selection Sunday + surrounding hours (all times UTC):
+#   March 14 evening  - pre-announcement buzz
+#   March 15 all day  - Selection Sunday (bracket revealed ~6 PM ET = 23:00 UTC)
+#   March 16 morning  - catch any stragglers / retry on transient failures
+#
+# Adjust the cron years by updating the 'on.schedule' block each season.
+# You can also fire manually via workflow_dispatch for testing.
+
+on:
+  schedule:
+    # Every 15 minutes: March 14 (UTC evening) through March 16 (UTC morning)
+    - cron: '*/15 20-23 14 3 *'   # March 14  20:00–23:45 UTC
+    - cron: '*/15 * 15 3 *'        # March 15  all day UTC
+    - cron: '*/15 0-8 16 3 *'      # March 16  00:00–08:45 UTC
+
+  workflow_dispatch:
+    inputs:
+      year:
+        description: 'Tournament year to fetch'
+        required: false
+        default: ''
+      force:
+        description: 'Re-fetch even if bracket file already exists'
+        type: boolean
+        default: false
+
+jobs:
+  check-bracket:
+    runs-on: ubuntu-latest
+    outputs:
+      bracket_found: ${{ steps.final.outputs.bracket_found }}
+      bracket_file:  ${{ steps.final.outputs.bracket_file }}
+
+    permissions:
+      contents: write
+
+    steps:
+      # ── 1. Checkout ──────────────────────────────────────────────────────
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # ── 2. Check if bracket already committed ────────────────────────────
+      - name: Check for existing bracket
+        id: already_done
+        run: |
+          year="${{ inputs.year || '' }}"
+          if [ -z "$year" ]; then
+            year=$(date +%Y)
+          fi
+          bracket_path="data/brackets/official_${year}.csv"
+          force="${{ inputs.force || 'false' }}"
+          if [ "$force" = "false" ] && [ -f "$bracket_path" ]; then
+            echo "Bracket already committed at ${bracket_path} — skipping fetch."
+            echo "skip=true"   >> "$GITHUB_OUTPUT"
+            echo "bracket_file=${bracket_path}" >> "$GITHUB_OUTPUT"
+          else
+            echo "skip=false"  >> "$GITHUB_OUTPUT"
+            echo "bracket_file=${bracket_path}" >> "$GITHUB_OUTPUT"
+          fi
+
+      # ── 3. Python env ─────────────────────────────────────────────────────
+      - name: Set up Python 3.11
+        if: steps.already_done.outputs.skip != 'true'
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install dependencies
+        if: steps.already_done.outputs.skip != 'true'
+        run: pip install requests
+
+      # ── 4. Fetch official bracket ─────────────────────────────────────────
+      - name: Fetch official bracket from ESPN
+        if: steps.already_done.outputs.skip != 'true'
+        id: fetch
+        run: |
+          year="${{ inputs.year || '' }}"
+          if [ -z "$year" ]; then
+            year=$(date +%Y)
+          fi
+          mkdir -p data/brackets
+          python scripts/fetch_official_bracket.py \
+            --year "$year" \
+            --out "data/brackets/official_${year}.csv"
+
+          # Script exits 0 if bracket found, 1 if not yet available
+          if [ $? -eq 0 ] && [ -f "data/brackets/official_${year}.csv" ]; then
+            echo "bracket_found=true"                          >> "$GITHUB_OUTPUT"
+            echo "bracket_file=data/brackets/official_${year}.csv" >> "$GITHUB_OUTPUT"
+          else
+            echo "bracket_found=false" >> "$GITHUB_OUTPUT"
+            echo "bracket_file="       >> "$GITHUB_OUTPUT"
+          fi
+
+      # Pass through from already_done path when bracket was pre-existing
+      - name: Pass through existing bracket outputs
+        if: steps.already_done.outputs.skip == 'true'
+        id: passthrough
+        run: |
+          echo "bracket_found=true" >> "$GITHUB_OUTPUT"
+          echo "bracket_file=${{ steps.already_done.outputs.bracket_file }}" >> "$GITHUB_OUTPUT"
+
+      # ── Merge outputs from whichever path ran ─────────────────────────────
+      - name: Set final outputs
+        id: final
+        run: |
+          found="${{ steps.fetch.outputs.bracket_found || steps.passthrough.outputs.bracket_found }}"
+          file="${{ steps.fetch.outputs.bracket_file || steps.passthrough.outputs.bracket_file }}"
+          echo "bracket_found=${found}" >> "$GITHUB_OUTPUT"
+          echo "bracket_file=${file}"   >> "$GITHUB_OUTPUT"
+
+      # ── 5. Commit bracket file ────────────────────────────────────────────
+      - name: Commit bracket CSV
+        if: steps.fetch.outputs.bracket_found == 'true'
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/brackets/
+          if ! git diff --staged --quiet; then
+            git commit -m "auto: add official bracket ${{ steps.fetch.outputs.bracket_file }} [skip ci]"
+            git push
+          fi
+
+  # ── Trigger full simulation run ─────────────────────────────────────────────
+  run-official-sim:
+    needs: check-bracket
+    if: needs.check-bracket.outputs.bracket_found == 'true'
+    uses: ./.github/workflows/update-data.yml
+    with:
+      bracket_file: ${{ needs.check-bracket.outputs.bracket_file }}
+      official_bracket: true
+      sims: '10000'
+    permissions:
+      contents: write

@@ -1,9 +1,12 @@
-name: Scrape and save processed data
+# DEPRECATED — superseded by update-data.yml (runs every 6 hours, retrains and
+# commits simulation results back to the repo). This file is kept for reference
+# but its schedule has been removed. Trigger manually via workflow_dispatch if
+# you only need a raw data artifact without a full retrain.
+
+name: Scrape only (manual / legacy)
 
 on:
   workflow_dispatch:
-  schedule:
-    - cron: '0 6 * * 1' # weekly on Monday at 06:00 UTC
 
 jobs:
   scrape:
@@ -13,23 +16,19 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: '3.11'
+          cache: 'pip'
 
       - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
+        run: pip install -r requirements.txt
 
       - name: Run scraper
-        run: |
-          python scripts/run_pipeline.py --mode scrape
+        run: python scripts/run_pipeline.py --mode scrape
 
-      - name: Upload processed data
+      - name: Upload processed data artifact
         uses: actions/upload-artifact@v4
         with:
           name: processed-data
           path: data/processed
-
-# Note: For GPT-5 mini prompts to run in CI, configure a self-hosted runner with the model available.
