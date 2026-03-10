@@ -5,6 +5,10 @@ name: Update Data, Retrain & Simulate
 # the bracket-watch workflow (with an official bracket file).
 
 on:
+  push:
+    branches:
+      - main
+
   schedule:
     - cron: '0 */6 * * *'  # every 6 hours
 
