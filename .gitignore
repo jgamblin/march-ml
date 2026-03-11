@@ -233,6 +233,9 @@ results/*.csv
 # Keep committed: chart PNGs referenced by README
 !results/charts/
 
+# Keep the canonical CI sim output committed (updated every run)
+!results/sim_results.json
+
 # Scratch planning / analysis docs
 ADVANCED_ANALYSIS_TOOLS.md
 ALL_IMPROVEMENTS_COMPLETE.md
