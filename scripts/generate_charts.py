@@ -57,18 +57,20 @@ def load_sim(sim_path):
 
 
 def chart_loso_per_season(summary, out_dir):
-    """Bar chart of LOSO accuracy per season with overall CI band."""
-    seasons_data = summary.get('loso_per_season', [])
+    """Bar chart of Rolling CV accuracy per season with overall CI band."""
+    # Prefer rolling CV (deployment metric); fall back to loso_per_season for compatibility
+    seasons_data = summary.get('rolling_cv_per_season') or summary.get('loso_per_season', [])
+    cv_label = 'Rolling CV' if summary.get('rolling_cv_per_season') else 'LOSO'
     if not seasons_data:
-        print("  Skipping LOSO chart: no loso_per_season data")
+        print("  Skipping accuracy-by-season chart: no per-season data")
         return
 
     seasons = [str(d['season']) for d in seasons_data]
     accs = [d['accuracy'] for d in seasons_data]
-    overall = summary.get('loso_overall', {})
-    overall_acc = overall.get('accuracy', np.mean(accs))
-    ci_lo = overall.get('ci_low', overall_acc - 0.05)
-    ci_hi = overall.get('ci_high', overall_acc + 0.05)
+    overall_data = summary.get('rolling_cv_overall') or summary.get('loso_overall', {})
+    overall_acc = overall_data.get('accuracy', np.mean(accs))
+    ci = overall_data.get('accuracy_ci_95', [overall_acc - 0.05, overall_acc + 0.05])
+    ci_lo, ci_hi = ci[0], ci[1]
     baselines = summary.get('baselines', {})
     seed_baseline = baselines.get('lower_seed', None)
 
@@ -78,15 +80,11 @@ def chart_loso_per_season(summary, out_dir):
     colors = [SUCCESS_GREEN if a >= overall_acc else NCAA_BLUE for a in accs]
     bars = ax.bar(seasons, accs, color=colors, width=0.55, zorder=3, edgecolor='#21262d', linewidth=0.8)
 
-    # Overall accuracy line
-    ax.axhline(overall_acc, color=NCAA_GOLD, linewidth=2, linestyle='-', zorder=4, label=f'LOSO Overall {overall_acc:.1%}')
-    # CI band
+    ax.axhline(overall_acc, color=NCAA_GOLD, linewidth=2, linestyle='-', zorder=4, label=f'{cv_label} Overall {overall_acc:.1%}')
     ax.axhspan(ci_lo, ci_hi, alpha=0.15, color=NCAA_GOLD, zorder=2, label=f'95% CI [{ci_lo:.1%}, {ci_hi:.1%}]')
-    # Seed baseline
     if seed_baseline:
         ax.axhline(seed_baseline, color=WARNING_RED, linewidth=1.5, linestyle='--', zorder=4, label=f'Lower-seed baseline {seed_baseline:.1%}')
 
-    # Value labels on bars
     for bar, acc in zip(bars, accs):
         ax.text(bar.get_x() + bar.get_width() / 2, acc + 0.005, f'{acc:.1%}',
                 ha='center', va='bottom', fontsize=10, color='#c9d1d9', fontweight='bold')
@@ -94,7 +92,7 @@ def chart_loso_per_season(summary, out_dir):
     ax.set_ylim(0.40, min(1.0, max(accs) + 0.12))
     ax.set_xlabel('Season', fontsize=12, labelpad=8)
     ax.set_ylabel('Accuracy', fontsize=12, labelpad=8)
-    ax.set_title('LOSO Accuracy by Season', fontsize=14, fontweight='bold', pad=12)
+    ax.set_title(f'{cv_label} Accuracy by Season', fontsize=14, fontweight='bold', pad=12)
     ax.legend(fontsize=9, loc='lower right', framealpha=0.3)
     ax.yaxis.set_major_formatter(matplotlib.ticker.PercentFormatter(xmax=1.0))
     ax.grid(axis='y', zorder=1)
@@ -108,10 +106,12 @@ def chart_loso_per_season(summary, out_dir):
 
 def chart_model_vs_baselines(summary, out_dir):
     """Horizontal bar chart comparing model accuracy to all baselines."""
-    overall = summary.get('loso_overall', {})
+    # Prefer rolling CV (deployment metric); fall back to loso_overall for compatibility
+    overall = summary.get('rolling_cv_overall') or summary.get('loso_overall', {})
+    cv_label = 'Rolling CV' if summary.get('rolling_cv_overall') else 'LOSO'
     model_acc = overall.get('accuracy')
     if model_acc is None:
-        print("  Skipping baselines chart: no loso_overall.accuracy")
+        print("  Skipping baselines chart: no accuracy in summary")
         return
     baselines = summary.get('baselines', {})
     if not baselines:
@@ -141,7 +141,7 @@ def chart_model_vs_baselines(summary, out_dir):
 
     ax.set_xlim(0.0, max(values) + 0.10)
     ax.set_xlabel('Accuracy', fontsize=12, labelpad=8)
-    ax.set_title('Model vs. Baselines (LOSO Tournament Accuracy)', fontsize=14, fontweight='bold', pad=12)
+    ax.set_title(f'Model vs. Baselines ({cv_label} Tournament Accuracy)', fontsize=14, fontweight='bold', pad=12)
     ax.xaxis.set_major_formatter(matplotlib.ticker.PercentFormatter(xmax=1.0))
     ax.grid(axis='x', zorder=1)
 

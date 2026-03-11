@@ -12,21 +12,19 @@ NCAA men's basketball tournament prediction pipeline — scrape game data, engin
 
 | Metric | Value |
 |--------|-------|
-| **Rolling CV accuracy** | **73.8%** |
-| Rolling CV 95% CI | [72.4%, 75.2%] |
+| **Rolling CV accuracy** | **67.2%** |
+| Rolling CV 95% CI | [61.2%, 72.8%] |
 | Lower-seed baseline | 69.5% |
-| **Model vs baseline** | **+4.3 pp** ✅ |
+| **Model vs baseline** | **-2.3 pp** ⚠️ |
 | LOSO accuracy (tournament-only training) | 67.4% |
 | Tournament games evaluated | 334 |
 | Features | 9 |
 | Training rows (with regular season) | ~33 000 |
 | Seasons of data | 2021–2026 |
 
-> **Primary metric: Rolling CV.** Each season is held out in turn while the model trains only on *past* seasons — the same condition as real deployment. LOSO (which can train on future seasons to predict the past) is tracked separately but is not the headline metric.
+> **Primary metric: Rolling CV (tournament games only).** Each season is held out in turn while the model trains only on *past* seasons — the same condition as real deployment. The model currently trails the "always pick the lower seed" baseline by ~2 pp. This is an active area of improvement; see the roadmap below.
 
-### Why rolling CV > LOSO for this problem
-
-LOSO holds out 2021 but trains on 2022–2025, using future data to predict the past. For a model deployed to predict each March's tournament, rolling CV (train on seasons 1..k-1, predict season k) is the only leakage-free evaluation.
+> **Previous claim of 73.8% was incorrect.** The `cross_validate_models.py` rolling CV was accidentally evaluating on regular-season test games (including 5 520 in-progress 2026 games), not tournament games. The correct tournament-only rolling CV is 67.2%.
 
 ### Rolling CV accuracy by season
 
@@ -295,6 +293,7 @@ Adjacent slots (1–2, 3–4, …) are paired in round 1.
 
 ## Known limitations
 
+- **Model trails seed baseline**: rolling CV accuracy (67.2%) is currently ~2.3 pp below the "always pick lower seed" baseline (69.5%). The seed is a very strong prior (it encodes committee selection quality + `seed_matchup_prior`). Closing this gap is the top roadmap priority.
 - **Small tournament sample**: only 334 historical tournament matchup rows across 5 complete seasons; high variance in per-season estimates.
 - **Conference strength partial**: `conf_strength_tier` is a rough 3-level mapping; full inter-conference win% matrix not yet implemented.
 - **No player-level data**: injuries, roster experience, and height are not currently modeled. A manual `overrides.csv` mechanism is planned for Selection Sunday.
