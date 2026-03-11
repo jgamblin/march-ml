@@ -448,6 +448,74 @@ def evaluate_loso(X, y, meta, lr_weight=0.5, xgb_weight=0.5):
     return per_season, overall
 
 
+def evaluate_rolling_cv(X, y, meta, sample_weight=None, lr_weight=0.5, xgb_weight=0.5):
+    """Rolling (expanding-window) cross-validation — the deployment-relevant metric.
+
+    For each season k (starting from the 2nd), trains on all rows from seasons < k
+    (tournament + regular season, with sample weights), tests on tournament rows of
+    season k only. Strictly forward-looking: no future data is used to predict the past.
+    """
+    seasons = sorted(meta["season"].unique().tolist())
+    if len(seasons) < 2:
+        return [], {}
+
+    per_season = []
+    all_probs = []
+    all_y = []
+
+    season_arr = meta["season"].to_numpy()
+    tourney_mask = (sample_weight == 1.0) if sample_weight is not None else np.ones(len(y), dtype=bool)
+
+    for i, test_season in enumerate(seasons[1:], start=1):
+        train_seasons = seasons[:i]
+        train_mask = np.isin(season_arr, train_seasons)
+        test_mask = (season_arr == test_season) & tourney_mask
+        if train_mask.sum() == 0 or test_mask.sum() == 0:
+            continue
+
+        X_train = X.loc[train_mask]
+        X_test = X.loc[test_mask]
+        y_train = y[train_mask]
+        y_test = y[test_mask]
+        sw_train = sample_weight[train_mask] if sample_weight is not None else None
+
+        lr = build_lr_model()
+        lr.fit(X_train, y_train, sample_weight=sw_train)
+        p_lr = lr.predict_proba(X_test)[:, 1]
+
+        model_probs = [p_lr]
+        if HAS_XGB:
+            xgb = build_xgb_model()
+            xgb.fit(X_train, y_train, sample_weight=sw_train)
+            p_xgb = xgb.predict_proba(X_test)[:, 1]
+            model_probs.append(p_xgb)
+
+        total_w = max(1e-9, lr_weight + (xgb_weight if HAS_XGB else 0))
+        fold_weights = [lr_weight] + ([xgb_weight] if HAS_XGB else [])
+        p_ens = sum(w * p for w, p in zip(fold_weights, model_probs)) / total_w
+
+        season_result = compute_metrics(y_test, p_ens)
+        season_result["season"] = int(test_season)
+        per_season.append(season_result)
+
+        all_probs.extend(p_ens.tolist())
+        all_y.extend(y_test.tolist())
+
+    overall = compute_metrics(np.asarray(all_y), np.asarray(all_probs)) if all_y else {}
+
+    if all_y:
+        rng = np.random.default_rng(42)
+        n = len(all_y)
+        boot_scores = []
+        for _ in range(1000):
+            idx = rng.integers(0, n, n)
+            preds = (np.asarray(all_probs)[idx] >= 0.5).astype(int)
+            boot_scores.append(float(accuracy_score(np.asarray(all_y)[idx], preds)))
+        overall["accuracy_ci_95"] = [float(np.percentile(boot_scores, 2.5)), float(np.percentile(boot_scores, 97.5))]
+
+    return per_season, overall
+
+
 def compute_baselines(X, y, meta):
     """Compute naive baseline accuracies for model comparison."""
     baselines = {}
@@ -555,16 +623,32 @@ def main():
     loso_per_season, loso_overall = evaluate_loso(X_tourney, y_tourney, meta_tourney,
                                                    lr_weight=args.lr_weight,
                                                    xgb_weight=args.xgb_weight)
+    # Rolling CV: train on seasons 1..k-1 (all rows), test on tournament rows of season k.
+    # This is the deployment-relevant metric — strictly forward-looking, no future data leakage.
+    rolling_per_season, rolling_overall = evaluate_rolling_cv(
+        X, y, meta, weights,
+        lr_weight=args.lr_weight,
+        xgb_weight=args.xgb_weight,
+    )
     baselines = compute_baselines(X_tourney, y_tourney, meta_tourney)
 
     if loso_per_season:
-        print("LOSO evaluation (leave-one-season-out):")
+        print("LOSO evaluation (leave-one-season-out, tournament-only training):")
         for r in loso_per_season:
             print(f"  {r['season']}: accuracy={r['accuracy']:.4f} logloss={r['log_loss']:.4f} ({r['games']} games)")
     if loso_overall:
         ci = loso_overall.get("accuracy_ci_95", [None, None])
         print(f"LOSO overall: accuracy={loso_overall['accuracy']:.4f} 95%CI=[{ci[0]:.3f},{ci[1]:.3f}]")
-        print(f"Baselines: {baselines}")
+
+    if rolling_per_season:
+        print("Rolling CV (forward-looking, deployment metric):")
+        for r in rolling_per_season:
+            print(f"  {r['season']}: accuracy={r['accuracy']:.4f} logloss={r['log_loss']:.4f} ({r['games']} games)")
+    if rolling_overall:
+        ci = rolling_overall.get("accuracy_ci_95", [None, None])
+        print(f"Rolling CV overall: accuracy={rolling_overall['accuracy']:.4f} 95%CI=[{ci[0]:.3f},{ci[1]:.3f}]")
+
+    print(f"Baselines: {baselines}")
 
     fit_and_save_final_models(X, y, args.out_dir,
                               sample_weight=weights if args.include_regular_season else None)
@@ -582,9 +666,11 @@ def main():
         "baselines": baselines,
         "loso_per_season": loso_per_season,
         "loso_overall": loso_overall,
-        # backward-compatible keys
-        "holdout_results": loso_per_season,
-        "overall_holdout_ensemble": loso_overall,
+        "rolling_cv_per_season": rolling_per_season,
+        "rolling_cv_overall": rolling_overall,
+        # backward-compatible keys (use rolling CV as the primary reported metric)
+        "holdout_results": rolling_per_season,
+        "overall_holdout_ensemble": rolling_overall,
         "models": {
             "logistic_regression": True,
             "xgboost": bool(HAS_XGB),

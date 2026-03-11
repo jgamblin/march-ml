@@ -221,8 +221,9 @@ def main():
     y_t = y[tourney_mask]
     meta_t = meta.loc[tourney_mask].reset_index(drop=True)
     baselines = compute_baselines(X_t, y_t, meta_t)
+    # Rolling CV must also evaluate on tournament-only rows for a fair comparison
     rolling_results, rolling_overall = evaluate_rolling(
-        X, y, meta, lr_weight=args.lr_weight, xgb_weight=args.xgb_weight
+        X_t, y_t, meta_t, lr_weight=args.lr_weight, xgb_weight=args.xgb_weight
     )
 
     print("\nLeave-One-Season-Out (LOSO):")
