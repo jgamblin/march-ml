@@ -129,8 +129,11 @@ def main():
                         "2020 is skipped automatically (no tournament due to COVID).")
     p.add_argument("--since", default=None, metavar="YYYY-MM-DD",
                    help="Only fetch games from this date forward for the current season and merge "
-                        "with the existing CSV. Speeds up daily CI runs dramatically by skipping "
-                        "the already-cached regular season (e.g. --since 2026-03-15).")
+                        "with the existing CSV. Mutually exclusive with --lookback-days.")
+    p.add_argument("--lookback-days", type=int, default=None, metavar="N",
+                   help="Incremental scrape: fetch the last N days for the current season and merge "
+                        "with the existing CSV. 14 days covers conf tournaments + early NCAA rounds "
+                        "without re-scraping the full regular season.")
     p.add_argument("--box", action="store_true", help="fetch box scores (slow, not needed for feature pipeline)")
     p.add_argument("--pbp", action="store_true", help="fetch play-by-play in addition to game info (very slow)")
     args = p.parse_args()
@@ -138,13 +141,19 @@ def main():
     ensure_dir(args.out)
     ensure_dir(args.raw)
 
-    if args.since and not args.seasons and not args.historical:
-        # Incremental mode: only update the current season from --since date
+    # Resolve --lookback-days to a since date
+    since = args.since
+    if args.lookback_days and not since:
+        from datetime import timedelta
+        since = (datetime.utcnow() - timedelta(days=args.lookback_days)).strftime("%Y-%m-%d")
+
+    if since and not args.seasons and not args.historical:
+        # Incremental mode: only update the current season from the resolved since date
         current_year = datetime.utcnow().year
         current_season = current_year  # season named by end year (2025-26 → 2026)
-        print(f"Incremental mode: fetching season {current_season} games since {args.since}")
+        print(f"Incremental mode: fetching season {current_season} games since {since}")
         try:
-            fetch_season_since(current_season, args.since, args.out, args.raw,
+            fetch_season_since(current_season, since, args.out, args.raw,
                                fetch_box=args.box, fetch_pbp=args.pbp)
         except Exception as e:
             print(f"Error in incremental fetch for season {current_season}: {e}", file=sys.stderr)

@@ -15,12 +15,14 @@ def run_command(cmd):
     subprocess.check_call(cmd)
 
 
-def run_scrape(fetch_pbp=False, seasons=None, historical=False, since=None):
+def run_scrape(fetch_pbp=False, seasons=None, historical=False, since=None, lookback_days=None):
     cmd = [sys.executable, "scripts/scrape_with_cbbpy.py", "--out", "data/processed", "--raw", "data/raw"]
     if seasons:
         cmd.extend(["--seasons", *[str(season) for season in seasons]])
     elif historical:
         cmd.append("--historical")
+    elif lookback_days:
+        cmd.extend(["--lookback-days", str(lookback_days)])
     elif since:
         cmd.extend(["--since", since])
     if fetch_pbp:
@@ -132,8 +134,9 @@ def main():
     p.add_argument("--historical", action="store_true",
                    help="also scrape 2015-2019 historical seasons (used with --mode scrape/full)")
     p.add_argument("--since", default=None, metavar="YYYY-MM-DD",
-                   help="incremental scrape: only fetch games from this date for the current season "
-                        "(default on scheduled runs: 2026-03-15, covers Selection Sunday onward)")
+                   help="incremental scrape: only fetch games from this date forward (mutually exclusive with --lookback-days)")
+    p.add_argument("--lookback-days", type=int, default=None, metavar="N",
+                   help="incremental scrape: fetch last N days for the current season (default for scheduled runs: 14)")
     p.add_argument("--d1_list", default="data/mappings/d1_list_normalized.csv")
     p.add_argument("--seed_map", default=None)
     p.add_argument("--conf_map", default=None)
@@ -157,7 +160,8 @@ def main():
     if args.mode in {"scrape", "full"}:
         run_scrape(fetch_pbp=args.pbp, seasons=args.seasons,
                    historical=getattr(args, 'historical', False),
-                   since=getattr(args, 'since', None))
+                   since=getattr(args, 'since', None),
+                   lookback_days=getattr(args, 'lookback_days', None))
     if args.mode in {"features", "full"}:
         run_features(seasons=args.seasons, d1_list=args.d1_list, seed_map=args.seed_map, conf_map=args.conf_map)
     if args.mode in {"train", "full"}:

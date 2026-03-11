@@ -90,12 +90,13 @@ jobs:
 
       # ── 4. Scrape ──────────────────────────────────────────────────────────
       #   Historical seasons (2015-2025, excl. 2020) are committed to the repo — scraped once.
-      #   Normal runs only fetch new games since Selection Sunday (2026-03-15) via --since,
-      #   which uses get_games_range() instead of get_games_season() — takes ~5 sec instead of ~3 min.
+      #   Normal runs only fetch the last 14 days of games via --lookback-days,
+      #   which captures conference tournaments + early NCAA rounds without re-scraping
+      #   the full regular season. Takes ~15 sec instead of ~3 min.
       #   Use manual full_rescrape=true to re-fetch all seasons if needed.
-      - name: Scrape current season (incremental, Selection Sunday onward)
+      - name: Scrape current season (incremental, last 14 days)
         if: inputs.full_rescrape != 'true'
-        run: python scripts/scrape_with_cbbpy.py --since 2026-03-15 --out data/processed --raw data/raw
+        run: python scripts/scrape_with_cbbpy.py --lookback-days 14 --out data/processed --raw data/raw
 
       - name: Scrape all seasons (manual full rescrape only)
         if: inputs.full_rescrape == 'true'
