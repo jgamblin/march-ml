@@ -203,6 +203,83 @@ def chart_champion_probs(sim, out_dir, top_n=15):
     print(f"  Saved {out_path}")
 
 
+def chart_shap_importance(shap_data, out_dir):
+    """Horizontal bar chart of mean absolute SHAP values per feature."""
+    mean_abs = shap_data.get("mean_abs_shap", {})
+    if not mean_abs:
+        print("  Skipping SHAP importance chart: no mean_abs_shap data")
+        return
+
+    feats = sorted(mean_abs.keys(), key=lambda k: mean_abs[k])
+    vals = [mean_abs[f] for f in feats]
+    clean_labels = [f.replace("diff_", "Δ ").replace("_", " ") for f in feats]
+
+    apply_style()
+    fig, ax = plt.subplots(figsize=(9, max(4, len(feats) * 0.45)))
+    colors = [NCAA_GOLD if v == max(vals) else NCAA_BLUE for v in vals]
+    bars = ax.barh(clean_labels, vals, color=colors, height=0.6, edgecolor='#21262d', linewidth=0.8, zorder=3)
+    for bar, val in zip(bars, vals):
+        ax.text(val + max(vals) * 0.01, bar.get_y() + bar.get_height() / 2,
+                f'{val:.4f}', va='center', fontsize=9, color='#c9d1d9')
+    ax.set_xlabel('Mean |SHAP value|', fontsize=12, labelpad=8)
+    ax.set_title('Feature Importance (SHAP)', fontsize=14, fontweight='bold', pad=12)
+    ax.grid(axis='x', zorder=1)
+    out_path = Path(out_dir) / 'shap_importance.png'
+    fig.tight_layout()
+    fig.savefig(out_path, dpi=150, bbox_inches='tight')
+    plt.close(fig)
+    print(f"  Saved {out_path}")
+
+
+def chart_shap_beeswarm(shap_data, out_dir):
+    """Beeswarm-style scatter: each dot is a game, x=SHAP value, color=feature value magnitude."""
+    shap_vals = shap_data.get("shap_values")
+    x_vals = shap_data.get("x_values")
+    feat_cols = shap_data.get("feature_columns")
+    if not shap_vals or not x_vals or not feat_cols:
+        print("  Skipping SHAP beeswarm: missing data")
+        return
+
+    sv = np.array(shap_vals)      # (n_games, n_features)
+    xv = np.array(x_vals)         # (n_games, n_features)
+    mean_abs = np.abs(sv).mean(axis=0)
+    order = np.argsort(mean_abs)  # ascending — bottom = least important
+
+    apply_style()
+    fig, ax = plt.subplots(figsize=(10, max(5, len(feat_cols) * 0.55)))
+    cmap = plt.cm.RdBu_r
+
+    for plot_idx, feat_idx in enumerate(order):
+        sv_col = sv[:, feat_idx]
+        xv_col = xv[:, feat_idx]
+        # Normalize feature values to [0,1] for color mapping
+        xv_range = xv_col.max() - xv_col.min()
+        xv_norm = (xv_col - xv_col.min()) / (xv_range + 1e-9)
+        # Jitter y-axis for beeswarm effect
+        rng = np.random.default_rng(feat_idx)
+        y_jitter = plot_idx + rng.uniform(-0.3, 0.3, size=len(sv_col))
+        sc = ax.scatter(sv_col, y_jitter, c=xv_norm, cmap=cmap,
+                        alpha=0.6, s=14, linewidths=0, zorder=3)
+
+    clean_labels = [feat_cols[i].replace("diff_", "Δ ").replace("_", " ") for i in order]
+    ax.set_yticks(range(len(feat_cols)))
+    ax.set_yticklabels(clean_labels, fontsize=9)
+    ax.axvline(0, color='#8b949e', linewidth=1, linestyle='--', zorder=2)
+    ax.set_xlabel('SHAP value (impact on win probability)', fontsize=11, labelpad=8)
+    ax.set_title('SHAP Beeswarm — Per-Game Feature Impact', fontsize=13, fontweight='bold', pad=12)
+    ax.grid(axis='x', zorder=1)
+    cb = fig.colorbar(sc, ax=ax, pad=0.01)
+    cb.set_label('Feature value\n(low → high)', fontsize=8, color='#c9d1d9')
+    cb.ax.yaxis.set_tick_params(color='#8b949e')
+    plt.setp(cb.ax.yaxis.get_ticklabels(), color='#8b949e')
+
+    out_path = Path(out_dir) / 'shap_beeswarm.png'
+    fig.tight_layout()
+    fig.savefig(out_path, dpi=150, bbox_inches='tight')
+    plt.close(fig)
+    print(f"  Saved {out_path}")
+
+
 def main():
     p = argparse.ArgumentParser(description='Generate charts from model training and simulation output')
     p.add_argument('--models_dir', default='models', help='directory containing training_summary.json')
@@ -233,6 +310,18 @@ def main():
         chart_model_vs_baselines(summary, out_dir)
     except FileNotFoundError as e:
         print(f"  Warning: {e}")
+
+    # SHAP charts (generated during training; optional)
+    shap_path = Path(args.models_dir) / 'shap_summary.json'
+    if shap_path.exists():
+        try:
+            shap_data = json.loads(shap_path.read_text())
+            chart_shap_importance(shap_data, out_dir)
+            chart_shap_beeswarm(shap_data, out_dir)
+        except Exception as e:
+            print(f"  Warning: SHAP charts failed: {e}")
+    else:
+        print(f"  Skipping SHAP charts: {shap_path} not found (run train first)")
 
     if sim_path:
         try:

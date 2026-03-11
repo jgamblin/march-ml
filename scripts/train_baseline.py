@@ -489,6 +489,31 @@ def fit_and_save_final_models(X, y, out_dir, sample_weight=None):
         xgb_cal.fit(X, y, sample_weight=sample_weight)
         joblib.dump(xgb_cal, Path(out_dir) / "xgb_cal.joblib")
 
+    # SHAP feature importance — compute on tournament rows only for interpretability
+    try:
+        import shap as _shap
+        X_shap = X.loc[sample_weight == 1.0] if sample_weight is not None else X
+        shap_vals_lr = _shap.LinearExplainer(lr, X_shap).shap_values(X_shap)
+        if HAS_XGB:
+            shap_vals_xgb = _shap.TreeExplainer(xgb).shap_values(X_shap)
+            shap_arr = 0.5 * np.asarray(shap_vals_lr) + 0.5 * np.asarray(shap_vals_xgb)
+        else:
+            shap_arr = np.asarray(shap_vals_lr)
+        shap_summary = {
+            "feature_columns": list(X.columns),
+            "mean_abs_shap": {
+                feat: float(np.abs(shap_arr[:, i]).mean())
+                for i, feat in enumerate(X.columns)
+            },
+            "shap_values": shap_arr.tolist(),
+            "x_values": X_shap.values.tolist(),
+        }
+        with open(Path(out_dir) / "shap_summary.json", "w", encoding="utf-8") as f:
+            json.dump(shap_summary, f, indent=2)
+        print("  Saved SHAP summary to shap_summary.json")
+    except Exception as exc:
+        print(f"  SHAP computation skipped: {exc}")
+
 
 def main():
     p = argparse.ArgumentParser()
