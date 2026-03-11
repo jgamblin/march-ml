@@ -9,6 +9,10 @@ name: Update Data, Retrain & Simulate
 #   - Current season (2026) is re-scraped on every run (games change daily).
 #   - Manual trigger with full_rescrape=true re-fetches all seasons.
 
+concurrency:
+  group: pipeline
+  cancel-in-progress: true
+
 on:
   push:
     branches:
