@@ -92,15 +92,20 @@ def compute_baselines(X, y, meta):
     return baselines
 
 
-def evaluate_loso(X, y, meta, lr_weight=0.65, xgb_weight=0.35):
+def evaluate_loso(X, y, meta, weights=None, lr_weight=0.5, xgb_weight=0.5):
     results = []
     all_probs = []
     all_y = []
 
-    seasons = sorted(meta["season"].unique().tolist())
+    # Evaluate only on tournament games; regular-season rows are training augmentation only
+    tourney_mask = (weights == 1.0) if weights is not None else pd.Series(True, index=meta.index)
+    seasons = sorted(meta.loc[tourney_mask, "season"].unique().tolist())
+
     for holdout in seasons:
+        # Train on all data (including regular season) except the holdout season
         train_mask = meta["season"] != holdout
-        test_mask = meta["season"] == holdout
+        # Test only on tournament rows from the holdout season
+        test_mask = (meta["season"] == holdout) & tourney_mask
         if train_mask.sum() == 0 or test_mask.sum() == 0:
             continue
 
@@ -108,14 +113,15 @@ def evaluate_loso(X, y, meta, lr_weight=0.65, xgb_weight=0.35):
         X_test = X.loc[test_mask]
         y_train = y[train_mask.to_numpy()]
         y_test = y[test_mask.to_numpy()]
+        w_train = weights[train_mask.to_numpy()] if weights is not None else None
 
         lr = build_lr_model()
-        lr.fit(X_train, y_train)
+        lr.fit(X_train, y_train, sample_weight=w_train)
         p_lr = lr.predict_proba(X_test)[:, 1]
 
         if HAS_XGB:
             xgb = build_xgb_model()
-            xgb.fit(X_train, y_train)
+            xgb.fit(X_train, y_train, sample_weight=w_train)
             p_xgb = xgb.predict_proba(X_test)[:, 1]
             total_w = max(1e-9, lr_weight + xgb_weight)
             p_ens = (lr_weight * p_lr + xgb_weight * p_xgb) / total_w
@@ -134,7 +140,7 @@ def evaluate_loso(X, y, meta, lr_weight=0.65, xgb_weight=0.35):
     return results, overall, ci
 
 
-def evaluate_rolling(X, y, meta, lr_weight=0.65, xgb_weight=0.35):
+def evaluate_rolling(X, y, meta, lr_weight=0.5, xgb_weight=0.5):
     results = []
     seasons = sorted(meta["season"].unique().tolist())
 
@@ -185,9 +191,11 @@ def main():
     parser.add_argument("--features", default="data/processed/features/tournament_teams.csv")
     parser.add_argument("--games_dir", default="data/processed")
     parser.add_argument("--game_scope", choices=["ncaa_tourney", "postseason", "all"], default="ncaa_tourney")
-    parser.add_argument("--lr_weight", type=float, default=0.65)
-    parser.add_argument("--xgb_weight", type=float, default=0.35)
+    parser.add_argument("--lr_weight", type=float, default=0.5)
+    parser.add_argument("--xgb_weight", type=float, default=0.5)
     parser.add_argument("--out", default="results/cross_validation_summary.json")
+    parser.add_argument("--include_regular_season", action="store_true", default=False)
+    parser.add_argument("--regular_season_weight", type=float, default=0.3)
     args = parser.parse_args()
 
     features_path = Path(args.features)
@@ -195,17 +203,24 @@ def main():
         features_path = features_path.with_name("teams.csv")
 
     feats = load_features(features_path)
-    X, y, meta, _weights = build_match_dataset(args.games_dir, feats, args.game_scope)
+    X, y, meta, _weights = build_match_dataset(
+        args.games_dir, feats, args.game_scope,
+        include_regular_season=args.include_regular_season,
+        regular_season_weight=args.regular_season_weight,
+    )
 
     print(f"Dataset: {X.shape[0]} games, {X.shape[1]} features")
     print(f"Seasons: {sorted(meta['season'].unique().tolist())}")
 
-    baselines = compute_baselines(X, y, meta)
-    print(f"Baselines: {baselines}")
-
     loso_results, loso_overall, loso_ci = evaluate_loso(
-        X, y, meta, lr_weight=args.lr_weight, xgb_weight=args.xgb_weight
+        X, y, meta, weights=_weights, lr_weight=args.lr_weight, xgb_weight=args.xgb_weight
     )
+    # Compute baselines on tournament-only rows for fair comparison
+    tourney_mask = _weights == 1.0
+    X_t = X.loc[tourney_mask].reset_index(drop=True)
+    y_t = y[tourney_mask]
+    meta_t = meta.loc[tourney_mask].reset_index(drop=True)
+    baselines = compute_baselines(X_t, y_t, meta_t)
     rolling_results, rolling_overall = evaluate_rolling(
         X, y, meta, lr_weight=args.lr_weight, xgb_weight=args.xgb_weight
     )
@@ -230,6 +245,7 @@ def main():
     best_baseline = max(baselines.values()) if baselines else 0.0
     model_acc = loso_overall.get("accuracy", 0.0) if loso_overall else 0.0
     gap = model_acc - best_baseline
+    print(f"\nBaselines (tournament games only): {baselines}")
     print(f"Model vs best baseline: {model_acc:.4f} vs {best_baseline:.4f} (gap: {gap:+.4f})")
 
     print("\nRolling Time Split:")
