@@ -5,9 +5,9 @@ name: Update Data, Retrain & Simulate
 # the bracket-watch workflow (with an official bracket file).
 #
 # Data strategy:
-#   - Completed seasons (2021–2025) are cached in Actions; scraped once ever.
+#   - Completed seasons (2015–2025, excl. 2020 COVID) are cached in repo; scraped once ever.
 #   - Current season (2026) is re-scraped on every run (games change daily).
-#   - Manual trigger with full_rescrape=true re-fetches all seasons.
+#   - Manual trigger with full_rescrape=true re-fetches all seasons including 2015-2019 history.
 
 concurrency:
   group: pipeline
@@ -97,7 +97,7 @@ jobs:
 
       - name: Scrape all seasons (manual full rescrape only)
         if: inputs.full_rescrape == 'true'
-        run: python scripts/run_pipeline.py --mode scrape
+        run: python scripts/run_pipeline.py --mode scrape --historical
 
       # ── 5. Build features ──────────────────────────────────────────────────
       - name: Build features

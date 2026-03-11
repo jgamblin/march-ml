@@ -89,7 +89,8 @@ def test_build_match_dataset_shape(dataset):
 def test_build_match_dataset_expected_columns(dataset):
     """Core feature columns must be present."""
     X, *_ = dataset
-    required = {"diff_adj_margin", "diff_win_pct", "diff_seed", "seed_matchup_prior"}
+    required = {"diff_adj_margin", "diff_win_pct", "diff_seed", "seed_matchup_prior",
+                "seed_close_match", "adj_when_close", "adj_when_far"}
     missing = required - set(X.columns)
     assert not missing, f"Missing expected columns: {missing}"
 
