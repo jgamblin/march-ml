@@ -3,11 +3,17 @@
 By default this script fetches game metadata and boxscores only (no play-by-play)
 to reduce run-time and storage. Use `--pbp` to enable play-by-play scraping.
 
-Writes processed CSVs to `data/processed/` and caches raw outputs under `data/raw/`.
+For the current season, use `--since YYYY-MM-DD` to fetch only games from that date
+forward and merge them into the existing CSV. This dramatically speeds up daily CI runs:
+instead of re-scraping ~3,500 regular-season games, only new tournament games are fetched.
 
-Usage:
-    python scripts/scrape_with_cbbpy.py --out data/processed --raw data/raw
-    python scripts/scrape_with_cbbpy.py --seasons 2023 --pbp
+    # Normal daily run (fetch only new games since Selection Sunday)
+    python scripts/scrape_with_cbbpy.py --since 2026-03-15
+
+    # Full historical scrape (one-time)
+    python scripts/scrape_with_cbbpy.py --historical
+
+Writes processed CSVs to `data/processed/` and caches raw outputs under `data/raw/`.
 """
 import argparse
 import os
@@ -71,6 +77,48 @@ def fetch_season(season, out_dir, raw_dir, fetch_box=False, fetch_pbp=False):
     print(f"Cached raw games to {raw_games_path}")
 
 
+def fetch_season_since(season, since_date, out_dir, raw_dir, fetch_box=False, fetch_pbp=False):
+    """Incremental fetch: only pull games from `since_date` through today, then
+    merge with the existing season CSV. Much faster than a full re-scrape when
+    the regular season is already cached and only new tournament games are needed.
+    """
+    today = datetime.utcnow().strftime("%Y-%m-%d")
+    if since_date > today:
+        print(f"Season {season}: since_date {since_date} is in the future, skipping.")
+        return
+
+    print(f"Fetching season {season} games since {since_date} (incremental)...")
+    games_tuple = s.get_games_range(since_date, today, info=True, box=fetch_box, pbp=fetch_pbp)
+    if not isinstance(games_tuple, (list, tuple)) or len(games_tuple) < 1:
+        raise RuntimeError("Unexpected return from cbbpy.get_games_range")
+
+    new_df = games_tuple[0]
+    print(f"  Fetched {len(new_df)} new rows from {since_date} to {today}")
+
+    games_path = os.path.join(out_dir, f"games_{season}.csv")
+    if os.path.exists(games_path):
+        existing = pd.read_csv(games_path, low_memory=False)
+        # Deduplicate by game_id if available, otherwise by all columns
+        id_col = "game_id" if "game_id" in existing.columns else None
+        combined = pd.concat([existing, new_df], ignore_index=True)
+        if id_col:
+            combined = combined.drop_duplicates(subset=[id_col], keep="last")
+        else:
+            combined = combined.drop_duplicates(keep="last")
+        print(f"  Merged: {len(existing)} existing + {len(new_df)} new = {len(combined)} total rows")
+        combined.to_csv(games_path, index=False)
+        games_df = combined
+    else:
+        print(f"  No existing file; writing {len(new_df)} rows to {games_path}")
+        new_df.to_csv(games_path, index=False)
+        games_df = new_df
+
+    # Update raw cache
+    raw_games_path = os.path.join(raw_dir, f"games_{season}.pkl")
+    games_df.to_pickle(raw_games_path)
+    print(f"  Updated raw cache: {raw_games_path}")
+
+
 def main():
     p = argparse.ArgumentParser()
     p.add_argument("--out", default="data/processed", help="processed output dir")
@@ -79,12 +127,28 @@ def main():
     p.add_argument("--historical", action="store_true",
                    help="Also fetch 2015–2019 historical seasons (appended before recent seasons). "
                         "2020 is skipped automatically (no tournament due to COVID).")
+    p.add_argument("--since", default=None, metavar="YYYY-MM-DD",
+                   help="Only fetch games from this date forward for the current season and merge "
+                        "with the existing CSV. Speeds up daily CI runs dramatically by skipping "
+                        "the already-cached regular season (e.g. --since 2026-03-15).")
     p.add_argument("--box", action="store_true", help="fetch box scores (slow, not needed for feature pipeline)")
     p.add_argument("--pbp", action="store_true", help="fetch play-by-play in addition to game info (very slow)")
     args = p.parse_args()
 
     ensure_dir(args.out)
     ensure_dir(args.raw)
+
+    if args.since and not args.seasons and not args.historical:
+        # Incremental mode: only update the current season from --since date
+        current_year = datetime.utcnow().year
+        current_season = current_year  # season named by end year (2025-26 → 2026)
+        print(f"Incremental mode: fetching season {current_season} games since {args.since}")
+        try:
+            fetch_season_since(current_season, args.since, args.out, args.raw,
+                               fetch_box=args.box, fetch_pbp=args.pbp)
+        except Exception as e:
+            print(f"Error in incremental fetch for season {current_season}: {e}", file=sys.stderr)
+        return
 
     if args.seasons:
         seasons = args.seasons

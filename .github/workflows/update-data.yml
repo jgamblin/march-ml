@@ -6,7 +6,8 @@ name: Update Data, Retrain & Simulate
 #
 # Data strategy:
 #   - Completed seasons (2015–2025, excl. 2020 COVID) are cached in repo; scraped once ever.
-#   - Current season (2026) is re-scraped on every run (games change daily).
+#   - Current season (2026): normal runs do an incremental scrape from 2026-03-15 (Selection Sunday)
+#     using get_games_range(), merging into the existing games_2026.csv. Takes ~5 sec vs ~3 min.
 #   - Manual trigger with full_rescrape=true re-fetches all seasons including 2015-2019 history.
 
 concurrency:
@@ -88,12 +89,13 @@ jobs:
           key: raw-data-v1
 
       # ── 4. Scrape ──────────────────────────────────────────────────────────
-      #   Historical seasons (2021-2025) are committed to the repo — no scraping needed.
-      #   Only the current season is scraped on each run (~30 sec, info only, no box scores).
+      #   Historical seasons (2015-2025, excl. 2020) are committed to the repo — scraped once.
+      #   Normal runs only fetch new games since Selection Sunday (2026-03-15) via --since,
+      #   which uses get_games_range() instead of get_games_season() — takes ~5 sec instead of ~3 min.
       #   Use manual full_rescrape=true to re-fetch all seasons if needed.
-      - name: Scrape current season (fast path)
+      - name: Scrape current season (incremental, Selection Sunday onward)
         if: inputs.full_rescrape != 'true'
-        run: python scripts/scrape_with_cbbpy.py --seasons 2026 --out data/processed --raw data/raw
+        run: python scripts/scrape_with_cbbpy.py --since 2026-03-15 --out data/processed --raw data/raw
 
       - name: Scrape all seasons (manual full rescrape only)
         if: inputs.full_rescrape == 'true'

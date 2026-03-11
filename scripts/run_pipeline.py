@@ -15,12 +15,14 @@ def run_command(cmd):
     subprocess.check_call(cmd)
 
 
-def run_scrape(fetch_pbp=False, seasons=None, historical=False):
+def run_scrape(fetch_pbp=False, seasons=None, historical=False, since=None):
     cmd = [sys.executable, "scripts/scrape_with_cbbpy.py", "--out", "data/processed", "--raw", "data/raw"]
     if seasons:
         cmd.extend(["--seasons", *[str(season) for season in seasons]])
     elif historical:
         cmd.append("--historical")
+    elif since:
+        cmd.extend(["--since", since])
     if fetch_pbp:
         cmd.append("--pbp")
     run_command(cmd)
@@ -129,6 +131,9 @@ def main():
     p.add_argument("--seasons", nargs="*", type=int, help="optional season override")
     p.add_argument("--historical", action="store_true",
                    help="also scrape 2015-2019 historical seasons (used with --mode scrape/full)")
+    p.add_argument("--since", default=None, metavar="YYYY-MM-DD",
+                   help="incremental scrape: only fetch games from this date for the current season "
+                        "(default on scheduled runs: 2026-03-15, covers Selection Sunday onward)")
     p.add_argument("--d1_list", default="data/mappings/d1_list_normalized.csv")
     p.add_argument("--seed_map", default=None)
     p.add_argument("--conf_map", default=None)
@@ -150,7 +155,9 @@ def main():
     args = p.parse_args()
 
     if args.mode in {"scrape", "full"}:
-        run_scrape(fetch_pbp=args.pbp, seasons=args.seasons, historical=getattr(args, 'historical', False))
+        run_scrape(fetch_pbp=args.pbp, seasons=args.seasons,
+                   historical=getattr(args, 'historical', False),
+                   since=getattr(args, 'since', None))
     if args.mode in {"features", "full"}:
         run_features(seasons=args.seasons, d1_list=args.d1_list, seed_map=args.seed_map, conf_map=args.conf_map)
     if args.mode in {"train", "full"}:
