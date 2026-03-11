@@ -62,7 +62,23 @@ def load_models(models_dir='models'):
     return base_lr, base_xgb, lr_cal, xgb_cal, features
 
 
-def load_seed_stratified_models(models_dir='models_seed_stratified'):
+def load_ensemble_weights(models_dir='models', default_lr=0.5, default_xgb=0.5):
+    """Load optimized ensemble weights from models/ensemble_weights.json if present."""
+    weights_path = Path(models_dir) / 'ensemble_weights.json'
+    if weights_path.exists():
+        try:
+            data = json.loads(weights_path.read_text())
+            lr_w = float(data.get('lr_weight', default_lr))
+            xgb_w = float(data.get('xgb_weight', default_xgb))
+            print(f"  Loaded ensemble weights: LR={lr_w:.0%} / XGB={xgb_w:.0%} "
+                  f"(acc={data.get('accuracy', '?'):.4f}, from {weights_path})")
+            return lr_w, xgb_w
+        except Exception as exc:
+            print(f"  Warning: could not read {weights_path}: {exc}")
+    return default_lr, default_xgb
+
+
+
     strata = ['chalk', 'competitive', 'balanced']
     loaded = {}
     base = Path(models_dir)
@@ -623,13 +639,18 @@ def main():
     p.add_argument('--features_path', default='data/processed/features/tournament_teams.csv', help='team feature CSV used for simulation lookups')
     p.add_argument('--min_games', type=int, default=10, help='minimum games required to consider a team for demo bracket')
     p.add_argument('--allow_nd', action='store_true', help='allow non-D1 (nd-) teams in demo bracket selection')
-    p.add_argument('--lr_weight', type=float, default=0.65, help='ensemble weight for Logistic Regression model')
-    p.add_argument('--xgb_weight', type=float, default=0.35, help='ensemble weight for XGBoost model')
+    p.add_argument('--lr_weight', type=float, default=None, help='ensemble weight for Logistic Regression (default: read from models/ensemble_weights.json or 0.5)')
+    p.add_argument('--xgb_weight', type=float, default=None, help='ensemble weight for XGBoost (default: read from models/ensemble_weights.json or 0.5)')
     args = p.parse_args()
 
     ensure_dir(Path(args.out).parent)
 
     base_lr, base_xgb, lr_cal, xgb_cal, feat_names = load_models(args.models_dir)
+
+    # Load optimized ensemble weights; CLI args override if provided
+    default_lr, default_xgb = load_ensemble_weights(args.models_dir)
+    lr_weight = args.lr_weight if args.lr_weight is not None else default_lr
+    xgb_weight = args.xgb_weight if args.xgb_weight is not None else default_xgb
     seed_models = None
     if args.seed_stratified_models_dir:
         seed_models = load_seed_stratified_models(args.seed_stratified_models_dir)
@@ -677,7 +698,7 @@ def main():
 
     team_overrides = {record['team']: record for record in bracket_records}
 
-    if args.lr_weight < 0 or args.xgb_weight < 0 or (args.lr_weight + args.xgb_weight) <= 0:
+    if lr_weight < 0 or xgb_weight < 0 or (lr_weight + xgb_weight) <= 0:
         raise ValueError('Ensemble weights must be non-negative and sum to a positive value')
 
     sims = args.sims
@@ -694,8 +715,8 @@ def main():
             feat_names,
             team_feats_dict,
             team_overrides=team_overrides,
-            lr_weight=args.lr_weight,
-            xgb_weight=args.xgb_weight,
+            lr_weight=lr_weight,
+            xgb_weight=xgb_weight,
             seed_models=seed_models,
         )
         champions[champ] += 1
@@ -743,8 +764,8 @@ def main():
             'lr_calibration': lr_cal is not None,
             'xgb_calibration': xgb_cal is not None,
             'ensemble_weights': {
-                'lr_weight': float(args.lr_weight),
-                'xgb_weight': float(args.xgb_weight),
+                'lr_weight': float(lr_weight),
+                'xgb_weight': float(xgb_weight),
             },
             'seed_stratified_models': {
                 'enabled': bool(seed_models),

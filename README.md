@@ -8,27 +8,37 @@ NCAA men's basketball tournament prediction pipeline — scrape game data, engin
 
 ---
 
-## Current metrics (seasons 2021–2025)
+## Current metrics (seasons 2021–2026)
 
 | Metric | Value |
 |--------|-------|
-| LOSO accuracy | **64.7%** |
-| 95% bootstrap CI | [59.3%, 70.1%] |
-| Lower-seed baseline | 70.4% |
-| Win-% baseline | 54.5% |
+| **Rolling CV accuracy** | **73.8%** |
+| Rolling CV 95% CI | [72.4%, 75.2%] |
+| Lower-seed baseline | 69.5% |
+| **Model vs baseline** | **+4.3 pp** ✅ |
+| LOSO accuracy (tournament-only training) | 67.4% |
 | Tournament games evaluated | 334 |
-| Features | 27 |
+| Features | 9 |
+| Training rows (with regular season) | ~33 000 |
 | Seasons of data | 2021–2026 |
 
-> Accuracy is measured with true **Leave-One-Season-Out** (LOSO) evaluation — each season held out completely while the model trains on remaining seasons. This prevents any data leakage across time.
+> **Primary metric: Rolling CV.** Each season is held out in turn while the model trains only on *past* seasons — the same condition as real deployment. LOSO (which can train on future seasons to predict the past) is tracked separately but is not the headline metric.
 
-### LOSO accuracy by season
+### Why rolling CV > LOSO for this problem
+
+LOSO holds out 2021 but trains on 2022–2025, using future data to predict the past. For a model deployed to predict each March's tournament, rolling CV (train on seasons 1..k-1, predict season k) is the only leakage-free evaluation.
+
+### Rolling CV accuracy by season
 
 ![LOSO by season](results/charts/loso_by_season.png)
 
 ### Model vs baselines
 
 ![Model vs baselines](results/charts/model_vs_baselines.png)
+
+### Feature importance (SHAP)
+
+![SHAP importance](results/charts/shap_importance.png)
 
 ---
 
@@ -160,7 +170,8 @@ scripts/              all pipeline scripts (see table below)
 | `pool_scorer.py` | Scores brackets; ESPN/CBS/simple scoring profiles |
 | `parse_bracket.py` | Parses official NCAA bracket CSV/JSON |
 | `validate_artifacts.py` | Validates simulation JSON schema |
-| `generate_charts.py` | Generates accuracy and champion-probability charts |
+| `generate_charts.py` | Generates accuracy, SHAP importance, and champion-probability charts |
+| `optimize_ensemble_weights.py` | LOSO-based grid search for optimal LR/XGB blend; writes `models/ensemble_weights.json` |
 | `train_seed_stratified_models.py` | Per-seed-stratum model variants |
 | `fetch_official_bracket.py` | Polls ESPN API for official bracket on Selection Sunday |
 
@@ -221,20 +232,22 @@ GitHub Actions → bracket-watch → Run workflow → force: true
 
 ## Methodology
 
-### Features (27 total, all computed pre-tournament)
+### Features (9 total, all computed pre-tournament)
 
-Each training example is a matchup `(team_A, team_B)` expressed as the **difference** in each team's features (`diff_*`), plus two context features:
+Each training example is a matchup `(team_A, team_B)` expressed as the **difference** in each team's features (`diff_*`), plus three context features:
 
 | Category | Features |
 |----------|---------|
-| Season stats | `diff_games_played`, `diff_wins`, `diff_losses`, `diff_win_pct`, `diff_avg_points_for/against`, `diff_avg_margin` |
-| Rolling form | `diff_last10_wins/losses`, `diff_offense_trend`, `diff_defense_trend`, `diff_last5_win_pct` |
-| Schedule strength | `diff_sos_win_pct`, `diff_opp_avg_margin`, `diff_adj_margin` |
-| Conference | `diff_conf_avg_adj_margin`, `diff_conf_avg_win_pct`, `diff_conf_strength_tier` |
-| Momentum | `diff_weighted_last10_margin`, `diff_win_streak`, `diff_margin_trend_slope`, `diff_last5_momentum`, `diff_last10_momentum`, `diff_form_rating` |
+| Schedule strength | `diff_adj_margin` (Massey-style 2-iteration), `diff_sos_win_pct` |
+| Season stats | `diff_win_pct` |
+| Conference | `diff_conf_strength_tier` |
+| Momentum | `diff_form_rating` |
 | Tournament | `diff_seed`, `neutral_site`, `is_tournament` |
+| Prior knowledge | `seed_matchup_prior` (40-year historical 1v16, 5v12 … win rates — hardcoded constants, no leakage) |
 
 > `tournament_teams.csv` contains **pre-tournament snapshots** built from non-postseason games only. Never use `teams.csv` (full-season) for training — it leaks postseason results.
+
+> `adj_margin` uses a 2-iteration Massey correction: `adj_i = avg_margin_i + mean(adj_j for all opponents j)`. This correctly rates teams that dominate weak conferences lower than teams that play competitive schedules.
 
 ### Label orientation
 
@@ -282,10 +295,11 @@ Adjacent slots (1–2, 3–4, …) are paired in round 1.
 
 ## Known limitations
 
-- **Model vs seed baseline gap**: LOSO 64.7% vs lower-seed baseline 70.4%. Seeds are strong predictors; closing this gap requires richer features (player usage, injury data, coaching changes) or a deeper architecture.
 - **Small tournament sample**: only 334 historical tournament matchup rows across 5 complete seasons; high variance in per-season estimates.
-- **No automated regression tests**: manual smoke test only.
+- **No automated regression tests**: add `pytest tests/` to catch silent regressions.
 - **Conference strength partial**: `conf_strength_tier` is a rough 3-level mapping; full inter-conference win% matrix not yet implemented.
+- **No player-level data**: injuries, roster experience, and height are not currently modeled. A manual `overrides.csv` mechanism is planned for Selection Sunday.
+- **cbbpy API fragility**: if ESPN changes their API schema during tournament week, scraping fails. A fallback `template_64.csv` is provided in `data/brackets/` for manual entry.
 
 ---
 

@@ -57,6 +57,24 @@ def run_train(game_scope="ncaa_tourney", interactions=False, include_regular_sea
     run_command(cmd)
 
 
+def run_ensemble_optimize(include_regular_season=True, regular_season_weight=0.3):
+    """Find optimal LR/XGB blend weights via LOSO and write models/ensemble_weights.json."""
+    cmd = [
+        sys.executable,
+        "scripts/optimize_ensemble_weights.py",
+        "--features",
+        "data/processed/features/tournament_teams.csv",
+        "--games_dir",
+        "data/processed",
+        "--models_dir",
+        "models",
+    ]
+    if include_regular_season:
+        cmd.append("--include_regular_season")
+    cmd.extend(["--regular_season_weight", str(regular_season_weight)])
+    run_command(cmd)
+
+
 def run_simulation(sims=1000, season=None, bracket_file=None, out_path="results/sim_results.json", min_games=10, allow_nd=False):
     cmd = [sys.executable, "scripts/simulate_bracket.py", "--sims", str(sims), "--out", out_path, "--min_games", str(min_games)]
     if season is not None:
@@ -135,6 +153,10 @@ def main():
         run_train(
             game_scope=args.game_scope,
             interactions=args.interactions,
+            include_regular_season=args.include_regular_season,
+            regular_season_weight=args.regular_season_weight,
+        )
+        run_ensemble_optimize(
             include_regular_season=args.include_regular_season,
             regular_season_weight=args.regular_season_weight,
         )
