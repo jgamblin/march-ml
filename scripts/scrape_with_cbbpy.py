@@ -30,6 +30,10 @@ def seasons_to_fetch(last_n=5):
     return list(range(last_completed - last_n + 1, last_completed + 1))
 
 
+# 2020 had no NCAA tournament (COVID cancellation). Skip it for feature/training purposes.
+_NO_TOURNAMENT_YEARS = {2020}
+
+
 def ensure_dir(path):
     os.makedirs(path, exist_ok=True)
 
@@ -72,6 +76,9 @@ def main():
     p.add_argument("--out", default="data/processed", help="processed output dir")
     p.add_argument("--raw", default="data/raw", help="raw cache dir")
     p.add_argument("--seasons", nargs="*", type=int, help="explicit seasons to fetch (e.g. 2021 2022)")
+    p.add_argument("--historical", action="store_true",
+                   help="Also fetch 2015–2019 historical seasons (appended before recent seasons). "
+                        "2020 is skipped automatically (no tournament due to COVID).")
     p.add_argument("--box", action="store_true", help="fetch box scores (slow, not needed for feature pipeline)")
     p.add_argument("--pbp", action="store_true", help="fetch play-by-play in addition to game info (very slow)")
     args = p.parse_args()
@@ -79,7 +86,21 @@ def main():
     ensure_dir(args.out)
     ensure_dir(args.raw)
 
-    seasons = args.seasons or seasons_to_fetch(5)
+    if args.seasons:
+        seasons = args.seasons
+    else:
+        recent = seasons_to_fetch(5)
+        if args.historical:
+            historical = [y for y in range(2015, 2020) if y not in _NO_TOURNAMENT_YEARS]
+            # Merge: historical first, then recent (deduped, preserving order)
+            seen = set(historical)
+            for y in recent:
+                if y not in seen:
+                    historical.append(y)
+                    seen.add(y)
+            seasons = historical
+        else:
+            seasons = recent
     print(f"Seasons: {seasons}")
 
     for season in seasons:

@@ -259,6 +259,14 @@ def build_match_dataset(games_dir, features_df, game_scope, include_interactions
             seed_a_raw = coerce_numeric_feature(team_a_row.get("seed", 0.0))
             seed_b_raw = coerce_numeric_feature(team_b_row.get("seed", 0.0))
             row_features["seed_matchup_prior"] = _lookup_seed_prior(seed_a_raw, seed_b_raw) - 0.5
+            # Seed-zone interaction features: let the model learn different adj_margin slopes
+            # for close matchups (|diff_seed| <= 3) vs. heavy-favorite matchups (|diff_seed| > 3).
+            # This encodes the "trust adj_margin for close seeds, trust seed for big gaps" heuristic.
+            diff_seed_val = seed_a_raw - seed_b_raw
+            seed_close = float(abs(diff_seed_val) <= 3)
+            row_features["seed_close_match"] = seed_close
+            row_features["adj_when_close"] = row_features.get("diff_adj_margin", 0.0) * seed_close
+            row_features["adj_when_far"] = row_features.get("diff_adj_margin", 0.0) * (1.0 - seed_close)
             if include_interactions:
                 row_features["_seed_a_raw"] = seed_a_raw
                 row_features["_seed_b_raw"] = seed_b_raw
@@ -328,8 +336,12 @@ def build_match_dataset(games_dir, features_df, game_scope, include_interactions
                 }
                 row_features["neutral_site"] = float(int(game.get("is_neutral", 0)))
                 row_features["is_tournament"] = 0.0
-                # Regular season teams don't have seeds; prior defaults to 0.5 → 0.0 after centering
+                # Regular season teams don't have seeds; prior defaults to 0.5 → 0.0 after centering.
+                # Treat all regular-season games as "close matchup" so adj_margin is the predictor.
                 row_features["seed_matchup_prior"] = 0.0
+                row_features["seed_close_match"] = 1.0
+                row_features["adj_when_close"] = row_features.get("diff_adj_margin", 0.0)
+                row_features["adj_when_far"] = 0.0
                 if include_interactions:
                     row_features = add_interaction_features(row_features)
                 X_rows.append(row_features)
