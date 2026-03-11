@@ -32,33 +32,21 @@ except Exception:
     HAS_XGB = False
 
 
+# Core independent features — kept deliberately small to prevent overfitting.
+# adj_margin: Massey-style schedule-adjusted margin (best quality metric).
+# win_pct: season-long success rate (independent of margin).
+# sos_win_pct: schedule quality (independent of own margin).
 BASE_FEATURES = [
-    "games_played",
-    "wins",
-    "losses",
-    "win_pct",
-    "avg_points_for",
-    "avg_points_against",
-    "avg_margin",
-    "last5_win_pct",
-    "last10_wins",
-    "last10_losses",
-    "offense_trend",
-    "defense_trend",
-    "sos_win_pct",
-    "opp_avg_margin",
     "adj_margin",
+    "win_pct",
+    "sos_win_pct",
 ]
 
+# Optional features used when present in the feature file.
+# conf_strength_tier: ordinal conference tier (power-6=3, high-major=2, mid-major=1).
+# form_rating: composite recent-form score (best single momentum feature).
 OPTIONAL_NUMERIC_FEATURES = [
-    "conf_avg_adj_margin",
-    "conf_avg_win_pct",
     "conf_strength_tier",
-    "weighted_last10_margin",
-    "win_streak",
-    "margin_trend_slope",
-    "last5_momentum",
-    "last10_momentum",
     "form_rating",
 ]
 

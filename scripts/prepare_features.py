@@ -328,18 +328,26 @@ def add_opponent_strength_features(rows, aggregated, n_iter=2):
 
     enriched["sos_win_pct"] = final_sos
 
-    # Compute opp_avg_margin (single pass, no iteration needed)
+    # Compute adj_margin iteratively (Massey: adj_i ≈ avg_margin_i + avg_opp_adj_j, 2 iterations)
+    # Iteration 0 uses raw avg_margin as the initial team quality estimate.
+    # Each subsequent iteration uses the previous adj_margin as opponent quality.
+    current_adj = [float(rec.get("avg_margin", 0.0)) for rec in records]
+    for _ in range(2):
+        new_adj = []
+        for i, (opp_indices, _) in enumerate(team_opp_indices):
+            valid = [current_adj[j] for j in opp_indices if j is not None]
+            avg_opp = float(np.mean(valid)) if valid else 0.0
+            new_adj.append(float(records[i].get("avg_margin", 0.0)) + avg_opp)
+        current_adj = new_adj
+
+    # opp_avg_margin: single-pass average of opponents' raw avg_margin (used as standalone feature)
     opp_margin_values = []
-    for i, (opp_indices, opp_margins) in enumerate(team_opp_indices):
-        # Use actual margin from opponents' perspective in the aggregated stats
-        valid_margins = []
-        for j in opp_indices:
-            if j is not None:
-                valid_margins.append(float(records[j].get("avg_margin", 0.0)))
-        opp_margin_values.append(float(pd.Series(valid_margins).mean()) if valid_margins else 0.0)
+    for i, (opp_indices, _) in enumerate(team_opp_indices):
+        valid = [float(records[j].get("avg_margin", 0.0)) for j in opp_indices if j is not None]
+        opp_margin_values.append(float(np.mean(valid)) if valid else 0.0)
 
     enriched["opp_avg_margin"] = opp_margin_values
-    enriched["adj_margin"] = enriched["avg_margin"] - enriched["opp_avg_margin"]
+    enriched["adj_margin"] = current_adj
     return enriched
 
 
