@@ -31,9 +31,12 @@ except Exception as e:
 
 def seasons_to_fetch(last_n=5):
     current_year = datetime.utcnow().year
-    # NCAA season is named by the calendar year it ends (e.g., 2025 for 2024-25 season)
+    # NCAA season is named by the calendar year it ends (e.g., 2025 for 2024-25 season).
+    # Include the current in-progress season so it gets scraped on full runs.
     last_completed = current_year - 1
-    return list(range(last_completed - last_n + 1, last_completed + 1))
+    seasons = list(range(last_completed - last_n + 1, last_completed + 1))
+    seasons.append(current_year)  # add current season (e.g., 2026)
+    return seasons
 
 
 # 2020 had no NCAA tournament (COVID cancellation). Skip it for feature/training purposes.
@@ -87,6 +90,14 @@ def fetch_season_since(season, since_date, out_dir, raw_dir, fetch_box=False, fe
         print(f"Season {season}: since_date {since_date} is in the future, skipping.")
         return
 
+    games_path = os.path.join(out_dir, f"games_{season}.csv")
+    if not os.path.exists(games_path):
+        # Cold start: no base file exists — fall back to full season scrape so we don't
+        # silently drop all the regular-season games from the training data.
+        print(f"  No existing games_{season}.csv; doing full season scrape as cold-start fallback...")
+        fetch_season(season, out_dir, raw_dir, fetch_box=fetch_box, fetch_pbp=fetch_pbp)
+        return
+
     print(f"Fetching season {season} games since {since_date} (incremental)...")
     games_tuple = s.get_games_range(since_date, today, info=True, box=fetch_box, pbp=fetch_pbp)
     if not isinstance(games_tuple, (list, tuple)) or len(games_tuple) < 1:
@@ -95,23 +106,17 @@ def fetch_season_since(season, since_date, out_dir, raw_dir, fetch_box=False, fe
     new_df = games_tuple[0]
     print(f"  Fetched {len(new_df)} new rows from {since_date} to {today}")
 
-    games_path = os.path.join(out_dir, f"games_{season}.csv")
-    if os.path.exists(games_path):
-        existing = pd.read_csv(games_path, low_memory=False)
-        # Deduplicate by game_id if available, otherwise by all columns
-        id_col = "game_id" if "game_id" in existing.columns else None
-        combined = pd.concat([existing, new_df], ignore_index=True)
-        if id_col:
-            combined = combined.drop_duplicates(subset=[id_col], keep="last")
-        else:
-            combined = combined.drop_duplicates(keep="last")
-        print(f"  Merged: {len(existing)} existing + {len(new_df)} new = {len(combined)} total rows")
-        combined.to_csv(games_path, index=False)
-        games_df = combined
+    existing = pd.read_csv(games_path, low_memory=False)
+    # Deduplicate by game_id if available, otherwise by all columns
+    id_col = "game_id" if "game_id" in existing.columns else None
+    combined = pd.concat([existing, new_df], ignore_index=True)
+    if id_col:
+        combined = combined.drop_duplicates(subset=[id_col], keep="last")
     else:
-        print(f"  No existing file; writing {len(new_df)} rows to {games_path}")
-        new_df.to_csv(games_path, index=False)
-        games_df = new_df
+        combined = combined.drop_duplicates(keep="last")
+    print(f"  Merged: {len(existing)} existing + {len(new_df)} new = {len(combined)} total rows")
+    combined.to_csv(games_path, index=False)
+    games_df = combined
 
     # Update raw cache
     raw_games_path = os.path.join(raw_dir, f"games_{season}.pkl")
