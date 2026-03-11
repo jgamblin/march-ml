@@ -296,10 +296,9 @@ Adjacent slots (1–2, 3–4, …) are paired in round 1.
 ## Known limitations
 
 - **Small tournament sample**: only 334 historical tournament matchup rows across 5 complete seasons; high variance in per-season estimates.
-- **No automated regression tests**: add `pytest tests/` to catch silent regressions.
 - **Conference strength partial**: `conf_strength_tier` is a rough 3-level mapping; full inter-conference win% matrix not yet implemented.
 - **No player-level data**: injuries, roster experience, and height are not currently modeled. A manual `overrides.csv` mechanism is planned for Selection Sunday.
-- **cbbpy API fragility**: if ESPN changes their API schema during tournament week, scraping fails. A fallback `template_64.csv` is provided in `data/brackets/` for manual entry.
+- **cbbpy API fragility**: if ESPN changes their API schema during tournament week, scraping fails. Use `data/manual_features_template.csv` as a fallback — see [Troubleshooting](#troubleshooting) below.
 
 ---
 
@@ -325,6 +324,25 @@ python scripts/run_pipeline.py --mode features --seasons 2021 2022 2023 2024 202
 ```bash
 python scripts/run_pipeline.py --mode smoke
 ```
+
+**cbbpy scraping fails during tournament week**
+
+If the ESPN API is down or has changed schema, use the manual features fallback:
+
+```bash
+# 1. Copy the template
+cp data/manual_features_template.csv data/processed/features/tournament_teams.csv
+
+# 2. Fill in the 64 team rows using KenPom, Bart Torvik, or ESPN BPI for these 8 columns:
+#    season, team, seed, adj_margin, win_pct, sos_win_pct, conf_strength_tier, form_rating
+#    (see the header comments in the template for field definitions and typical ranges)
+
+# 3. Train and simulate as normal
+python scripts/run_pipeline.py --mode train --include_regular_season
+python scripts/run_pipeline.py --mode simulate --sims 1000
+```
+
+The 9th model feature (`seed_matchup_prior`) is computed automatically from the hardcoded 40-year prior table — no data entry required.
 
 ---
 
