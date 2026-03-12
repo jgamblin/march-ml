@@ -161,7 +161,16 @@ def main():
             fetch_season_since(current_season, since, args.out, args.raw,
                                fetch_box=args.box, fetch_pbp=args.pbp)
         except Exception as e:
-            print(f"Error in incremental fetch for season {current_season}: {e}", file=sys.stderr)
+            # cbbpy sometimes raises KeyError('game_day') or similar when scraped
+            # data is missing expected columns (e.g. scheduled/future games).
+            # Fall back to a full season scrape so CI always produces a valid CSV.
+            print(f"Warning: incremental fetch failed ({e}); falling back to full season scrape...",
+                  file=sys.stderr)
+            try:
+                fetch_season(current_season, args.out, args.raw,
+                             fetch_box=args.box, fetch_pbp=args.pbp)
+            except Exception as e2:
+                print(f"Error in full-season fallback for {current_season}: {e2}", file=sys.stderr)
         return
 
     if args.seasons:
