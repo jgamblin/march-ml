@@ -1,6 +1,6 @@
 {
   "schema_version": "2025-03-09",
-  "generated_at": "2026-03-12T20:29:28.917624Z",
+  "generated_at": "2026-03-12T21:03:09.453877Z",
   "season": 2026,
   "sims": 1000,
   "teams": [
@@ -32,7 +32,7 @@
     "Santa Clara Broncos",
     "Gonzaga Bulldogs",
     "UC Irvine Anteaters",
-    "Georgia Bulldogs",
+    "Miami Hurricanes",
     "NC State Wolfpack",
     "Houston Cougars",
     "Idaho Vandals",
@@ -48,7 +48,7 @@
     "SMU Mustangs",
     "Purdue Boilermakers",
     "Wright State Raiders",
-    "Miami Hurricanes",
+    "Georgia Bulldogs",
     "Miami (OH) RedHawks",
     "Michigan State Spartans",
     "Furman Paladins",
@@ -241,7 +241,7 @@
     },
     {
       "slot": 29,
-      "team": "Georgia Bulldogs",
+      "team": "Miami Hurricanes",
       "seed": 7,
       "region": null
     },
@@ -337,7 +337,7 @@
     },
     {
       "slot": 45,
-      "team": "Miami Hurricanes",
+      "team": "Georgia Bulldogs",
       "seed": 7,
       "region": null
     },
@@ -459,186 +459,158 @@
   "champion_probs": [
     [
       "Michigan Wolverines",
-      0.203
+      0.3
     ],
     [
       "Duke Blue Devils",
-      0.15
+      0.216
     ],
     [
       "Arizona Wildcats",
-      0.117
+      0.176
     ],
     [
       "Florida Gators",
-      0.099
+      0.131
     ],
     [
       "Gonzaga Bulldogs",
-      0.047
-    ],
-    [
-      "Saint Mary's Gaels",
-      0.032
-    ],
-    [
-      "Nebraska Cornhuskers",
       0.024
     ],
     [
-      "Michigan State Spartans",
-      0.023
-    ],
-    [
       "Illinois Fighting Illini",
-      0.022
+      0.019
     ],
     [
-      "UConn Huskies",
-      0.022
-    ],
-    [
-      "St. John's Red Storm",
-      0.021
-    ],
-    [
-      "Houston Cougars",
+      "Michigan State Spartans",
       0.018
     ],
     [
-      "North Carolina Tar Heels",
-      0.017
-    ],
-    [
-      "Yale Bulldogs",
-      0.017
+      "Houston Cougars",
+      0.014
     ],
     [
       "Iowa State Cyclones",
-      0.013
-    ],
-    [
-      "South Florida Bulls",
-      0.012
-    ],
-    [
-      "Saint Louis Billikens",
-      0.011
-    ],
-    [
-      "Alabama Crimson Tide",
-      0.011
-    ],
-    [
-      "VCU Rams",
-      0.011
-    ],
-    [
-      "Georgia Bulldogs",
-      0.011
-    ],
-    [
-      "BYU Cougars",
-      0.011
-    ],
-    [
-      "Purdue Boilermakers",
-      0.011
-    ],
-    [
-      "Virginia Cavaliers",
-      0.009
-    ],
-    [
-      "Texas Tech Red Raiders",
-      0.009
-    ],
-    [
-      "Arkansas Razorbacks",
       0.008
     ],
     [
-      "Louisville Cardinals",
+      "UConn Huskies",
       0.007
     ],
     [
-      "Akron Zips",
-      0.007
-    ],
-    [
-      "Miami Hurricanes",
-      0.007
-    ],
-    [
-      "Miami (OH) RedHawks",
-      0.007
-    ],
-    [
-      "Wisconsin Badgers",
-      0.007
-    ],
-    [
-      "Santa Clara Broncos",
+      "Saint Mary's Gaels",
       0.006
     ],
     [
-      "Vanderbilt Commodores",
+      "Texas Tech Red Raiders",
+      0.006
+    ],
+    [
+      "BYU Cougars",
+      0.006
+    ],
+    [
+      "Purdue Boilermakers",
+      0.006
+    ],
+    [
+      "North Carolina Tar Heels",
+      0.006
+    ],
+    [
+      "Nebraska Cornhuskers",
+      0.006
+    ],
+    [
+      "VCU Rams",
       0.005
     ],
     [
-      "High Point Panthers",
+      "Santa Clara Broncos",
       0.004
     ],
     [
-      "Kentucky Wildcats",
+      "St. John's Red Storm",
       0.004
     ],
     [
-      "Tulsa Golden Hurricane",
+      "Vanderbilt Commodores",
       0.003
     ],
     [
-      "Kansas Jayhawks",
+      "South Florida Bulls",
       0.003
+    ],
+    [
+      "Alabama Crimson Tide",
+      0.003
+    ],
+    [
+      "Louisville Cardinals",
+      0.003
+    ],
+    [
+      "Arkansas Razorbacks",
+      0.003
+    ],
+    [
+      "Miami Hurricanes",
+      0.003
+    ],
+    [
+      "Saint Louis Billikens",
+      0.002
+    ],
+    [
+      "Ohio State Buckeyes",
+      0.002
+    ],
+    [
+      "Virginia Cavaliers",
+      0.002
     ],
     [
       "Tennessee Volunteers",
       0.002
     ],
     [
-      "Missouri Tigers",
+      "Akron Zips",
       0.002
     ],
     [
-      "Utah State Aggies",
+      "Georgia Bulldogs",
+      0.002
+    ],
+    [
+      "Yale Bulldogs",
+      0.002
+    ],
+    [
+      "Wisconsin Badgers",
+      0.002
+    ],
+    [
+      "High Point Panthers",
       0.001
     ],
     [
-      "Clemson Tigers",
+      "Miami (OH) RedHawks",
       0.001
     ],
     [
-      "Hofstra Pride",
+      "Tulsa Golden Hurricane",
       0.001
     ],
     [
-      "NC State Wolfpack",
-      0.001
-    ],
-    [
-      "UCLA Bruins",
-      0.001
-    ],
-    [
-      "SMU Mustangs",
-      0.001
-    ],
-    [
-      "Texas Longhorns",
+      "Kentucky Wildcats",
       0.001
     ],
     [
       "UMBC Retrievers",
+      0.0
+    ],
+    [
+      "Utah State Aggies",
       0.0
     ],
     [
@@ -662,11 +634,19 @@
       0.0
     ],
     [
-      "Ohio State Buckeyes",
+      "Clemson Tigers",
+      0.0
+    ],
+    [
+      "Hofstra Pride",
       0.0
     ],
     [
       "UC Irvine Anteaters",
+      0.0
+    ],
+    [
+      "NC State Wolfpack",
       0.0
     ],
     [
@@ -678,11 +658,19 @@
       0.0
     ],
     [
+      "UCLA Bruins",
+      0.0
+    ],
+    [
       "Iowa Hawkeyes",
       0.0
     ],
     [
       "Utah Valley Wolverines",
+      0.0
+    ],
+    [
+      "SMU Mustangs",
       0.0
     ],
     [
@@ -702,11 +690,23 @@
       0.0
     ],
     [
+      "Kansas Jayhawks",
+      0.0
+    ],
+    [
       "Sam Houston Bearkats",
       0.0
     ],
     [
+      "Texas Longhorns",
+      0.0
+    ],
+    [
       "Troy Trojans",
+      0.0
+    ],
+    [
+      "Missouri Tigers",
       0.0
     ],
     [
@@ -716,552 +716,529 @@
   ],
   "round_probs": {
     "Duke Blue Devils": {
-      "champion": 0.15,
-      "elite_8": 0.523,
-      "final_4": 0.367,
-      "round_of_32": 0.912,
+      "champion": 0.216,
+      "elite_8": 0.671,
+      "final_4": 0.519,
+      "round_of_32": 0.957,
       "round_of_64": 1.0,
-      "sweet_16": 0.688,
-      "title_game": 0.21
+      "sweet_16": 0.83,
+      "title_game": 0.319
     },
     "UMBC Retrievers": {
-      "elite_8": 0.007,
-      "final_4": 0.001,
-      "round_of_32": 0.088,
+      "elite_8": 0.001,
+      "round_of_32": 0.043,
       "round_of_64": 1.0,
-      "sweet_16": 0.022
+      "sweet_16": 0.009
     },
     "Utah State Aggies": {
-      "champion": 0.001,
-      "elite_8": 0.049,
-      "final_4": 0.018,
-      "round_of_32": 0.369,
+      "elite_8": 0.026,
+      "final_4": 0.012,
+      "round_of_32": 0.471,
       "round_of_64": 1.0,
-      "sweet_16": 0.1,
-      "title_game": 0.005
+      "sweet_16": 0.059,
+      "title_game": 0.001
     },
     "Saint Louis Billikens": {
-      "champion": 0.011,
-      "elite_8": 0.105,
-      "final_4": 0.053,
-      "round_of_32": 0.631,
+      "champion": 0.002,
+      "elite_8": 0.051,
+      "final_4": 0.026,
+      "round_of_32": 0.529,
       "round_of_64": 1.0,
-      "sweet_16": 0.19,
-      "title_game": 0.023
+      "sweet_16": 0.102,
+      "title_game": 0.007
     },
     "Vanderbilt Commodores": {
-      "champion": 0.005,
-      "elite_8": 0.079,
-      "final_4": 0.037,
-      "round_of_32": 0.469,
+      "champion": 0.003,
+      "elite_8": 0.09,
+      "final_4": 0.035,
+      "round_of_32": 0.58,
       "round_of_64": 1.0,
-      "sweet_16": 0.262,
-      "title_game": 0.013
+      "sweet_16": 0.318,
+      "title_game": 0.01
     },
     "South Florida Bulls": {
-      "champion": 0.012,
-      "elite_8": 0.095,
-      "final_4": 0.055,
-      "round_of_32": 0.531,
+      "champion": 0.003,
+      "elite_8": 0.044,
+      "final_4": 0.017,
+      "round_of_32": 0.42,
       "round_of_64": 1.0,
-      "sweet_16": 0.273,
-      "title_game": 0.026
+      "sweet_16": 0.16,
+      "title_game": 0.007
     },
     "Alabama Crimson Tide": {
-      "champion": 0.011,
-      "elite_8": 0.098,
-      "final_4": 0.05,
-      "round_of_32": 0.598,
+      "champion": 0.003,
+      "elite_8": 0.093,
+      "final_4": 0.046,
+      "round_of_32": 0.705,
       "round_of_64": 1.0,
-      "sweet_16": 0.286,
-      "title_game": 0.016
+      "sweet_16": 0.413,
+      "title_game": 0.008
     },
     "Northern Iowa Panthers": {
-      "elite_8": 0.044,
-      "final_4": 0.014,
-      "round_of_32": 0.402,
+      "elite_8": 0.024,
+      "final_4": 0.011,
+      "round_of_32": 0.295,
       "round_of_64": 1.0,
-      "sweet_16": 0.179,
-      "title_game": 0.004
+      "sweet_16": 0.109,
+      "title_game": 0.002
     },
     "Louisville Cardinals": {
-      "champion": 0.007,
-      "elite_8": 0.116,
-      "final_4": 0.048,
-      "round_of_32": 0.442,
+      "champion": 0.003,
+      "elite_8": 0.055,
+      "final_4": 0.018,
+      "round_of_32": 0.462,
       "round_of_64": 1.0,
-      "sweet_16": 0.253,
-      "title_game": 0.019
+      "sweet_16": 0.161,
+      "title_game": 0.007
     },
     "VCU Rams": {
-      "champion": 0.011,
-      "elite_8": 0.152,
-      "final_4": 0.056,
-      "round_of_32": 0.558,
+      "champion": 0.005,
+      "elite_8": 0.089,
+      "final_4": 0.021,
+      "round_of_32": 0.538,
       "round_of_64": 1.0,
-      "sweet_16": 0.306,
-      "title_game": 0.024
+      "sweet_16": 0.21,
+      "title_game": 0.007
     },
     "Iowa State Cyclones": {
-      "champion": 0.013,
-      "elite_8": 0.178,
-      "final_4": 0.072,
-      "round_of_32": 0.757,
+      "champion": 0.008,
+      "elite_8": 0.315,
+      "final_4": 0.111,
+      "round_of_32": 0.906,
       "round_of_64": 1.0,
-      "sweet_16": 0.359,
+      "sweet_16": 0.611,
       "title_game": 0.031
     },
     "North Dakota State Bison": {
-      "elite_8": 0.02,
-      "final_4": 0.006,
-      "round_of_32": 0.243,
-      "round_of_64": 1.0,
-      "sweet_16": 0.082
-    },
-    "Saint Mary's Gaels": {
-      "champion": 0.032,
-      "elite_8": 0.256,
-      "final_4": 0.113,
-      "round_of_32": 0.683,
-      "round_of_64": 1.0,
-      "sweet_16": 0.398,
-      "title_game": 0.051
-    },
-    "Texas A&M Aggies": {
-      "elite_8": 0.036,
-      "final_4": 0.007,
-      "round_of_32": 0.317,
-      "round_of_64": 1.0,
-      "sweet_16": 0.113,
-      "title_game": 0.001
-    },
-    "Illinois Fighting Illini": {
-      "champion": 0.022,
-      "elite_8": 0.219,
-      "final_4": 0.097,
-      "round_of_32": 0.774,
-      "round_of_64": 1.0,
-      "sweet_16": 0.408,
-      "title_game": 0.047
-    },
-    "Tennessee State Tigers": {
-      "elite_8": 0.023,
-      "final_4": 0.006,
-      "round_of_32": 0.226,
-      "round_of_64": 1.0,
-      "sweet_16": 0.081,
-      "title_game": 0.002
-    },
-    "Michigan Wolverines": {
-      "champion": 0.203,
-      "elite_8": 0.617,
-      "final_4": 0.428,
-      "round_of_32": 0.94,
-      "round_of_64": 1.0,
-      "sweet_16": 0.79,
-      "title_game": 0.296
-    },
-    "Montana Grizzlies": {
       "elite_8": 0.003,
-      "round_of_32": 0.06,
+      "final_4": 0.001,
+      "round_of_32": 0.094,
       "round_of_64": 1.0,
       "sweet_16": 0.018
     },
-    "Clemson Tigers": {
-      "champion": 0.001,
-      "elite_8": 0.036,
-      "final_4": 0.017,
-      "round_of_32": 0.451,
+    "Saint Mary's Gaels": {
+      "champion": 0.006,
+      "elite_8": 0.171,
+      "final_4": 0.056,
+      "round_of_32": 0.768,
       "round_of_64": 1.0,
-      "sweet_16": 0.085,
-      "title_game": 0.004
+      "sweet_16": 0.366,
+      "title_game": 0.018
+    },
+    "Texas A&M Aggies": {
+      "elite_8": 0.015,
+      "final_4": 0.006,
+      "round_of_32": 0.232,
+      "round_of_64": 1.0,
+      "sweet_16": 0.054,
+      "title_game": 0.001
+    },
+    "Illinois Fighting Illini": {
+      "champion": 0.019,
+      "elite_8": 0.352,
+      "final_4": 0.121,
+      "round_of_32": 0.93,
+      "round_of_64": 1.0,
+      "sweet_16": 0.573,
+      "title_game": 0.045
+    },
+    "Tennessee State Tigers": {
+      "round_of_32": 0.07,
+      "round_of_64": 1.0,
+      "sweet_16": 0.007
+    },
+    "Michigan Wolverines": {
+      "champion": 0.3,
+      "elite_8": 0.749,
+      "final_4": 0.6,
+      "round_of_32": 0.967,
+      "round_of_64": 1.0,
+      "sweet_16": 0.891,
+      "title_game": 0.405
+    },
+    "Montana Grizzlies": {
+      "elite_8": 0.001,
+      "final_4": 0.001,
+      "round_of_32": 0.033,
+      "round_of_64": 1.0,
+      "sweet_16": 0.007
+    },
+    "Clemson Tigers": {
+      "elite_8": 0.016,
+      "final_4": 0.006,
+      "round_of_32": 0.487,
+      "round_of_64": 1.0,
+      "sweet_16": 0.051,
+      "title_game": 0.002
     },
     "Ohio State Buckeyes": {
-      "elite_8": 0.037,
-      "final_4": 0.013,
-      "round_of_32": 0.549,
+      "champion": 0.002,
+      "elite_8": 0.02,
+      "final_4": 0.007,
+      "round_of_32": 0.513,
       "round_of_64": 1.0,
-      "sweet_16": 0.107,
-      "title_game": 0.002
+      "sweet_16": 0.051,
+      "title_game": 0.004
     },
     "Arkansas Razorbacks": {
-      "champion": 0.008,
-      "elite_8": 0.113,
-      "final_4": 0.058,
-      "round_of_32": 0.558,
+      "champion": 0.003,
+      "elite_8": 0.101,
+      "final_4": 0.041,
+      "round_of_32": 0.65,
       "round_of_64": 1.0,
-      "sweet_16": 0.312,
-      "title_game": 0.023
+      "sweet_16": 0.369,
+      "title_game": 0.019
     },
     "High Point Panthers": {
-      "champion": 0.004,
-      "elite_8": 0.058,
-      "final_4": 0.019,
-      "round_of_32": 0.442,
+      "champion": 0.001,
+      "elite_8": 0.026,
+      "final_4": 0.012,
+      "round_of_32": 0.35,
       "round_of_64": 1.0,
-      "sweet_16": 0.225,
-      "title_game": 0.006
+      "sweet_16": 0.134,
+      "title_game": 0.003
     },
     "Virginia Cavaliers": {
-      "champion": 0.009,
-      "elite_8": 0.109,
-      "final_4": 0.053,
-      "round_of_32": 0.622,
+      "champion": 0.002,
+      "elite_8": 0.078,
+      "final_4": 0.035,
+      "round_of_32": 0.729,
       "round_of_64": 1.0,
-      "sweet_16": 0.318,
-      "title_game": 0.023
+      "sweet_16": 0.434,
+      "title_game": 0.005
     },
     "Hofstra Pride": {
-      "champion": 0.001,
-      "elite_8": 0.027,
-      "final_4": 0.01,
-      "round_of_32": 0.378,
+      "elite_8": 0.009,
+      "final_4": 0.002,
+      "round_of_32": 0.271,
       "round_of_64": 1.0,
-      "sweet_16": 0.145,
-      "title_game": 0.002
+      "sweet_16": 0.063,
+      "title_game": 0.001
     },
     "Tennessee Volunteers": {
       "champion": 0.002,
-      "elite_8": 0.065,
-      "final_4": 0.024,
-      "round_of_32": 0.363,
+      "elite_8": 0.051,
+      "final_4": 0.012,
+      "round_of_32": 0.469,
       "round_of_64": 1.0,
-      "sweet_16": 0.149,
-      "title_game": 0.006
+      "sweet_16": 0.132,
+      "title_game": 0.004
     },
     "Santa Clara Broncos": {
-      "champion": 0.006,
-      "elite_8": 0.156,
-      "final_4": 0.054,
-      "round_of_32": 0.637,
+      "champion": 0.004,
+      "elite_8": 0.11,
+      "final_4": 0.034,
+      "round_of_32": 0.531,
       "round_of_64": 1.0,
-      "sweet_16": 0.271,
-      "title_game": 0.016
+      "sweet_16": 0.205,
+      "title_game": 0.009
     },
     "Gonzaga Bulldogs": {
-      "champion": 0.047,
-      "elite_8": 0.325,
-      "final_4": 0.167,
-      "round_of_32": 0.781,
+      "champion": 0.024,
+      "elite_8": 0.386,
+      "final_4": 0.133,
+      "round_of_32": 0.877,
       "round_of_64": 1.0,
-      "sweet_16": 0.492,
-      "title_game": 0.079
+      "sweet_16": 0.633,
+      "title_game": 0.053
     },
     "UC Irvine Anteaters": {
-      "elite_8": 0.037,
-      "final_4": 0.005,
-      "round_of_32": 0.219,
+      "elite_8": 0.015,
+      "round_of_32": 0.123,
       "round_of_64": 1.0,
-      "sweet_16": 0.088
+      "sweet_16": 0.03
     },
-    "Georgia Bulldogs": {
-      "champion": 0.011,
-      "elite_8": 0.126,
-      "final_4": 0.036,
-      "round_of_32": 0.536,
+    "Miami Hurricanes": {
+      "champion": 0.003,
+      "elite_8": 0.087,
+      "final_4": 0.024,
+      "round_of_32": 0.654,
       "round_of_64": 1.0,
-      "sweet_16": 0.283,
-      "title_game": 0.018
-    },
-    "NC State Wolfpack": {
-      "champion": 0.001,
-      "elite_8": 0.056,
-      "final_4": 0.01,
-      "round_of_32": 0.464,
-      "round_of_64": 1.0,
-      "sweet_16": 0.19,
-      "title_game": 0.002
-    },
-    "Houston Cougars": {
-      "champion": 0.018,
-      "elite_8": 0.225,
-      "final_4": 0.103,
-      "round_of_32": 0.825,
-      "round_of_64": 1.0,
-      "sweet_16": 0.479,
-      "title_game": 0.05
-    },
-    "Idaho Vandals": {
-      "elite_8": 0.01,
-      "final_4": 0.003,
-      "round_of_32": 0.175,
-      "round_of_64": 1.0,
-      "sweet_16": 0.048,
-      "title_game": 0.001
-    },
-    "Florida Gators": {
-      "champion": 0.099,
-      "elite_8": 0.478,
-      "final_4": 0.34,
-      "round_of_32": 0.929,
-      "round_of_64": 1.0,
-      "sweet_16": 0.715,
-      "title_game": 0.2
-    },
-    "Boston University Terriers": {
-      "elite_8": 0.004,
-      "round_of_32": 0.071,
-      "round_of_64": 1.0,
-      "sweet_16": 0.019
-    },
-    "UCLA Bruins": {
-      "champion": 0.001,
-      "elite_8": 0.047,
-      "final_4": 0.019,
-      "round_of_32": 0.463,
-      "round_of_64": 1.0,
-      "sweet_16": 0.115,
+      "sweet_16": 0.278,
       "title_game": 0.006
     },
-    "Iowa Hawkeyes": {
-      "elite_8": 0.052,
-      "final_4": 0.024,
-      "round_of_32": 0.537,
+    "NC State Wolfpack": {
+      "elite_8": 0.041,
+      "final_4": 0.01,
+      "round_of_32": 0.346,
       "round_of_64": 1.0,
-      "sweet_16": 0.151,
-      "title_game": 0.008
+      "sweet_16": 0.126,
+      "title_game": 0.001
+    },
+    "Houston Cougars": {
+      "champion": 0.014,
+      "elite_8": 0.307,
+      "final_4": 0.083,
+      "round_of_32": 0.917,
+      "round_of_64": 1.0,
+      "sweet_16": 0.575,
+      "title_game": 0.025
+    },
+    "Idaho Vandals": {
+      "elite_8": 0.003,
+      "round_of_32": 0.083,
+      "round_of_64": 1.0,
+      "sweet_16": 0.021
+    },
+    "Florida Gators": {
+      "champion": 0.131,
+      "elite_8": 0.661,
+      "final_4": 0.496,
+      "round_of_32": 0.943,
+      "round_of_64": 1.0,
+      "sweet_16": 0.821,
+      "title_game": 0.299
+    },
+    "Boston University Terriers": {
+      "elite_8": 0.003,
+      "round_of_32": 0.057,
+      "round_of_64": 1.0,
+      "sweet_16": 0.014
+    },
+    "UCLA Bruins": {
+      "elite_8": 0.023,
+      "final_4": 0.009,
+      "round_of_32": 0.562,
+      "round_of_64": 1.0,
+      "sweet_16": 0.088,
+      "title_game": 0.003
+    },
+    "Iowa Hawkeyes": {
+      "elite_8": 0.033,
+      "final_4": 0.013,
+      "round_of_32": 0.438,
+      "round_of_64": 1.0,
+      "sweet_16": 0.077,
+      "title_game": 0.002
     },
     "St. John's Red Storm": {
-      "champion": 0.021,
-      "elite_8": 0.153,
-      "final_4": 0.082,
-      "round_of_32": 0.539,
+      "champion": 0.004,
+      "elite_8": 0.093,
+      "final_4": 0.053,
+      "round_of_32": 0.626,
       "round_of_64": 1.0,
-      "sweet_16": 0.34,
-      "title_game": 0.044
+      "sweet_16": 0.327,
+      "title_game": 0.018
     },
     "Akron Zips": {
-      "champion": 0.007,
-      "elite_8": 0.097,
-      "final_4": 0.047,
-      "round_of_32": 0.461,
+      "champion": 0.002,
+      "elite_8": 0.027,
+      "final_4": 0.009,
+      "round_of_32": 0.374,
       "round_of_64": 1.0,
-      "sweet_16": 0.228,
-      "title_game": 0.019
+      "sweet_16": 0.128,
+      "title_game": 0.003
     },
     "Texas Tech Red Raiders": {
-      "champion": 0.009,
-      "elite_8": 0.123,
-      "final_4": 0.065,
-      "round_of_32": 0.65,
+      "champion": 0.006,
+      "elite_8": 0.153,
+      "final_4": 0.075,
+      "round_of_32": 0.831,
       "round_of_64": 1.0,
-      "sweet_16": 0.292,
+      "sweet_16": 0.5,
       "title_game": 0.023
     },
     "Utah Valley Wolverines": {
-      "elite_8": 0.046,
-      "final_4": 0.017,
-      "round_of_32": 0.35,
+      "elite_8": 0.007,
+      "final_4": 0.003,
+      "round_of_32": 0.169,
       "round_of_64": 1.0,
-      "sweet_16": 0.14,
-      "title_game": 0.004
+      "sweet_16": 0.045
     },
     "BYU Cougars": {
-      "champion": 0.011,
-      "elite_8": 0.182,
-      "final_4": 0.073,
-      "round_of_32": 0.587,
+      "champion": 0.006,
+      "elite_8": 0.116,
+      "final_4": 0.044,
+      "round_of_32": 0.63,
       "round_of_64": 1.0,
-      "sweet_16": 0.352,
-      "title_game": 0.032
+      "sweet_16": 0.278,
+      "title_game": 0.018
     },
     "SMU Mustangs": {
-      "champion": 0.001,
-      "elite_8": 0.085,
-      "final_4": 0.028,
-      "round_of_32": 0.413,
+      "elite_8": 0.044,
+      "final_4": 0.014,
+      "round_of_32": 0.37,
       "round_of_64": 1.0,
-      "sweet_16": 0.2,
-      "title_game": 0.012
+      "sweet_16": 0.143,
+      "title_game": 0.002
     },
     "Purdue Boilermakers": {
-      "champion": 0.011,
-      "elite_8": 0.171,
-      "final_4": 0.071,
-      "round_of_32": 0.678,
+      "champion": 0.006,
+      "elite_8": 0.225,
+      "final_4": 0.061,
+      "round_of_32": 0.86,
       "round_of_64": 1.0,
-      "sweet_16": 0.341,
-      "title_game": 0.031
+      "sweet_16": 0.547,
+      "title_game": 0.018
     },
     "Wright State Raiders": {
-      "elite_8": 0.047,
-      "final_4": 0.011,
-      "round_of_32": 0.322,
+      "elite_8": 0.003,
+      "round_of_32": 0.14,
       "round_of_64": 1.0,
-      "sweet_16": 0.107,
-      "title_game": 0.004
+      "sweet_16": 0.032
     },
-    "Miami Hurricanes": {
-      "champion": 0.007,
-      "elite_8": 0.119,
-      "final_4": 0.043,
-      "round_of_32": 0.5,
+    "Georgia Bulldogs": {
+      "champion": 0.002,
+      "elite_8": 0.128,
+      "final_4": 0.037,
+      "round_of_32": 0.732,
       "round_of_64": 1.0,
-      "sweet_16": 0.254,
-      "title_game": 0.018
+      "sweet_16": 0.262,
+      "title_game": 0.014
     },
     "Miami (OH) RedHawks": {
-      "champion": 0.007,
-      "elite_8": 0.094,
-      "final_4": 0.036,
-      "round_of_32": 0.5,
+      "champion": 0.001,
+      "elite_8": 0.022,
+      "final_4": 0.005,
+      "round_of_32": 0.268,
       "round_of_64": 1.0,
-      "sweet_16": 0.194,
-      "title_game": 0.018
-    },
-    "Michigan State Spartans": {
-      "champion": 0.023,
-      "elite_8": 0.282,
-      "final_4": 0.138,
-      "round_of_32": 0.785,
-      "round_of_64": 1.0,
-      "sweet_16": 0.484,
-      "title_game": 0.069
-    },
-    "Furman Paladins": {
-      "elite_8": 0.02,
-      "final_4": 0.006,
-      "round_of_32": 0.215,
-      "round_of_64": 1.0,
-      "sweet_16": 0.068,
+      "sweet_16": 0.066,
       "title_game": 0.001
     },
-    "Arizona Wildcats": {
-      "champion": 0.117,
-      "elite_8": 0.519,
-      "final_4": 0.344,
-      "round_of_32": 0.958,
+    "Michigan State Spartans": {
+      "champion": 0.018,
+      "elite_8": 0.452,
+      "final_4": 0.179,
+      "round_of_32": 0.893,
       "round_of_64": 1.0,
-      "sweet_16": 0.718,
-      "title_game": 0.22
+      "sweet_16": 0.644,
+      "title_game": 0.087
+    },
+    "Furman Paladins": {
+      "elite_8": 0.01,
+      "final_4": 0.002,
+      "round_of_32": 0.107,
+      "round_of_64": 1.0,
+      "sweet_16": 0.028
+    },
+    "Arizona Wildcats": {
+      "champion": 0.176,
+      "elite_8": 0.693,
+      "final_4": 0.563,
+      "round_of_32": 0.963,
+      "round_of_64": 1.0,
+      "sweet_16": 0.861,
+      "title_game": 0.367
     },
     "Bethune-Cookman Wildcats": {
-      "elite_8": 0.002,
-      "round_of_32": 0.042,
+      "round_of_32": 0.037,
       "round_of_64": 1.0,
       "sweet_16": 0.01
     },
     "Tulsa Golden Hurricane": {
-      "champion": 0.003,
-      "elite_8": 0.063,
-      "final_4": 0.015,
-      "round_of_32": 0.492,
+      "champion": 0.001,
+      "elite_8": 0.021,
+      "final_4": 0.009,
+      "round_of_32": 0.421,
       "round_of_64": 1.0,
-      "sweet_16": 0.148,
-      "title_game": 0.007
+      "sweet_16": 0.058,
+      "title_game": 0.003
     },
     "TCU Horned Frogs": {
-      "elite_8": 0.046,
-      "final_4": 0.017,
-      "round_of_32": 0.508,
+      "elite_8": 0.024,
+      "final_4": 0.014,
+      "round_of_32": 0.579,
       "round_of_64": 1.0,
-      "sweet_16": 0.124,
-      "title_game": 0.006
+      "sweet_16": 0.071,
+      "title_game": 0.004
     },
     "North Carolina Tar Heels": {
-      "champion": 0.017,
-      "elite_8": 0.138,
-      "final_4": 0.085,
-      "round_of_32": 0.49,
+      "champion": 0.006,
+      "elite_8": 0.127,
+      "final_4": 0.076,
+      "round_of_32": 0.592,
       "round_of_64": 1.0,
-      "sweet_16": 0.331,
-      "title_game": 0.042
+      "sweet_16": 0.351,
+      "title_game": 0.026
     },
     "Yale Bulldogs": {
-      "champion": 0.017,
-      "elite_8": 0.127,
-      "final_4": 0.075,
-      "round_of_32": 0.51,
+      "champion": 0.002,
+      "elite_8": 0.041,
+      "final_4": 0.023,
+      "round_of_32": 0.408,
       "round_of_64": 1.0,
-      "sweet_16": 0.313,
-      "title_game": 0.041
+      "sweet_16": 0.167,
+      "title_game": 0.006
     },
     "Kansas Jayhawks": {
-      "champion": 0.003,
       "elite_8": 0.085,
-      "final_4": 0.039,
-      "round_of_32": 0.649,
+      "final_4": 0.036,
+      "round_of_32": 0.856,
       "round_of_64": 1.0,
-      "sweet_16": 0.243,
-      "title_game": 0.017
+      "sweet_16": 0.445,
+      "title_game": 0.006
     },
     "Sam Houston Bearkats": {
-      "elite_8": 0.02,
-      "final_4": 0.006,
-      "round_of_32": 0.351,
+      "elite_8": 0.009,
+      "final_4": 0.001,
+      "round_of_32": 0.144,
       "round_of_64": 1.0,
-      "sweet_16": 0.113,
+      "sweet_16": 0.037,
       "title_game": 0.001
     },
     "Wisconsin Badgers": {
-      "champion": 0.007,
-      "elite_8": 0.114,
-      "final_4": 0.051,
-      "round_of_32": 0.589,
+      "champion": 0.002,
+      "elite_8": 0.117,
+      "final_4": 0.034,
+      "round_of_32": 0.652,
       "round_of_64": 1.0,
-      "sweet_16": 0.268,
-      "title_game": 0.024
+      "sweet_16": 0.248,
+      "title_game": 0.011
     },
     "Texas Longhorns": {
-      "champion": 0.001,
-      "elite_8": 0.059,
-      "final_4": 0.017,
-      "round_of_32": 0.411,
+      "elite_8": 0.032,
+      "final_4": 0.008,
+      "round_of_32": 0.348,
       "round_of_64": 1.0,
-      "sweet_16": 0.132,
-      "title_game": 0.005
-    },
-    "Nebraska Cornhuskers": {
-      "champion": 0.024,
-      "elite_8": 0.289,
-      "final_4": 0.137,
-      "round_of_32": 0.754,
-      "round_of_64": 1.0,
-      "sweet_16": 0.486,
-      "title_game": 0.055
-    },
-    "Troy Trojans": {
-      "elite_8": 0.041,
-      "final_4": 0.007,
-      "round_of_32": 0.246,
-      "round_of_64": 1.0,
-      "sweet_16": 0.114,
+      "sweet_16": 0.104,
       "title_game": 0.001
     },
-    "Kentucky Wildcats": {
-      "champion": 0.004,
-      "elite_8": 0.177,
-      "final_4": 0.081,
-      "round_of_32": 0.582,
+    "Nebraska Cornhuskers": {
+      "champion": 0.006,
+      "elite_8": 0.319,
+      "final_4": 0.086,
+      "round_of_32": 0.839,
       "round_of_64": 1.0,
-      "sweet_16": 0.313,
-      "title_game": 0.03
+      "sweet_16": 0.599,
+      "title_game": 0.032
+    },
+    "Troy Trojans": {
+      "elite_8": 0.018,
+      "final_4": 0.001,
+      "round_of_32": 0.161,
+      "round_of_64": 1.0,
+      "sweet_16": 0.049
+    },
+    "Kentucky Wildcats": {
+      "champion": 0.001,
+      "elite_8": 0.128,
+      "final_4": 0.033,
+      "round_of_32": 0.701,
+      "round_of_64": 1.0,
+      "sweet_16": 0.283,
+      "title_game": 0.012
     },
     "Missouri Tigers": {
-      "champion": 0.002,
-      "elite_8": 0.063,
-      "final_4": 0.016,
-      "round_of_32": 0.418,
+      "elite_8": 0.028,
+      "final_4": 0.003,
+      "round_of_32": 0.299,
       "round_of_64": 1.0,
-      "sweet_16": 0.153,
-      "title_game": 0.004
+      "sweet_16": 0.078
     },
     "UConn Huskies": {
-      "champion": 0.022,
-      "elite_8": 0.226,
-      "final_4": 0.104,
-      "round_of_32": 0.783,
+      "champion": 0.007,
+      "elite_8": 0.351,
+      "final_4": 0.113,
+      "round_of_32": 0.864,
       "round_of_64": 1.0,
-      "sweet_16": 0.453,
-      "title_game": 0.055
+      "sweet_16": 0.61,
+      "title_game": 0.043
     },
     "Siena Saints": {
-      "elite_8": 0.031,
-      "final_4": 0.006,
-      "round_of_32": 0.217,
+      "elite_8": 0.007,
+      "round_of_32": 0.136,
       "round_of_64": 1.0,
-      "sweet_16": 0.081,
-      "title_game": 0.003
+      "sweet_16": 0.029
     }
   },
   "model_metadata": {
@@ -1271,8 +1248,8 @@
     "lr_calibration": true,
     "xgb_calibration": true,
     "ensemble_weights": {
-      "lr_weight": 0.7,
-      "xgb_weight": 0.3
+      "lr_weight": 0.3,
+      "xgb_weight": 0.7
     },
     "seed_stratified_models": {
       "enabled": false,
