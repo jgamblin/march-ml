@@ -583,46 +583,80 @@ def simulate_once(
 
 
 def demo_bracket_from_top64_with_options(team_feats, season, min_games=10, allow_nd=False):
-    """Selects top 64 teams by adj_margin (schedule-adjusted margin, more reliable than raw win%)."""
+    """Build a 64-team bracket ordered for proper tournament simulation.
+
+    When projected seeds are available (e.g. from bracketmatrix.com) the bracket
+    is structured as a real NCAA tournament: four regions of 16, each arranged so
+    that adjacent-slot pairing produces the correct first-round matchups
+    (1v16, 8v9, 5v12, 4v13, 6v11, 3v14, 7v10, 2v15).
+
+    Falls back to a sequential adj_margin ordering when fewer than 64 teams have
+    seeds (e.g. pre-selection simulation on incomplete data).
+    """
+    # Standard intra-region slot order so that adjacent pairing = correct matchups
+    REGION_ORDER = [1, 16, 8, 9, 5, 12, 4, 13, 6, 11, 3, 14, 7, 10, 2, 15]
+
     df = team_feats[team_feats['season'] == season].copy()
-    df = df.sort_values('adj_margin', ascending=False)
-    # if `is_d1` exists, prefer those; otherwise prefer team_id not starting with 'nd-'
+
+    # Filter to D1 teams with enough games played
     if 'is_d1' in df.columns:
-        primary = df[(df['is_d1']) & (df['games_played'] >= min_games)].sort_values('adj_margin', ascending=False)
-        if len(primary) >= 64:
-            return primary['team'].astype(str).tolist()[:64]
-        if not allow_nd:
-            secondary = df[(df['is_d1'])].sort_values('adj_margin', ascending=False)
-            if len(secondary) >= 64:
-                return secondary['team'].astype(str).tolist()[:64]
+        eligible = df[(df['is_d1']) & (df['games_played'] >= min_games)]
     else:
-        df['team_id_str'] = df['team_id'].astype(str)
-        df['is_nd'] = df['team_id_str'].str.startswith('nd-')
-        primary = df[(~df['is_nd']) & (df['games_played'] >= min_games)].sort_values('adj_margin', ascending=False)
-        if len(primary) >= 64:
-            return primary['team'].astype(str).tolist()[:64]
-        if not allow_nd:
-            secondary = df[~df['is_nd']].sort_values('adj_margin', ascending=False)
-            if len(secondary) >= 64:
-                return secondary['team'].astype(str).tolist()[:64]
+        eligible = df[~df['team_id'].astype(str).str.startswith('nd-') &
+                      (df['games_played'] >= min_games)]
 
-    # tertiary: include teams with enough games regardless of D1 tag
-    tertiary = df[df['games_played'] >= min_games].sort_values('adj_margin', ascending=False)
-    if len(tertiary) >= 64:
-        return tertiary['team'].astype(str).tolist()[:64]
+    if eligible.empty:
+        eligible = df[df['games_played'] >= min_games]
 
-    # fallback: allow ND teams if allowed, else pure top-by-adj_margin
-    if allow_nd:
-        fallback = df.sort_values('adj_margin', ascending=False)
-        if len(fallback) >= 64:
-            return fallback['team'].astype(str).tolist()[:64]
-    else:
-        if 'is_d1' in df.columns:
-            fallback = df[df['is_d1']].sort_values('adj_margin', ascending=False)
-        else:
-            fallback = df[~df['team_id'].astype(str).str.startswith('nd-')].sort_values('adj_margin', ascending=False)
-        if len(fallback) >= 64:
-            return fallback['team'].astype(str).tolist()[:64]
+    # --- Seeded path: use projected seeds if at least 32 teams are seeded ---
+    seeded = eligible[eligible['seed'].notna()].copy()
+    seeded['seed_int'] = seeded['seed'].astype(int)
+
+    if len(seeded) >= 32:
+        seeded = seeded.sort_values(['seed_int', 'adj_margin'], ascending=[True, False])
+
+        # Assign the top-4 teams at each seed line to 4 regions (round-robin by adj_margin rank)
+        # regions[r][seed_val] = team_name
+        regions = [{} for _ in range(4)]
+        used = set()
+        for seed_val in range(1, 17):
+            top4 = seeded[seeded['seed_int'] == seed_val]['team'].astype(str).tolist()[:4]
+            for i, team in enumerate(top4):
+                regions[i][seed_val] = team
+                used.add(team)
+
+        # Fill any empty slots (seed lines with <4 teams) using the best unseeded eligible teams
+        reserve = [t for t in eligible.sort_values('adj_margin', ascending=False)['team'].astype(str).tolist()
+                   if t not in used]
+        fill_idx = 0
+        for r in range(4):
+            for s in range(1, 17):
+                if s not in regions[r]:
+                    if fill_idx < len(reserve):
+                        regions[r][s] = reserve[fill_idx]
+                        fill_idx += 1
+
+        # Flatten regions in proper NCAA bracket slot order
+        ordered = []
+        for r in range(4):
+            for s in REGION_ORDER:
+                if s in regions[r]:
+                    ordered.append(regions[r][s])
+
+        if len(ordered) >= 64:
+            print(f"  Bracket: seeded structure — 4 regions × 16 seeds (proper 1v16/2v15 matchups)")
+            return ordered[:64]
+
+    # --- Fallback: sequential adj_margin ordering (no seeds available) ---
+    print("  Bracket: adj_margin fallback (no seed data available)")
+    fallback = eligible.sort_values('adj_margin', ascending=False)
+    if len(fallback) >= 64:
+        return fallback['team'].astype(str).tolist()[:64]
+
+    # Last resort: include ND teams if needed
+    fallback2 = df.sort_values('adj_margin', ascending=False)
+    if len(fallback2) >= 64:
+        return fallback2['team'].astype(str).tolist()[:64]
 
     raise ValueError('Not enough teams for 64-team demo bracket')
 
@@ -866,11 +900,20 @@ def main():
                 "   Use --bracket_file data/brackets/official_YYYY.csv --official_bracket for real predictions.\n"
             )
         teams = demo_bracket_from_top64_with_options(team_feats, season, min_games=args.min_games, allow_nd=args.allow_nd)
+        # Populate seed from features when available so model can use it
+        seed_lookup = (
+            team_feats[team_feats['season'] == season]
+            .set_index('team')['seed']
+            .dropna()
+            .to_dict()
+        )
         bracket_records = [
-            {'slot': idx, 'team': team, 'seed': None, 'region': None}
+            {'slot': idx, 'team': team,
+             'seed': int(seed_lookup[team]) if team in seed_lookup else None,
+             'region': None}
             for idx, team in enumerate(teams, start=1)
         ]
-        bracket_source = 'generated_top64'
+        bracket_source = 'generated_seeded' if any(r['seed'] for r in bracket_records) else 'generated_top64'
 
     if len(teams) & (len(teams) - 1) != 0:
         raise ValueError('Bracket size must be power of two (e.g., 64)')
