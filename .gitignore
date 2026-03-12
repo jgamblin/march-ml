@@ -226,6 +226,8 @@ data/processed/
 !data/processed/games_2024.csv
 !data/processed/games_2025.csv
 !data/processed/games_2026.csv
+# Projected seeds from bracketmatrix.com (needed for 2026 simulation)
+!data/processed/features/seeds_2026.csv
 
 # Trained model artifacts (regenerated via --mode train)
 models/
