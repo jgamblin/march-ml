@@ -520,19 +520,51 @@ def extract_seeds_from_games(games_df, season, out_dir):
 
 
 def merge_seeds(df, seeds_df):
-    """Left-join seeds onto a features DataFrame by team_id (fallback to team name)."""
+    """Left-join seeds onto a features DataFrame by team_id (fallback to team name).
+
+    Handles the case where:
+    - df already has a 'seed' column (from per-season extraction)
+    - seeds_df rows may lack team_id (e.g. projected seeds from bracketmatrix)
+    """
     if seeds_df.empty or "seed" not in seeds_df.columns:
         return df
-    keep = seeds_df[["season", "team_id", "seed"]].drop_duplicates()
-    merged = df.merge(keep, on=["season", "team_id"], how="left")
-    # Fallback: name-based join for teams where team_id didn't match
-    if merged["seed"].isna().any() and "team" in seeds_df.columns:
-        name_map = seeds_df.set_index(["season", "team"])["seed"].to_dict()
-        missing = merged["seed"].isna()
-        merged.loc[missing, "seed"] = merged.loc[missing].apply(
-            lambda r: name_map.get((r["season"], r["team"]), float("nan")), axis=1
+
+    result = df.copy()
+
+    # Ensure result has a seed column to fill into
+    if "seed" not in result.columns:
+        result["seed"] = float("nan")
+
+    # Build a (season, team_id) → seed map, skipping rows without team_id
+    if "team_id" in seeds_df.columns:
+        id_map = (
+            seeds_df.dropna(subset=["team_id"])
+            [["season", "team_id", "seed"]]
+            .drop_duplicates(subset=["season", "team_id"])
+            .set_index(["season", "team_id"])["seed"]
+            .to_dict()
         )
-    return merged
+        missing_seed = result["seed"].isna()
+        if missing_seed.any() and "team_id" in result.columns:
+            result.loc[missing_seed, "seed"] = result.loc[missing_seed].apply(
+                lambda r: id_map.get((r["season"], r["team_id"]), float("nan")), axis=1
+            )
+
+    # Fallback: name-based join for any remaining nulls
+    if "team" in seeds_df.columns:
+        name_map = (
+            seeds_df[["season", "team", "seed"]]
+            .drop_duplicates(subset=["season", "team"])
+            .set_index(["season", "team"])["seed"]
+            .to_dict()
+        )
+        missing_seed = result["seed"].isna()
+        if missing_seed.any() and "team" in result.columns:
+            result.loc[missing_seed, "seed"] = result.loc[missing_seed].apply(
+                lambda r: name_map.get((r["season"], r["team"]), float("nan")), axis=1
+            )
+
+    return result
 
 
 def process_season(season, input_dir, out_dir):
@@ -618,14 +650,20 @@ def main():
 
     # Combine all per-season seed files into seeds_all.csv
     seed_files = sorted(f for f in Path(args.out).glob("seeds_*.csv") if f.name != "seeds_all.csv")
+    seeds_all_path = Path(args.out) / "seeds_all.csv"
     if seed_files:
         all_seeds = pd.concat([pd.read_csv(f) for f in seed_files], ignore_index=True, sort=False)
-        seeds_all_path = Path(args.out) / "seeds_all.csv"
         all_seeds.to_csv(seeds_all_path, index=False)
         print(f"Wrote {seeds_all_path} ({len(all_seeds)} rows)")
 
+    # Use seeds_all.csv as the seed map if no explicit --seed_map was provided.
+    # This ensures projected seeds (e.g. from fetch_bracketmatrix_seeds.py) are
+    # merged into tournament_teams.csv even for seasons where tournament games
+    # haven't been played yet (so extract_seeds_from_games returned nothing).
+    effective_seed_map = args.seed_map or (str(seeds_all_path) if seeds_all_path.exists() else None)
+
     for df_name, df in [("teams", combined), ("tournament_teams", tournament_combined)]:
-        enriched = merge_optional_mapping(df, args.seed_map, "seed")
+        enriched = merge_seeds(df, pd.read_csv(effective_seed_map)) if effective_seed_map else df.copy()
         enriched = merge_optional_mapping(enriched, args.conf_map, "conference")
         if not args.no_auto_enrich:
             enriched = apply_auto_enrichment(enriched, args.out)
