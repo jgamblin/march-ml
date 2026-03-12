@@ -23,6 +23,7 @@ import pandas as pd
 from sklearn.calibration import CalibratedClassifierCV
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import accuracy_score, brier_score_loss, log_loss
+from sklearn.preprocessing import StandardScaler
 
 try:
     from xgboost import XGBClassifier
@@ -43,12 +44,11 @@ BASE_FEATURES = [
 ]
 
 # Optional features used when present in the feature file.
-# conf_strength_tier: ordinal conference tier (power-6=3, high-major=2, mid-major=1).
-# form_rating: composite recent-form score (best single momentum feature).
-OPTIONAL_NUMERIC_FEATURES = [
-    "conf_strength_tier",
-    "form_rating",
-]
+# conf_strength_tier and form_rating were removed: conf_strength_tier is 97% the
+# same value (1.0) across D1 teams so diff is always 0; form_rating is 0 for 94%
+# of training rows (momentum files not generated for most seasons). Both features
+# add noise with no measurable signal.
+OPTIONAL_NUMERIC_FEATURES: list[str] = []
 
 INTERACTION_FEATURES = [
     "seed_diff_abs",
@@ -364,9 +364,10 @@ def build_match_dataset(games_dir, features_df, game_scope, include_interactions
 
 
 def build_lr_model():
-    # C=50: less regularization — with 6 features and 30K+ samples, the default C=1
-    # is far too aggressive and underfits the seed/adj_margin signal.
-    return LogisticRegression(C=50, max_iter=2000, random_state=42)
+    # C=0.1: moderate regularization, appropriate for standardized features.
+    # The scaler (StandardScaler) is fitted externally and applied before calling
+    # fit/predict — see fit_and_save_final_models and evaluate_loso.
+    return LogisticRegression(C=0.1, max_iter=2000, random_state=42)
 
 
 def build_xgb_model():
@@ -422,15 +423,20 @@ def evaluate_loso(X, y, meta, lr_weight=0.5, xgb_weight=0.5):
         X_train, X_test = X.loc[train_mask], X.loc[test_mask]
         y_train, y_test = y[train_mask.to_numpy()], y[test_mask.to_numpy()]
 
+        # Fit scaler on training fold only to avoid data leakage
+        scaler = StandardScaler()
+        X_train_sc = scaler.fit_transform(X_train)
+        X_test_sc = scaler.transform(X_test)
+
         lr = build_lr_model()
-        lr.fit(X_train, y_train)
-        p_lr = lr.predict_proba(X_test)[:, 1]
+        lr.fit(X_train_sc, y_train)
+        p_lr = lr.predict_proba(X_test_sc)[:, 1]
 
         model_probs = [p_lr]
         if HAS_XGB:
             xgb = build_xgb_model()
-            xgb.fit(X_train, y_train)
-            p_xgb = xgb.predict_proba(X_test)[:, 1]
+            xgb.fit(X_train_sc, y_train)
+            p_xgb = xgb.predict_proba(X_test_sc)[:, 1]
             model_probs.append(p_xgb)
 
         total_w = max(1e-9, lr_weight + (xgb_weight if HAS_XGB else 0))
@@ -491,15 +497,24 @@ def evaluate_rolling_cv(X, y, meta, sample_weight=None, lr_weight=0.5, xgb_weigh
         y_test = y[test_mask]
         sw_train = sample_weight[train_mask] if sample_weight is not None else None
 
+        # Fit scaler on tournament rows only within this fold (seed features are meaningful
+        # only for tournament games — regular season rows all have seed=0, which would
+        # distort the scale of seed_close_match, adj_when_close/far, seed_matchup_prior).
+        tourney_train_mask = (sw_train == 1.0) if sw_train is not None else np.ones(len(y_train), dtype=bool)
+        scaler = StandardScaler()
+        scaler.fit(X_train[tourney_train_mask])
+        X_train_sc = scaler.transform(X_train)
+        X_test_sc = scaler.transform(X_test)
+
         lr = build_lr_model()
-        lr.fit(X_train, y_train, sample_weight=sw_train)
-        p_lr = lr.predict_proba(X_test)[:, 1]
+        lr.fit(X_train_sc, y_train, sample_weight=sw_train)
+        p_lr = lr.predict_proba(X_test_sc)[:, 1]
 
         model_probs = [p_lr]
         if HAS_XGB:
             xgb = build_xgb_model()
-            xgb.fit(X_train, y_train, sample_weight=sw_train)
-            p_xgb = xgb.predict_proba(X_test)[:, 1]
+            xgb.fit(X_train_sc, y_train, sample_weight=sw_train)
+            p_xgb = xgb.predict_proba(X_test_sc)[:, 1]
             model_probs.append(p_xgb)
 
         total_w = max(1e-9, lr_weight + (xgb_weight if HAS_XGB else 0))
@@ -549,33 +564,45 @@ def compute_baselines(X, y, meta):
 
 
 def fit_and_save_final_models(X, y, out_dir, sample_weight=None):
+    # Fit the StandardScaler only on tournament rows (weight=1.0) so that seed-based
+    # features (seed_close_match, adj_when_close/far, seed_matchup_prior) are scaled
+    # with statistics representative of tournament data — not distorted by the large
+    # volume of regular-season rows where all seeds are 0.
+    tourney_mask = (sample_weight == 1.0) if sample_weight is not None else np.ones(len(y), dtype=bool)
+    scaler = StandardScaler()
+    scaler.fit(X[tourney_mask])
+    X_sc = scaler.transform(X)
+    joblib.dump(scaler, Path(out_dir) / "feature_scaler.joblib")
+    print(f"  Saved feature scaler to {out_dir}/feature_scaler.joblib  "
+          f"(fit on {tourney_mask.sum()} tournament rows)")
+
     lr = build_lr_model()
-    lr.fit(X, y, sample_weight=sample_weight)
+    lr.fit(X_sc, y, sample_weight=sample_weight)
     joblib.dump(lr, Path(out_dir) / "lr_model.joblib")
 
     # LR: sigmoid (Platt scaling) is appropriate for linear models
     lr_cal = CalibratedClassifierCV(build_lr_model(), method="sigmoid", cv=5)
-    lr_cal.fit(X, y, sample_weight=sample_weight)
+    lr_cal.fit(X_sc, y, sample_weight=sample_weight)
     joblib.dump(lr_cal, Path(out_dir) / "lr_cal.joblib")
 
     if HAS_XGB:
         xgb = build_xgb_model()
-        xgb.fit(X, y, sample_weight=sample_weight)
+        xgb.fit(X_sc, y, sample_weight=sample_weight)
         joblib.dump(xgb, Path(out_dir) / "xgb_model.joblib")
         # XGBoost: isotonic regression is recommended over Platt scaling for tree ensembles.
         # Fall back to sigmoid when too few samples for isotonic (needs ~1000+).
         cal_method = "isotonic" if len(y) >= 1000 else "sigmoid"
         xgb_cal = CalibratedClassifierCV(build_xgb_model(), method=cal_method, cv=5)
-        xgb_cal.fit(X, y, sample_weight=sample_weight)
+        xgb_cal.fit(X_sc, y, sample_weight=sample_weight)
         joblib.dump(xgb_cal, Path(out_dir) / "xgb_cal.joblib")
 
     # SHAP feature importance — compute on tournament rows only for interpretability
     try:
         import shap as _shap
-        X_shap = X.loc[sample_weight == 1.0] if sample_weight is not None else X
-        shap_vals_lr = _shap.LinearExplainer(lr, X_shap).shap_values(X_shap)
+        X_shap_sc = X_sc[sample_weight == 1.0] if sample_weight is not None else X_sc
+        shap_vals_lr = _shap.LinearExplainer(lr, X_shap_sc).shap_values(X_shap_sc)
         if HAS_XGB:
-            shap_vals_xgb = _shap.TreeExplainer(xgb).shap_values(X_shap)
+            shap_vals_xgb = _shap.TreeExplainer(xgb).shap_values(X_shap_sc)
             shap_arr = 0.5 * np.asarray(shap_vals_lr) + 0.5 * np.asarray(shap_vals_xgb)
         else:
             shap_arr = np.asarray(shap_vals_lr)

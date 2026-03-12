@@ -37,6 +37,7 @@ def load_models(models_dir='models'):
     lr_path = Path(models_dir) / 'lr_model.joblib'
     xgb_path = Path(models_dir) / 'xgb_model.joblib'
     feat_path = Path(models_dir) / 'model_features.joblib'
+    scaler_path = Path(models_dir) / 'feature_scaler.joblib'
     if not lr_path.exists() or not feat_path.exists():
         raise FileNotFoundError('Required model artifacts not found in models/')
     # load base models
@@ -59,7 +60,9 @@ def load_models(models_dir='models'):
     elif (Path(models_dir) / 'xgb_platt.joblib').exists():
         xgb_cal = joblib.load(Path(models_dir) / 'xgb_platt.joblib')
     features = joblib.load(feat_path)
-    return base_lr, base_xgb, lr_cal, xgb_cal, features
+    # Feature scaler (StandardScaler); optional for backward-compat with old model artifacts
+    feature_scaler = joblib.load(scaler_path) if scaler_path.exists() else None
+    return base_lr, base_xgb, lr_cal, xgb_cal, features, feature_scaler
 
 
 def load_ensemble_weights(models_dir='models', default_lr=0.5, default_xgb=0.5):
@@ -270,6 +273,37 @@ def coerce_numeric_feature(value):
         return 0.0
 
 
+# Historical first-round NCAA tournament seed matchup win rates (1985–2024).
+# Key = (lower_seed_num, higher_seed_num); value = win prob for lower seed.
+_SEED_WIN_RATE: dict[tuple[int, int], float] = {
+    (1, 16): 0.987, (2, 15): 0.931, (3, 14): 0.851, (4, 13): 0.792,
+    (5, 12): 0.651, (6, 11): 0.637, (7, 10): 0.606, (8, 9): 0.514,
+    (1, 8): 0.845,  (1, 9): 0.866,  (1, 5): 0.755,  (1, 4): 0.696,
+    (2, 7): 0.731,  (2, 10): 0.750, (2, 3): 0.568,  (2, 6): 0.672,
+    (3, 6): 0.640,  (3, 7): 0.667,  (3, 11): 0.734, (4, 5): 0.527,
+    (4, 12): 0.713, (5, 13): 0.700, (6, 14): 0.706, (7, 15): 0.720,
+    (1, 2): 0.600,  (1, 3): 0.645,  (1, 6): 0.729,  (1, 7): 0.775,
+    (2, 11): 0.770, (3, 10): 0.710, (4, 8): 0.620,  (4, 9): 0.645,
+    (5, 8): 0.565,  (5, 9): 0.560,  (5, 11): 0.620, (6, 10): 0.595,
+    (6, 3): 0.360,  (11, 3): 0.266, (12, 4): 0.287, (13, 5): 0.300,
+}
+
+
+def _lookup_seed_prior(seed_a: float, seed_b: float) -> float:
+    """Return historical win probability for the team with seed_a against seed_b.
+    Returns 0.5 if seeds are equal/unknown or matchup not in table.
+    """
+    try:
+        sa, sb = int(round(seed_a)), int(round(seed_b))
+    except Exception:
+        return 0.5
+    if sa == sb or sa <= 0 or sb <= 0:
+        return 0.5
+    lo, hi = min(sa, sb), max(sa, sb)
+    rate = _SEED_WIN_RATE.get((lo, hi), 0.5)
+    return rate if sa == lo else 1.0 - rate
+
+
 def add_interaction_features(values):
     diff_seed = float(values.get('diff_seed', 0.0))
     diff_adj_margin = float(values.get('diff_adj_margin', 0.0))
@@ -296,6 +330,23 @@ def add_interaction_features(values):
     return values
 
 
+def _compute_seed_features(home_row, away_row):
+    """Compute seed-based features shared by make_feature_vector and make_feature_matrix."""
+    seed_a = coerce_numeric_feature(home_row.get('seed', 0.0))
+    seed_b = coerce_numeric_feature(away_row.get('seed', 0.0))
+    diff_adj = (coerce_numeric_feature(home_row.get('adj_margin', 0.0))
+                - coerce_numeric_feature(away_row.get('adj_margin', 0.0)))
+    seed_prior = _lookup_seed_prior(seed_a, seed_b) - 0.5  # centered: positive = home favored
+    diff_seed_val = seed_a - seed_b
+    seed_close = float(abs(diff_seed_val) <= 3)
+    return {
+        'seed_matchup_prior': seed_prior,
+        'seed_close_match': seed_close,
+        'adj_when_close': diff_adj * seed_close,
+        'adj_when_far': diff_adj * (1.0 - seed_close),
+    }
+
+
 def make_feature_vector(home_row, away_row, feat_cols, neutral_site=True):
     values = {}
     for col in feat_cols:
@@ -310,6 +361,7 @@ def make_feature_vector(home_row, away_row, feat_cols, neutral_site=True):
             values[col] = 0.0 if neutral_site else 1.0
         else:
             values[col] = 0.0
+    values.update(_compute_seed_features(home_row, away_row))
     values = add_interaction_features(values)
     return pd.DataFrame([values], columns=feat_cols)
 
@@ -337,6 +389,7 @@ def make_feature_matrix(home_rows, away_rows, feat_cols, neutral_site=True):
                 values[col] = 0.0 if neutral_site else 1.0
             else:
                 values[col] = 0.0
+        values.update(_compute_seed_features(hr, ar))
         values = add_interaction_features(values)
         for col, idx in col_idx.items():
             matrix[j, idx] = values.get(col, 0.0)
@@ -358,12 +411,15 @@ def _batch_model_predict(base_model, calibrator, mat):
     return None
 
 
-def batch_predict_prob(models_dict, feat_names, home_rows, away_rows, lr_weight=0.65, xgb_weight=0.35):
+def batch_predict_prob(models_dict, feat_names, home_rows, away_rows, lr_weight=0.65, xgb_weight=0.35,
+                       feature_scaler=None):
     """Predict win probabilities for a batch of matchups with a single predict_proba call per model."""
     n = len(home_rows)
     if n == 0:
         return np.array([])
     mat = make_feature_matrix(home_rows, away_rows, feat_names)
+    if feature_scaler is not None:
+        mat = feature_scaler.transform(mat)
     ps_lr = _batch_model_predict(models_dict['base_lr'], models_dict['lr_cal'], mat)
     ps_xgb = _batch_model_predict(models_dict['base_xgb'], models_dict['xgb_cal'], mat)
     if ps_lr is None and ps_xgb is None:
@@ -376,13 +432,15 @@ def batch_predict_prob(models_dict, feat_names, home_rows, away_rows, lr_weight=
     return (float(lr_weight) / total) * ps_lr + (float(xgb_weight) / total) * ps_xgb
 
 
-def batch_predict_prob_routed(default_models, seed_models, feat_names, home_rows, away_rows, lr_weight, xgb_weight):
+def batch_predict_prob_routed(default_models, seed_models, feat_names, home_rows, away_rows, lr_weight, xgb_weight,
+                               feature_scaler=None):
     """Batch prediction with optional seed-stratified model routing."""
     n = len(home_rows)
     if n == 0:
         return np.array([])
     if not seed_models:
-        return batch_predict_prob(default_models, feat_names, home_rows, away_rows, lr_weight, xgb_weight)
+        return batch_predict_prob(default_models, feat_names, home_rows, away_rows, lr_weight, xgb_weight,
+                                  feature_scaler=feature_scaler)
     # Group matchups by seed stratum then batch-predict each group
     strata_indices = {}
     for i, (hr, ar) in enumerate(zip(home_rows, away_rows)):
@@ -393,7 +451,8 @@ def batch_predict_prob_routed(default_models, seed_models, feat_names, home_rows
         selected = (seed_models.get(stratum) if stratum else None) or default_models
         batch_h = [home_rows[i] for i in indices]
         batch_a = [away_rows[i] for i in indices]
-        batch_probs = batch_predict_prob(selected, feat_names, batch_h, batch_a, lr_weight, xgb_weight)
+        batch_probs = batch_predict_prob(selected, feat_names, batch_h, batch_a, lr_weight, xgb_weight,
+                                         feature_scaler=feature_scaler)
         for idx, p in zip(indices, batch_probs):
             probs[idx] = p
     return probs
@@ -749,6 +808,7 @@ def simulate_once_fast(
 def precompute_matchup_probs(
     teams, season, default_models, seed_models, feat_names,
     team_feats_dict, team_overrides, lr_weight, xgb_weight,
+    feature_scaler=None,
 ):
     """Pre-compute win probability for every possible pair among bracket teams.
 
@@ -804,6 +864,7 @@ def precompute_matchup_probs(
         raw_probs = batch_predict_prob_routed(
             default_models, seed_models, feat_names,
             home_rows_list, away_rows_list, lr_weight, xgb_weight,
+            feature_scaler=feature_scaler,
         )
         for (i, j, flipped), p in zip(valid_triples, raw_probs):
             p_i_beats_j = 1.0 - float(p) if flipped else float(p)
@@ -858,7 +919,7 @@ def main():
 
     ensure_dir(Path(args.out).parent)
 
-    base_lr, base_xgb, lr_cal, xgb_cal, feat_names = load_models(args.models_dir)
+    base_lr, base_xgb, lr_cal, xgb_cal, feat_names, feature_scaler = load_models(args.models_dir)
 
     # Load optimized ensemble weights; CLI args override if provided
     default_lr, default_xgb = load_ensemble_weights(args.models_dir)
@@ -939,6 +1000,7 @@ def main():
     prob_lookup = precompute_matchup_probs(
         teams, season, default_models_dict, seed_models, feat_names,
         team_feats_dict, team_overrides, lr_weight, xgb_weight,
+        feature_scaler=feature_scaler,
     )
 
     sims = args.sims

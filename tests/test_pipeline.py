@@ -145,7 +145,7 @@ def test_predict_prob_bounds(dataset, features_df):
     if not (models_dir / "lr_model.joblib").exists():
         pytest.skip("Models not found — run pipeline train step first")
 
-    base_lr, base_xgb, lr_cal, xgb_cal, feat_names = load_models(str(models_dir))
+    base_lr, base_xgb, lr_cal, xgb_cal, feat_names, feature_scaler = load_models(str(models_dir))
     X, y, meta, weights = dataset
 
     # Use first two tournament teams from a known season as home/away
