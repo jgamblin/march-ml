@@ -230,6 +230,15 @@ data/processed/
 !data/processed/features/seeds_2026.csv
 # NCAA NET rankings for current season (needed for 2026 features/simulation)
 !data/processed/features/net_2026.csv
+# BartTorvik T-Rank efficiency data — all available seasons (2019+)
+!data/processed/features/barttorvik_2019.csv
+!data/processed/features/barttorvik_2020.csv
+!data/processed/features/barttorvik_2021.csv
+!data/processed/features/barttorvik_2022.csv
+!data/processed/features/barttorvik_2023.csv
+!data/processed/features/barttorvik_2024.csv
+!data/processed/features/barttorvik_2025.csv
+!data/processed/features/barttorvik_2026.csv
 
 # Trained model artifacts (regenerated via --mode train)
 models/
