@@ -243,6 +243,7 @@ _F_BARTHAG = 8
 _F_SOS = 15
 _F_LUCK = 33
 _F_WAB = 41
+_F_ADJT = 44  # Adjusted Tempo (possessions per 40 min, pace-adjusted; ~62–72 for D-I)
 
 BARTTORVIK_URL = "https://barttorvik.com/{year}_team_results.json"
 
@@ -263,7 +264,7 @@ def parse_season(raw: list, season: int) -> pd.DataFrame:
     """Convert a raw JSON list into a tidy DataFrame."""
     rows = []
     for entry in raw:
-        if len(entry) <= _F_WAB:
+        if len(entry) <= _F_ADJT:
             continue
         source_name = str(entry[_F_TEAM]).strip()
         team = _FULL_NAME_MAP.get(source_name, source_name)
@@ -281,6 +282,7 @@ def parse_season(raw: list, season: int) -> pd.DataFrame:
             "sos_adj": round(float(entry[_F_SOS]), 6),
             "luck": round(float(entry[_F_LUCK]), 6),
             "wab": round(float(entry[_F_WAB]), 4),
+            "adj_t": round(float(entry[_F_ADJT]), 4),
         })
     return pd.DataFrame(rows)
 

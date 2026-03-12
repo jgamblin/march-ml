@@ -41,13 +41,18 @@ BASE_FEATURES = [
     "adj_margin",
     "win_pct",
     "sos_win_pct",
-    # BartTorvik T-Rank efficiency metrics (available 2019+; sentinel=0 for earlier seasons).
+    # BartTorvik T-Rank efficiency metrics (2015+ via direct JSON API).
     # adj_em = adjoe - adjde: net adjusted efficiency margin (KenPom AdjEM equivalent).
+    #   Stored as within-season z-score (adj_em_z) in the training matrix so a
+    #   10-point edge means the same across years.
     # barthag: Pythagorean win probability vs avg D-I team (0-1 scale).
-    # For seasons 2015-2018 both teams carry sentinel values so diff_adj_em=0 and
-    # diff_barthag=0 — the model falls back to diff_adj_margin for those games.
+    # luck:    deviation from expected wins (positive = lucky); tournament teams
+    #          with high luck tend to regress — expected NEGATIVE coefficient.
+    # adj_t:   adjusted tempo (possessions per 40 min); used for tempo-mismatch.
     "adj_em",
     "barthag",
+    "luck",
+    "adj_t",
 ]
 
 # Optional features used when present in the feature file AND sufficient coverage.
@@ -267,11 +272,20 @@ def build_match_dataset(games_dir, features_df, game_scope, include_interactions
                 if not bool(home_row.get("is_d1", False)) or not bool(away_row.get("is_d1", False)):
                     continue
 
-            # Orient matchup so team_A = better team by adj_margin to remove label bias.
-            # This ensures the label consistently means "did the stronger team win?"
-            home_adj = coerce_numeric_feature(home_row.get("adj_margin", 0.0))
-            away_adj = coerce_numeric_feature(away_row.get("adj_margin", 0.0))
-            if home_adj >= away_adj:
+            # Orient matchup so team_A = better team by adj_em (BartTorvik net efficiency),
+            # falling back to adj_margin when adj_em is unavailable (shouldn't happen for
+            # 2015+, but kept for safety).  Orientation by adj_em is more accurate than our
+            # hand-computed adj_margin — the label consistently means "did the T-Rank favorite win?"
+            home_adj_em = coerce_numeric_feature(home_row.get("adj_em", None))
+            away_adj_em = coerce_numeric_feature(away_row.get("adj_em", None))
+            # Use adj_em when both teams have real data (non-zero sentinel); else adj_margin
+            if home_adj_em != 0.0 or away_adj_em != 0.0:
+                home_strength = home_adj_em
+                away_strength = away_adj_em
+            else:
+                home_strength = coerce_numeric_feature(home_row.get("adj_margin", 0.0))
+                away_strength = coerce_numeric_feature(away_row.get("adj_margin", 0.0))
+            if home_strength >= away_strength:
                 team_a_row, team_b_row = home_row, away_row
                 label = int(game["home_win"])
             else:
@@ -290,18 +304,22 @@ def build_match_dataset(games_dir, features_df, game_scope, include_interactions
             seed_a_raw = coerce_numeric_feature(team_a_row.get("seed", 0.0))
             seed_b_raw = coerce_numeric_feature(team_b_row.get("seed", 0.0))
             row_features["seed_matchup_prior"] = _lookup_seed_prior(seed_a_raw, seed_b_raw) - 0.5
-            # Seed-zone interaction features: let the model learn different adj_margin slopes
-            # for close matchups (|diff_seed| <= 3) vs. heavy-favorite matchups (|diff_seed| > 3).
-            # This encodes the "trust adj_margin for close seeds, trust seed for big gaps" heuristic.
+            # Seed-zone interaction: let model learn different adj_em slopes for
+            # close matchups (|diff_seed| <= 3) vs. heavy-favorite matchups.
             diff_seed_val = seed_a_raw - seed_b_raw
             seed_close = float(abs(diff_seed_val) <= 3)
             row_features["seed_close_match"] = seed_close
             row_features["adj_when_close"] = row_features.get("diff_adj_margin", 0.0) * seed_close
             row_features["adj_when_far"] = row_features.get("diff_adj_margin", 0.0) * (1.0 - seed_close)
             # BartTorvik efficiency interactions — mirror of adj_margin interactions but using
-            # the more accurately adjusted T-Rank net efficiency margin. Zero for 2015-2018.
+            # the T-Rank net efficiency margin (now available for all seasons 2015+).
             row_features["bart_em_when_close"] = row_features.get("diff_adj_em", 0.0) * seed_close
             row_features["bart_em_when_far"] = row_features.get("diff_adj_em", 0.0) * (1.0 - seed_close)
+            # Tempo mismatch: absolute difference in adjusted tempo.  Larger = higher
+            # variance game, slight edge to the team that better controls pace.
+            t_a = coerce_numeric_feature(team_a_row.get("adj_t", 68.0))
+            t_b = coerce_numeric_feature(team_b_row.get("adj_t", 68.0))
+            row_features["tempo_mismatch"] = abs(t_a - t_b)
             if include_interactions:
                 row_features["_seed_a_raw"] = seed_a_raw
                 row_features["_seed_b_raw"] = seed_b_raw
@@ -357,9 +375,16 @@ def build_match_dataset(games_dir, features_df, game_scope, include_interactions
                 if "is_d1" in features_df.columns:
                     if not bool(home_row.get("is_d1", False)) or not bool(away_row.get("is_d1", False)):
                         continue
-                home_adj = coerce_numeric_feature(home_row.get("adj_margin", 0.0))
-                away_adj = coerce_numeric_feature(away_row.get("adj_margin", 0.0))
-                if home_adj >= away_adj:
+                # Orient by adj_em when available, fall back to adj_margin
+                h_em = coerce_numeric_feature(home_row.get("adj_em", 0.0))
+                a_em = coerce_numeric_feature(away_row.get("adj_em", 0.0))
+                if h_em != 0.0 or a_em != 0.0:
+                    home_strength = h_em
+                    away_strength = a_em
+                else:
+                    home_strength = coerce_numeric_feature(home_row.get("adj_margin", 0.0))
+                    away_strength = coerce_numeric_feature(away_row.get("adj_margin", 0.0))
+                if home_strength >= away_strength:
                     team_a_row, team_b_row = home_row, away_row
                     label = int(game["home_win"])
                 else:
@@ -371,14 +396,15 @@ def build_match_dataset(games_dir, features_df, game_scope, include_interactions
                 }
                 row_features["neutral_site"] = float(int(game.get("is_neutral", 0)))
                 row_features["is_tournament"] = 0.0
-                # Regular season teams don't have seeds; prior defaults to 0.5 → 0.0 after centering.
-                # Treat all regular-season games as "close matchup" so adj_margin is the predictor.
                 row_features["seed_matchup_prior"] = 0.0
                 row_features["seed_close_match"] = 1.0
                 row_features["adj_when_close"] = row_features.get("diff_adj_margin", 0.0)
                 row_features["adj_when_far"] = 0.0
                 row_features["bart_em_when_close"] = row_features.get("diff_adj_em", 0.0)
                 row_features["bart_em_when_far"] = 0.0
+                t_a = coerce_numeric_feature(team_a_row.get("adj_t", 68.0))
+                t_b = coerce_numeric_feature(team_b_row.get("adj_t", 68.0))
+                row_features["tempo_mismatch"] = abs(t_a - t_b)
                 if include_interactions:
                     row_features = add_interaction_features(row_features)
                 X_rows.append(row_features)
@@ -397,6 +423,20 @@ def build_match_dataset(games_dir, features_df, game_scope, include_interactions
     y = np.asarray(y_rows)
     weights = np.asarray(weight_rows, dtype=float)
     meta = pd.DataFrame(meta_rows)
+
+    # Within-season z-score normalization for adj_em and barthag diff features.
+    # adj_em values shift across seasons (rule changes, pace evolution); normalizing
+    # per season makes a "1 SD edge" comparable across years for the model.
+    # Only normalize if meta has a season column and we have enough data.
+    for diff_col in ("diff_adj_em", "diff_barthag"):
+        if diff_col not in X.columns or "season" not in meta.columns:
+            continue
+        for season in meta["season"].unique():
+            mask = (meta["season"] == season).values
+            vals = X.loc[mask, diff_col]
+            if vals.std() > 1e-6:
+                X.loc[mask, diff_col] = (vals - vals.mean()) / vals.std()
+
     return X, y, meta, weights
 
 
