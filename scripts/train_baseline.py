@@ -41,6 +41,13 @@ BASE_FEATURES = [
     "adj_margin",
     "win_pct",
     "sos_win_pct",
+    # BartTorvik T-Rank efficiency metrics (available 2019+; sentinel=0 for earlier seasons).
+    # adj_em = adjoe - adjde: net adjusted efficiency margin (KenPom AdjEM equivalent).
+    # barthag: Pythagorean win probability vs avg D-I team (0-1 scale).
+    # For seasons 2015-2018 both teams carry sentinel values so diff_adj_em=0 and
+    # diff_barthag=0 — the model falls back to diff_adj_margin for those games.
+    "adj_em",
+    "barthag",
 ]
 
 # Optional features used when present in the feature file AND sufficient coverage.
@@ -291,6 +298,10 @@ def build_match_dataset(games_dir, features_df, game_scope, include_interactions
             row_features["seed_close_match"] = seed_close
             row_features["adj_when_close"] = row_features.get("diff_adj_margin", 0.0) * seed_close
             row_features["adj_when_far"] = row_features.get("diff_adj_margin", 0.0) * (1.0 - seed_close)
+            # BartTorvik efficiency interactions — mirror of adj_margin interactions but using
+            # the more accurately adjusted T-Rank net efficiency margin. Zero for 2015-2018.
+            row_features["bart_em_when_close"] = row_features.get("diff_adj_em", 0.0) * seed_close
+            row_features["bart_em_when_far"] = row_features.get("diff_adj_em", 0.0) * (1.0 - seed_close)
             if include_interactions:
                 row_features["_seed_a_raw"] = seed_a_raw
                 row_features["_seed_b_raw"] = seed_b_raw
@@ -366,6 +377,8 @@ def build_match_dataset(games_dir, features_df, game_scope, include_interactions
                 row_features["seed_close_match"] = 1.0
                 row_features["adj_when_close"] = row_features.get("diff_adj_margin", 0.0)
                 row_features["adj_when_far"] = 0.0
+                row_features["bart_em_when_close"] = row_features.get("diff_adj_em", 0.0)
+                row_features["bart_em_when_far"] = 0.0
                 if include_interactions:
                     row_features = add_interaction_features(row_features)
                 X_rows.append(row_features)

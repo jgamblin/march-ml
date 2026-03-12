@@ -676,6 +676,76 @@ def _build_net_name_map(net_source_names: list, cbbpy_teams: list) -> dict:
     return name_map
 
 
+def merge_barttorvik(df, out_dir, season):
+    """Left-join BartTorvik T-Rank efficiency data onto a features DataFrame.
+
+    Reads data/processed/features/barttorvik_{season}.csv if it exists.
+    Adds columns: rank, adjoe, adjde, adj_em, barthag, sos_bart, luck, wab.
+
+    Uses the same two-pass merge as merge_net_rankings:
+      1. Exact match on scraper's already-normalized team name
+      2. Fuzzy fallback for unresolved source_names
+
+    Missing teams (non-D1 or not in data) get sentinels:
+      adjoe=100.0, adjde=100.0, adj_em=0.0, barthag=0.5, wab=0.0
+    which make the diff features zero (neutral) for those teams.
+    """
+    bart_path = Path(out_dir) / f"barttorvik_{season}.csv"
+    if not bart_path.exists():
+        return df
+
+    bart_df = pd.read_csv(bart_path)
+    bart_cols = ["rank", "adjoe", "adjde", "adj_em", "barthag", "sos_adj", "luck", "wab"]
+    available = [c for c in bart_cols if c in bart_df.columns]
+    if not available or "source_name" not in bart_df.columns:
+        return df
+
+    # Rename sos_adj to avoid collision with our own sos_win_pct feature
+    if "sos_adj" in bart_df.columns:
+        bart_df = bart_df.rename(columns={"sos_adj": "sos_bart"})
+        available = ["sos_bart" if c == "sos_adj" else c for c in available]
+
+    cbbpy_team_set = set(df["team"].dropna().unique())
+
+    # Pass 1: use scraper's _FULL_NAME_MAP output (already handles major teams)
+    bart_pass1 = bart_df[bart_df["team"].isin(cbbpy_team_set)].copy()
+
+    # Pass 2: fuzzy match remaining unresolved source_names
+    unresolved_src = bart_df[~bart_df["team"].isin(cbbpy_team_set)]["source_name"].dropna().unique().tolist()
+    if unresolved_src:
+        fuzzy_map = _build_net_name_map(unresolved_src, list(cbbpy_team_set))
+        fuzzy_rows = bart_df[bart_df["source_name"].isin(unresolved_src)].copy()
+        fuzzy_rows["team"] = fuzzy_rows["source_name"].map(lambda s: fuzzy_map.get(s, s))
+        fuzzy_rows = fuzzy_rows[fuzzy_rows["team"].isin(cbbpy_team_set)]
+        bart_resolved = pd.concat([bart_pass1, fuzzy_rows], ignore_index=True)
+    else:
+        bart_resolved = bart_pass1
+
+    keep = ["team"] + available
+    bart_slim = bart_resolved[keep].drop_duplicates(subset=["team"])
+
+    result = df.merge(bart_slim, on="team", how="left")
+
+    # Fill sentinels for unmatched teams
+    sentinels = {
+        "rank": 999,
+        "adjoe": 100.0,
+        "adjde": 100.0,
+        "adj_em": 0.0,
+        "barthag": 0.5,
+        "sos_bart": 0.5,
+        "luck": 0.0,
+        "wab": 0.0,
+    }
+    for col, sentinel in sentinels.items():
+        if col in result.columns:
+            result[col] = pd.to_numeric(result[col], errors="coerce").fillna(sentinel)
+
+    matched = (result["adj_em"] != 0.0).sum()
+    print(f"  BartTorvik: merged {matched}/{len(result)} teams for season {season}")
+    return result
+
+
 def merge_net_rankings(df, out_dir, season):
     """Left-join NCAA NET rankings onto a features DataFrame by team name.
 
@@ -771,6 +841,9 @@ def process_season(season, input_dir, out_dir):
 
     full_season = _merge_seeds(full_season, seeds_df)
     pre_tournament = _merge_seeds(pre_tournament, seeds_df)
+
+    full_season = merge_barttorvik(full_season, out_dir, season)
+    pre_tournament = merge_barttorvik(pre_tournament, out_dir, season)
 
     full_season = merge_net_rankings(full_season, out_dir, season)
     pre_tournament = merge_net_rankings(pre_tournament, out_dir, season)

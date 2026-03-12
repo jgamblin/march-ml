@@ -116,6 +116,14 @@ jobs:
       - name: Fetch NCAA NET rankings
         run: python scripts/fetch_net_rankings.py || echo "NET rankings fetch failed; skipping"
 
+      # ── 5c. Refresh BartTorvik T-Rank efficiency data ─────────────────────
+      #   Fetches adjusted efficiency metrics (AdjOE, AdjDE, Barthag, WAB) for the
+      #   current season from barttorvik.com's open JSON API. Historical seasons
+      #   (2019-2025) are already committed; only the current year is refreshed here.
+      #   Safe to fail — features step will use the committed barttorvik_*.csv files.
+      - name: Fetch BartTorvik T-Rank data
+        run: python scripts/fetch_barttorvik.py --season 2026 || echo "BartTorvik fetch failed; using cached data"
+
       # ── 6. Build features ──────────────────────────────────────────────────
       - name: Build features
         run: python scripts/run_pipeline.py --mode features
@@ -178,6 +186,7 @@ jobs:
             data/processed/games_2026.csv \
             data/processed/features/seeds_2026.csv \
             data/processed/features/net_2026.csv \
+            data/processed/features/barttorvik_2026.csv \
             || true
           # Only push if there are actual changes
           if ! git diff --staged --quiet; then
