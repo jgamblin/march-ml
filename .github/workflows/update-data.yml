@@ -151,7 +151,8 @@ jobs:
 
       # ── 9. Commit results back to main ─────────────────────────────────────
       #   Only commits files that changed. The [skip ci] tag prevents a loop.
-      #   We commit: simulation JSON, chart PNGs, and training summary.
+      #   We commit: simulation JSON, chart PNGs, training summary, and the
+      #   current-season games CSV so future runs do incremental scrapes.
       - name: Commit updated results
         run: |
           git config user.name  "github-actions[bot]"
@@ -160,6 +161,7 @@ jobs:
           git add \
             results/charts/ \
             models/training_summary.json \
+            data/processed/games_2026.csv \
             || true
           # Only push if there are actual changes
           if ! git diff --staged --quiet; then
