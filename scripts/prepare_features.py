@@ -736,6 +736,7 @@ def merge_barttorvik(df, out_dir, season):
         "sos_bart": 0.5,
         "luck": 0.0,
         "wab": 0.0,
+        "adj_t": 68.0,   # ~D-I average tempo; neutral diff when data is missing
     }
     for col, sentinel in sentinels.items():
         if col in result.columns:
