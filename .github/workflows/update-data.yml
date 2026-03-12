@@ -109,6 +109,13 @@ jobs:
       - name: Fetch projected seeds from bracketmatrix.com
         run: python scripts/fetch_bracketmatrix_seeds.py || echo "Bracketmatrix fetch failed; using cached seeds"
 
+      # ── 5b. Refresh NCAA NET rankings ─────────────────────────────────────
+      #   Scrapes current NET rankings from ncaa.com. Safe to fail — features step
+      #   will proceed without net_rank if the file is missing (it becomes optional).
+      #   NET is scraped weekly (not daily) since it updates Tuesday mornings.
+      - name: Fetch NCAA NET rankings
+        run: python scripts/fetch_net_rankings.py || echo "NET rankings fetch failed; skipping"
+
       # ── 6. Build features ──────────────────────────────────────────────────
       - name: Build features
         run: python scripts/run_pipeline.py --mode features
@@ -170,6 +177,7 @@ jobs:
             models/training_summary.json \
             data/processed/games_2026.csv \
             data/processed/features/seeds_2026.csv \
+            data/processed/features/net_2026.csv \
             || true
           # Only push if there are actual changes
           if ! git diff --staged --quiet; then

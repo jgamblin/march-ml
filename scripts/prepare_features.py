@@ -567,6 +567,174 @@ def merge_seeds(df, seeds_df):
     return result
 
 
+def _build_net_name_map(net_source_names: list, cbbpy_teams: list) -> dict:
+    """
+    Build a mapping from ncaa.com NET source names → cbbpy team names.
+
+    ncaa.com uses abbreviated names ("Texas Tech", "Boston U.", "Iowa St.")
+    while cbbpy uses full names with nicknames ("Texas Tech Red Raiders",
+    "Boston University Terriers", "Iowa State Cyclones").
+
+    Strategy:
+      1. Expand common abbreviations (St.→State, U.→University, etc.)
+      2. Strip the last word from cbbpy names (usually the nickname)
+         and try prefix/substring matching
+      3. Fall back to difflib fuzzy matching for remaining cases
+    """
+    import re
+    from difflib import SequenceMatcher
+
+    # Common abbreviation expansions for institution names
+    _ABBREV = [
+        (r"\bSt\.\b", "State"),
+        (r"\bU\.\b", "University"),
+        (r"\bSo\.\b", "Southern"),
+        (r"\bColo\.\b", "Colorado"),
+        (r"\bTenn\.\b", "Tennessee"),
+        (r"\bKy\.\b", "Kentucky"),
+        (r"\bPa\.\b", "Pennsylvania"),
+        (r"\bCal\b", "California"),
+        (r"\bFla\.\b", "Florida"),
+        (r"\bMich\.\b", "Michigan"),
+        (r"\bIll\.\b", "Illinois"),
+        (r"\bAriz\.\b", "Arizona"),
+        (r"\bAla\.\b", "Alabama"),
+        (r"\bCaro\.\b", "Carolina"),
+        (r"\bMiss\.\b", "Mississippi"),
+        (r"\bArk\.\b", "Arkansas"),
+        (r"\bGa\.\b", "Georgia"),
+        (r"\bVa\.\b", "Virginia"),
+        (r"\bNeb\.\b", "Nebraska"),
+        (r"\bOre\.\b", "Oregon"),
+        (r"\bWash\.\b", "Washington"),
+        (r"\bWis\.\b", "Wisconsin"),
+        (r"\bN\.C\.\b", "North Carolina"),
+        (r"\bN\. C\.\b", "North Carolina"),
+        (r"\bS\.C\.\b", "South Carolina"),
+        (r"\bInd\.\b", "Indiana"),
+        (r"\bOkla\.\b", "Oklahoma"),
+        (r"\bConnecticut\b", "UConn"),
+    ]
+
+    def expand_abbrevs(name: str) -> str:
+        for pattern, replacement in _ABBREV:
+            name = re.sub(pattern, replacement, name)
+        return name.strip()
+
+    # Build lookup: institution_key (lowercased words) → cbbpy full name
+    # Institution key = all words except the last (nickname) for multi-word names
+    cbbpy_keys = {}
+    for full_name in cbbpy_teams:
+        words = full_name.split()
+        if len(words) >= 2:
+            # Key = all but last word (drop nickname), lowercased
+            key = " ".join(words[:-1]).lower()
+            cbbpy_keys[key] = full_name
+        # Also index the full lowercased name for exact matches
+        cbbpy_keys[full_name.lower()] = full_name
+
+    name_map = {}
+    for src in net_source_names:
+        if src in name_map:
+            continue
+        # Try expanding abbreviations
+        expanded = expand_abbrevs(src)
+        # Try exact match (case insensitive)
+        key = expanded.lower()
+        if key in cbbpy_keys:
+            name_map[src] = cbbpy_keys[key]
+            continue
+
+        # Try prefix: does any institution key start with our expanded name?
+        matches = [full for k, full in cbbpy_keys.items() if k.startswith(key)]
+        if len(matches) == 1:
+            name_map[src] = matches[0]
+            continue
+        if len(matches) > 1:
+            # Multiple prefix matches — pick shortest (most specific institution)
+            name_map[src] = min(matches, key=len)
+            continue
+
+        # Try: does our expanded name start with any institution key?
+        matches2 = [full for k, full in cbbpy_keys.items()
+                    if key.startswith(k) and len(k) > 4]
+        if len(matches2) == 1:
+            name_map[src] = matches2[0]
+            continue
+
+        # Fuzzy match (last resort) — only accept high-confidence (>0.8)
+        best_score = 0.0
+        best_full = None
+        for k, full in cbbpy_keys.items():
+            score = SequenceMatcher(None, key, k).ratio()
+            if score > best_score:
+                best_score = score
+                best_full = full
+        if best_score >= 0.82 and best_full:
+            name_map[src] = best_full
+
+    return name_map
+
+
+def merge_net_rankings(df, out_dir, season):
+    """Left-join NCAA NET rankings onto a features DataFrame by team name.
+
+    Reads data/processed/features/net_{season}.csv if it exists.  Adds columns:
+      net_rank, quad1_wins, quad1_losses, quad2_wins, quad2_losses.
+
+    Uses a two-pass merge:
+      1. Exact match on the scraper's already-normalized team name (from _NAME_MAP
+         in fetch_net_rankings.py — already handles ~130 major teams correctly)
+      2. Fuzzy abbreviation expansion for remaining unmatched source_names
+
+    Missing rows (teams not in NET, e.g. non-D1) get sentinel net_rank=999.
+    """
+    net_path = Path(out_dir) / f"net_{season}.csv"
+    if not net_path.exists():
+        return df
+
+    net_df = pd.read_csv(net_path)
+    net_cols = ["net_rank", "quad1_wins", "quad1_losses", "quad2_wins", "quad2_losses"]
+    available = [c for c in net_cols if c in net_df.columns]
+    if not available or "source_name" not in net_df.columns:
+        return df
+
+    cbbpy_team_set = set(df["team"].dropna().unique())
+
+    # Pass 1: use the scraper's _NAME_MAP output (already handles major teams)
+    net_pass1 = net_df[net_df["team"].isin(cbbpy_team_set)].copy()
+
+    # Pass 2: fuzzy match remaining source_names not yet resolved
+    unresolved_src = net_df[~net_df["team"].isin(cbbpy_team_set)]["source_name"].dropna().unique().tolist()
+    if unresolved_src:
+        fuzzy_map = _build_net_name_map(unresolved_src, list(cbbpy_team_set))
+        fuzzy_rows = net_df[net_df["source_name"].isin(unresolved_src)].copy()
+        fuzzy_rows["team"] = fuzzy_rows["source_name"].map(
+            lambda s: fuzzy_map.get(s, s)
+        )
+        # Only keep fuzzy rows that resolved to a valid cbbpy team
+        fuzzy_rows = fuzzy_rows[fuzzy_rows["team"].isin(cbbpy_team_set)]
+        net_resolved = pd.concat([net_pass1, fuzzy_rows], ignore_index=True)
+    else:
+        net_resolved = net_pass1
+
+    keep = ["team"] + available
+    net_slim = net_resolved[keep].drop_duplicates(subset=["team"])
+
+    result = df.merge(net_slim, on="team", how="left")
+
+    # Fill unmatched teams with sentinel: net_rank=999 (unranked), quads=0
+    if "net_rank" in result.columns:
+        result["net_rank"] = pd.to_numeric(result["net_rank"], errors="coerce").fillna(999).astype(int)
+    for col in ["quad1_wins", "quad1_losses", "quad2_wins", "quad2_losses"]:
+        if col in result.columns:
+            result[col] = pd.to_numeric(result[col], errors="coerce").fillna(0).astype(int)
+
+    matched = (result["net_rank"] < 999).sum()
+    print(f"  NET rankings: merged {matched}/{len(result)} teams for season {season}")
+    return result
+
+
 def process_season(season, input_dir, out_dir):
     print(f"Processing season {season}")
     games = load_games_for_season(input_dir, season)
@@ -603,6 +771,9 @@ def process_season(season, input_dir, out_dir):
 
     full_season = _merge_seeds(full_season, seeds_df)
     pre_tournament = _merge_seeds(pre_tournament, seeds_df)
+
+    full_season = merge_net_rankings(full_season, out_dir, season)
+    pre_tournament = merge_net_rankings(pre_tournament, out_dir, season)
 
     full_path = Path(out_dir) / f"season_aggregates_{season}.csv"
     snap_path = Path(out_dir) / f"tournament_team_features_{season}.csv"

@@ -228,6 +228,8 @@ data/processed/
 !data/processed/games_2026.csv
 # Projected seeds from bracketmatrix.com (needed for 2026 simulation)
 !data/processed/features/seeds_2026.csv
+# NCAA NET rankings for current season (needed for 2026 features/simulation)
+!data/processed/features/net_2026.csv
 
 # Trained model artifacts (regenerated via --mode train)
 models/

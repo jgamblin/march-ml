@@ -43,12 +43,23 @@ BASE_FEATURES = [
     "sos_win_pct",
 ]
 
-# Optional features used when present in the feature file.
-# conf_strength_tier and form_rating were removed: conf_strength_tier is 97% the
-# same value (1.0) across D1 teams so diff is always 0; form_rating is 0 for 94%
-# of training rows (momentum files not generated for most seasons). Both features
-# add noise with no measurable signal.
-OPTIONAL_NUMERIC_FEATURES: list[str] = []
+# Optional features used when present in the feature file AND sufficient coverage.
+# Coverage threshold: >50% of training rows must have non-null values.
+#
+# net_rank: NCAA NET rank (1=best, 999=not in system). Only present when
+#   fetch_net_rankings.py has been run for that season. Currently (2021-2025
+#   historical data) coverage is ~12% (only 2026), so net_rank will not be
+#   selected for training until multiple seasons accumulate NET data.
+# conf_strength_tier, form_rating: removed — 97% same value and 94% zeros.
+OPTIONAL_NUMERIC_FEATURES: list[str] = [
+    "net_rank",
+    "quad1_wins",
+]
+
+# Minimum fraction of training rows that must have non-null values for an
+# optional feature to be included. Below this threshold the feature adds more
+# noise than signal (mostly zero/sentinel fills).
+_OPTIONAL_COVERAGE_THRESHOLD = 0.50
 
 INTERACTION_FEATURES = [
     "seed_diff_abs",
@@ -164,7 +175,20 @@ def lookup_feature_row(by_id, by_name, season, team_id, team_name):
 
 def feature_columns_from_df(features_df):
     cols = [col for col in BASE_FEATURES if col in features_df.columns]
-    cols.extend([col for col in OPTIONAL_NUMERIC_FEATURES if col in features_df.columns])
+    # Optional features: only include if coverage exceeds threshold.
+    # This prevents low-coverage features (e.g. net_rank only present for 2026
+    # while training on 2021-2025) from becoming noisy mostly-zero columns.
+    for col in OPTIONAL_NUMERIC_FEATURES:
+        if col in features_df.columns:
+            # net_rank uses 999 as sentinel for "not in system"; treat those as missing
+            if col == "net_rank":
+                coverage = (pd.to_numeric(features_df[col], errors="coerce") < 999).mean()
+            else:
+                coverage = features_df[col].notna().mean()
+            if coverage >= _OPTIONAL_COVERAGE_THRESHOLD:
+                cols.append(col)
+            else:
+                print(f"  Skipping optional feature '{col}': coverage={coverage:.1%} < {_OPTIONAL_COVERAGE_THRESHOLD:.0%}")
     if "seed" in features_df.columns:
         cols.append("seed")
     return cols
