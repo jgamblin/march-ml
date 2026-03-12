@@ -121,7 +121,7 @@ jobs:
       #   Without bracket: adj_margin-based team selection (pre-bracket estimate).
       - name: Simulate (with official bracket)
         if: inputs.bracket_file != ''
-        timeout-minutes: 15
+        timeout-minutes: 20
         run: |
           python scripts/run_pipeline.py \
             --mode simulate \
@@ -130,7 +130,7 @@ jobs:
 
       - name: Simulate (adj_margin selection, no bracket)
         if: inputs.bracket_file == ''
-        timeout-minutes: 15
+        timeout-minutes: 20
         run: |
           python scripts/run_pipeline.py \
             --mode simulate \
