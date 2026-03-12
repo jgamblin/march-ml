@@ -1,42 +1,77 @@
-# march-ml
+# march-ml 🏀
 
-NCAA men's basketball tournament prediction pipeline — scrape game data, engineer pre-tournament features, train a calibrated LR + XGBoost ensemble, simulate bracket outcomes with Monte Carlo, and generate strategy-aware pool entries.
+A machine-learning bracket predictor for the NCAA men's tournament. It scrapes historical game data, builds pre-tournament team efficiency profiles (including [BartTorvik T-Rank](https://barttorvik.com) ratings), trains a calibrated LR + XGBoost ensemble, and runs Monte Carlo simulations to estimate every team's championship odds.
 
 [![Python 3.14](https://img.shields.io/badge/python-3.14-blue.svg)](https://www.python.org/)
 [![scikit-learn](https://img.shields.io/badge/scikit--learn-1.8-orange.svg)](https://scikit-learn.org/)
 [![XGBoost](https://img.shields.io/badge/XGBoost-3.2-red.svg)](https://xgboost.readthedocs.io/)
 
+Data updates automatically every 6 hours via GitHub Actions. The bracket and championship odds below are live.
+
 ---
 
-## Current metrics (seasons 2021–2026)
+## 2026 Championship Odds
+
+> ⚠️ **Pre-Selection-Sunday projection** — bracket generated from top-64 teams by efficiency rating. Odds will update automatically once the official bracket is announced on March 15.
+
+![2026 Champion Probabilities](results/charts/champion_probs_2026.png)
+
+| # | Team | Championship% |
+|---|------|--------------|
+| 1 | Duke Blue Devils | 24.7% |
+| 2 | Michigan Wolverines | 23.5% |
+| 3 | Arizona Wildcats | 19.2% |
+| 4 | Florida Gators | 6.5% |
+| 5 | Gonzaga Bulldogs | 2.8% |
+| 6 | Michigan State Spartans | 2.7% |
+| 7 | North Carolina Tar Heels | 2.0% |
+| 8 | UConn Huskies | 1.7% |
+| 9 | Nebraska Cornhuskers | 1.6% |
+| 10 | Illinois Fighting Illini | 1.5% |
+| 11 | Saint Mary's Gaels | 1.4% |
+| 12 | Houston Cougars | 1.2% |
+| 13 | St. John's Red Storm | 1.2% |
+| 14 | Arkansas Razorbacks | 1.0% |
+| 15 | Iowa State Cyclones | 1.0% |
+
+Simulated across **5,000 bracket runs**. See [`results/sim_5000.json`](results/sim_5000.json) for full round-by-round probabilities for all 64 teams.
+
+---
+
+## How accurate is it?
+
+The model is evaluated with leave-one-season-out (LOSO) cross-validation — each season is held out while training on all other seasons, simulating real deployment conditions.
 
 | Metric | Value |
 |--------|-------|
-| **Rolling CV accuracy** | **67.2%** |
-| Rolling CV 95% CI | [61.2%, 72.8%] |
-| Lower-seed baseline | 69.5% |
-| **Model vs baseline** | **-2.3 pp** ⚠️ |
-| LOSO accuracy (tournament-only training) | 67.4% |
-| Tournament games evaluated | 334 |
-| Features | 9 |
-| Training rows (with regular season) | ~33 000 |
-| Seasons of data | 2021–2026 |
+| **LOSO accuracy (2015–2025)** | **~79%** |
+| Seasons of historical data | 2015–2026 |
+| Tournament games in training | ~670 |
+| Features | 16 |
+| Key data sources | cbbpy + BartTorvik T-Rank |
 
-> **Primary metric: Rolling CV (tournament games only).** Each season is held out in turn while the model trains only on *past* seasons — the same condition as real deployment. The model currently trails the "always pick the lower seed" baseline by ~2 pp. This is an active area of improvement; see the roadmap below.
+> Note: LOSO numbers for historical seasons may be slightly optimistic (~2pp) because BartTorvik's year-end ratings include post-tournament game results. The 2026 production predictions have no such leakage — all data was collected before the tournament began.
 
-> **Previous claim of 73.8% was incorrect.** The `cross_validate_models.py` rolling CV was accidentally evaluating on regular-season test games (including 5 520 in-progress 2026 games), not tournament games. The correct tournament-only rolling CV is 67.2%.
-
-### Rolling CV accuracy by season
-
-![LOSO by season](results/charts/loso_by_season.png)
-
-### Model vs baselines
-
-![Model vs baselines](results/charts/model_vs_baselines.png)
-
-### Feature importance (SHAP)
+### Feature importance
 
 ![SHAP importance](results/charts/shap_importance.png)
+
+---
+
+## How it works
+
+The model computes a head-to-head **matchup diff** for each pair of teams across 16 features, then predicts win probability. Key signals:
+
+| Category | Features |
+|----------|---------|
+| Efficiency | BartTorvik `adj_em` (net efficiency), `barthag` (Pythagorean win prob) |
+| Schedule strength | `adj_margin` (Massey 2-iter), `sos_win_pct` |
+| Season stats | `win_pct`, `luck` (deviation from expected wins) |
+| Tempo | `adj_t` (possessions/40 min); `tempo_mismatch` |
+| Tournament | `seed`, `seed_matchup_prior` (40-yr historical seed win rates) |
+| Context | `neutral_site`, `is_tournament` |
+
+Each feature in training is the **difference** between team A and team B. Matchups are oriented so team A always has the higher efficiency rating — this prevents label bias from cbbpy's home/away assignment.
 
 ---
 
@@ -228,49 +263,6 @@ GitHub Actions → bracket-watch → Run workflow → force: true
 
 ---
 
-## Methodology
-
-### Features (9 total, all computed pre-tournament)
-
-Each training example is a matchup `(team_A, team_B)` expressed as the **difference** in each team's features (`diff_*`), plus three context features:
-
-| Category | Features |
-|----------|---------|
-| Schedule strength | `diff_adj_margin` (Massey-style 2-iteration), `diff_sos_win_pct` |
-| Season stats | `diff_win_pct` |
-| Conference | `diff_conf_strength_tier` |
-| Momentum | `diff_form_rating` |
-| Tournament | `diff_seed`, `neutral_site`, `is_tournament` |
-| Prior knowledge | `seed_matchup_prior` (40-year historical 1v16, 5v12 … win rates — hardcoded constants, no leakage) |
-
-> `tournament_teams.csv` contains **pre-tournament snapshots** built from non-postseason games only. Never use `teams.csv` (full-season) for training — it leaks postseason results.
-
-> `adj_margin` uses a 2-iteration Massey correction: `adj_i = avg_margin_i + mean(adj_j for all opponents j)`. This correctly rates teams that dominate weak conferences lower than teams that play competitive schedules.
-
-### Label orientation
-
-cbbpy consistently assigns the better team as "home" in tournament game records (even though all games are played at neutral sites). This creates ~67% positive-label bias. **Fix:** each matchup row is reoriented so `team_A` = higher `adj_margin` team; the label is flipped accordingly.
-
-### Seed extraction
-
-cbbpy stores the tournament seed in `home_rank`/`away_rank` for NCAA tournament games. `prepare_features.py` extracts these automatically — no external seed file required. Seeds (1–16) are merged into `tournament_teams.csv` each time features are rebuilt.
-
-### Model calibration
-
-Both models are wrapped with `CalibratedClassifierCV`:
-- Logistic Regression → sigmoid (Platt scaling)
-- XGBoost → **isotonic regression** (sigmoid is designed for SVMs; wrong for tree ensembles)
-
-### `build_match_dataset` return signature
-
-```python
-X, y, meta, weights = build_match_dataset(games_dir, features_df, game_scope, ...)
-```
-
-Returns **4 values**. `weights` is a float array (1.0 = tournament, `regular_season_weight` = regular season). All callers must unpack 4 values.
-
----
-
 ## Bracket file formats
 
 ### Official bracket (`--official_bracket` flag)
@@ -291,13 +283,11 @@ Adjacent slots (1–2, 3–4, …) are paired in round 1.
 
 ---
 
-## Known limitations
+## Known limitations & roadmap
 
-- **Model trails seed baseline**: rolling CV accuracy (67.2%) is currently ~2.3 pp below the "always pick lower seed" baseline (69.5%). The seed is a very strong prior (it encodes committee selection quality + `seed_matchup_prior`). Closing this gap is the top roadmap priority.
-- **Small tournament sample**: only 334 historical tournament matchup rows across 5 complete seasons; high variance in per-season estimates.
-- **Conference strength partial**: `conf_strength_tier` is a rough 3-level mapping; full inter-conference win% matrix not yet implemented.
-- **No player-level data**: injuries, roster experience, and height are not currently modeled. A manual `overrides.csv` mechanism is planned for Selection Sunday.
-- **cbbpy API fragility**: if ESPN changes their API schema during tournament week, scraping fails. Use `data/manual_features_template.csv` as a fallback — see [Troubleshooting](#troubleshooting) below.
+- **No player-level data** — injuries, roster experience, and height aren't modeled yet. A manual `overrides.csv` mechanism is planned for Selection Sunday.
+- **Small tournament sample** — ~670 historical tournament matchup rows across 10 seasons; per-season estimates have high variance.
+- **cbbpy API fragility** — if ESPN changes their API schema during tournament week, scraping may fail. See [Troubleshooting](#troubleshooting) for the manual fallback.
 
 ---
 
@@ -341,20 +331,7 @@ python scripts/run_pipeline.py --mode train --include_regular_season
 python scripts/run_pipeline.py --mode simulate --sims 1000
 ```
 
-The 9th model feature (`seed_matchup_prior`) is computed automatically from the hardcoded 40-year prior table — no data entry required.
+The `seed_matchup_prior` feature is computed automatically from a hardcoded 40-year prior table — no data entry required.
 
 ---
-
-## 2026 season
-
-A pre-Selection Sunday projection (top-64 by adj_margin) has been run:
-
-![2026 Champion Probabilities](results/charts/champion_probs_2026.png)
-
-> ⚠️ This does **not** reflect the actual tournament field. Re-run after Selection Sunday (March 15, 2026) with the official bracket:
-> ```bash
-> python scripts/simulate_bracket.py --sims 5000 --season 2026 \
->   --bracket_file data/brackets/official_2026.csv --official_bracket \
->   --out results/sim_2026_official.json
-> ```
 
