@@ -13,6 +13,7 @@
     "diff_barthag",
     "diff_luck",
     "diff_net_rank",
+    "diff_pom_rank",
     "diff_seed",
     "neutral_site",
     "is_tournament",
@@ -46,77 +47,134 @@
   },
   "loso_per_season": [
     {
+<<<<<<< HEAD
       "log_loss": 0.4402436062957348,
       "brier": 0.13762854026059093,
       "accuracy": 0.835820895522388,
+=======
+      "log_loss": 0.44001687884071705,
+      "brier": 0.13689909854291632,
+      "accuracy": 0.8208955223880597,
+>>>>>>> c69a056 (Add KenPom (POM) feature from Kaggle Massey Ordinals)
       "games": 67,
       "season": 2015
     },
     {
+<<<<<<< HEAD
       "log_loss": 0.4811215179678019,
       "brier": 0.15602475682206093,
+=======
+      "log_loss": 0.4704103170195172,
+      "brier": 0.15265931848857447,
+>>>>>>> c69a056 (Add KenPom (POM) feature from Kaggle Massey Ordinals)
       "accuracy": 0.7761194029850746,
       "games": 67,
       "season": 2016
     },
     {
+<<<<<<< HEAD
       "log_loss": 0.4387154098478105,
       "brier": 0.14331879846472007,
       "accuracy": 0.7846153846153846,
+=======
+      "log_loss": 0.43434701051704827,
+      "brier": 0.14190568211036866,
+      "accuracy": 0.7692307692307693,
+>>>>>>> c69a056 (Add KenPom (POM) feature from Kaggle Massey Ordinals)
       "games": 65,
       "season": 2017
     },
     {
+<<<<<<< HEAD
       "log_loss": 0.4299550354925363,
       "brier": 0.13634229886392676,
       "accuracy": 0.803030303030303,
+=======
+      "log_loss": 0.43958573383372695,
+      "brier": 0.14024334657986304,
+      "accuracy": 0.8181818181818182,
+>>>>>>> c69a056 (Add KenPom (POM) feature from Kaggle Massey Ordinals)
       "games": 66,
       "season": 2018
     },
     {
+<<<<<<< HEAD
       "log_loss": 0.3715079827749406,
       "brier": 0.11820070601590701,
       "accuracy": 0.8208955223880597,
+=======
+      "log_loss": 0.385116538214224,
+      "brier": 0.12392203569782033,
+      "accuracy": 0.8059701492537313,
+>>>>>>> c69a056 (Add KenPom (POM) feature from Kaggle Massey Ordinals)
       "games": 67,
       "season": 2019
     },
     {
+<<<<<<< HEAD
       "log_loss": 0.6001904045834519,
       "brier": 0.19255892841736816,
+=======
+      "log_loss": 0.5966146608363553,
+      "brier": 0.19408118815685071,
+>>>>>>> c69a056 (Add KenPom (POM) feature from Kaggle Massey Ordinals)
       "accuracy": 0.696969696969697,
       "games": 66,
       "season": 2021
     },
     {
+<<<<<<< HEAD
       "log_loss": 0.43539881652881135,
       "brier": 0.13197292915952166,
       "accuracy": 0.835820895522388,
+=======
+      "log_loss": 0.4278083181098985,
+      "brier": 0.12774943233964708,
+      "accuracy": 0.8656716417910447,
+>>>>>>> c69a056 (Add KenPom (POM) feature from Kaggle Massey Ordinals)
       "games": 67,
       "season": 2022
     },
     {
+<<<<<<< HEAD
       "log_loss": 0.5210950895036012,
       "brier": 0.1687567407488171,
+=======
+      "log_loss": 0.5236429363464654,
+      "brier": 0.16977823558213428,
+>>>>>>> c69a056 (Add KenPom (POM) feature from Kaggle Massey Ordinals)
       "accuracy": 0.7313432835820896,
       "games": 67,
       "season": 2023
     },
     {
+<<<<<<< HEAD
       "log_loss": 0.47432206669636384,
       "brier": 0.15910653747301187,
+=======
+      "log_loss": 0.4724016290913475,
+      "brier": 0.1579177653059058,
+>>>>>>> c69a056 (Add KenPom (POM) feature from Kaggle Massey Ordinals)
       "accuracy": 0.7313432835820896,
       "games": 67,
       "season": 2024
     },
     {
+<<<<<<< HEAD
       "log_loss": 0.3277761782566743,
       "brier": 0.10014537777223764,
       "accuracy": 0.8805970149253731,
+=======
+      "log_loss": 0.3315699382571506,
+      "brier": 0.10284714453262393,
+      "accuracy": 0.8507462686567164,
+>>>>>>> c69a056 (Add KenPom (POM) feature from Kaggle Massey Ordinals)
       "games": 67,
       "season": 2025
     }
   ],
   "loso_overall": {
+<<<<<<< HEAD
     "log_loss": 0.45188329275184086,
     "brier": 0.1443486296000993,
     "accuracy": 0.7897897897897898,
@@ -124,74 +182,135 @@
     "accuracy_ci_95": [
       0.7597597597597597,
       0.8213213213213213
+=======
+    "log_loss": 0.452006818281904,
+    "brier": 0.1447418643732759,
+    "accuracy": 0.7867867867867868,
+    "games": 666,
+    "accuracy_ci_95": [
+      0.7567192192192193,
+      0.8183183183183184
+>>>>>>> c69a056 (Add KenPom (POM) feature from Kaggle Massey Ordinals)
     ]
   },
   "rolling_cv_per_season": [
     {
+<<<<<<< HEAD
       "log_loss": 0.5079830053559815,
       "brier": 0.16579347700235875,
       "accuracy": 0.7910447761194029,
+=======
+      "log_loss": 0.5032203491279371,
+      "brier": 0.16455648065850276,
+      "accuracy": 0.7761194029850746,
+>>>>>>> c69a056 (Add KenPom (POM) feature from Kaggle Massey Ordinals)
       "games": 67,
       "season": 2016
     },
     {
+<<<<<<< HEAD
       "log_loss": 0.5268217627416258,
       "brier": 0.17854104975206234,
       "accuracy": 0.6923076923076923,
+=======
+      "log_loss": 0.5217836335575898,
+      "brier": 0.17712851177841493,
+      "accuracy": 0.7076923076923077,
+>>>>>>> c69a056 (Add KenPom (POM) feature from Kaggle Massey Ordinals)
       "games": 65,
       "season": 2017
     },
     {
+<<<<<<< HEAD
       "log_loss": 0.5356183427024145,
       "brier": 0.17615157402446657,
       "accuracy": 0.7575757575757576,
+=======
+      "log_loss": 0.5409383584057446,
+      "brier": 0.17916434931811548,
+      "accuracy": 0.7272727272727273,
+>>>>>>> c69a056 (Add KenPom (POM) feature from Kaggle Massey Ordinals)
       "games": 66,
       "season": 2018
     },
     {
+<<<<<<< HEAD
       "log_loss": 0.4578558307093666,
       "brier": 0.15031989149852296,
+=======
+      "log_loss": 0.454585591959725,
+      "brier": 0.14903197199757912,
+>>>>>>> c69a056 (Add KenPom (POM) feature from Kaggle Massey Ordinals)
       "accuracy": 0.7761194029850746,
       "games": 67,
       "season": 2019
     },
     {
+<<<<<<< HEAD
       "log_loss": 0.5730311801545571,
       "brier": 0.1905804557050446,
+=======
+      "log_loss": 0.5767787018598108,
+      "brier": 0.1924783627444543,
+>>>>>>> c69a056 (Add KenPom (POM) feature from Kaggle Massey Ordinals)
       "accuracy": 0.7575757575757576,
       "games": 66,
       "season": 2021
     },
     {
+<<<<<<< HEAD
       "log_loss": 0.5333397605805634,
       "brier": 0.17532074388960725,
       "accuracy": 0.7761194029850746,
+=======
+      "log_loss": 0.5421208713467041,
+      "brier": 0.17857756858104093,
+      "accuracy": 0.7313432835820896,
+>>>>>>> c69a056 (Add KenPom (POM) feature from Kaggle Massey Ordinals)
       "games": 67,
       "season": 2022
     },
     {
+<<<<<<< HEAD
       "log_loss": 0.5713454298333159,
       "brier": 0.18832313176068644,
       "accuracy": 0.6865671641791045,
+=======
+      "log_loss": 0.5693827531761709,
+      "brier": 0.1874679884383968,
+      "accuracy": 0.7313432835820896,
+>>>>>>> c69a056 (Add KenPom (POM) feature from Kaggle Massey Ordinals)
       "games": 67,
       "season": 2023
     },
     {
+<<<<<<< HEAD
       "log_loss": 0.5315858850093729,
       "brier": 0.182297173244275,
+=======
+      "log_loss": 0.5329116591127708,
+      "brier": 0.18243143426545097,
+>>>>>>> c69a056 (Add KenPom (POM) feature from Kaggle Massey Ordinals)
       "accuracy": 0.7164179104477612,
       "games": 67,
       "season": 2024
     },
     {
+<<<<<<< HEAD
       "log_loss": 0.38399347454620003,
       "brier": 0.11827764921655977,
       "accuracy": 0.8208955223880597,
+=======
+      "log_loss": 0.38767945370114054,
+      "brier": 0.1199871757367481,
+      "accuracy": 0.8059701492537313,
+>>>>>>> c69a056 (Add KenPom (POM) feature from Kaggle Massey Ordinals)
       "games": 67,
       "season": 2025
     }
   ],
   "rolling_cv_overall": {
+<<<<<<< HEAD
     "log_loss": 0.5133275625227002,
     "brier": 0.16943527655932633,
     "accuracy": 0.7529215358931552,
@@ -199,74 +318,135 @@
     "accuracy_ci_95": [
       0.7194908180300501,
       0.7880217028380634
+=======
+    "log_loss": 0.5142046871672922,
+    "brier": 0.17001552217050706,
+    "accuracy": 0.7479131886477463,
+    "games": 599,
+    "accuracy_ci_95": [
+      0.7145242070116862,
+      0.7829716193656093
+>>>>>>> c69a056 (Add KenPom (POM) feature from Kaggle Massey Ordinals)
     ]
   },
   "holdout_results": [
     {
+<<<<<<< HEAD
       "log_loss": 0.5079830053559815,
       "brier": 0.16579347700235875,
       "accuracy": 0.7910447761194029,
+=======
+      "log_loss": 0.5032203491279371,
+      "brier": 0.16455648065850276,
+      "accuracy": 0.7761194029850746,
+>>>>>>> c69a056 (Add KenPom (POM) feature from Kaggle Massey Ordinals)
       "games": 67,
       "season": 2016
     },
     {
+<<<<<<< HEAD
       "log_loss": 0.5268217627416258,
       "brier": 0.17854104975206234,
       "accuracy": 0.6923076923076923,
+=======
+      "log_loss": 0.5217836335575898,
+      "brier": 0.17712851177841493,
+      "accuracy": 0.7076923076923077,
+>>>>>>> c69a056 (Add KenPom (POM) feature from Kaggle Massey Ordinals)
       "games": 65,
       "season": 2017
     },
     {
+<<<<<<< HEAD
       "log_loss": 0.5356183427024145,
       "brier": 0.17615157402446657,
       "accuracy": 0.7575757575757576,
+=======
+      "log_loss": 0.5409383584057446,
+      "brier": 0.17916434931811548,
+      "accuracy": 0.7272727272727273,
+>>>>>>> c69a056 (Add KenPom (POM) feature from Kaggle Massey Ordinals)
       "games": 66,
       "season": 2018
     },
     {
+<<<<<<< HEAD
       "log_loss": 0.4578558307093666,
       "brier": 0.15031989149852296,
+=======
+      "log_loss": 0.454585591959725,
+      "brier": 0.14903197199757912,
+>>>>>>> c69a056 (Add KenPom (POM) feature from Kaggle Massey Ordinals)
       "accuracy": 0.7761194029850746,
       "games": 67,
       "season": 2019
     },
     {
+<<<<<<< HEAD
       "log_loss": 0.5730311801545571,
       "brier": 0.1905804557050446,
+=======
+      "log_loss": 0.5767787018598108,
+      "brier": 0.1924783627444543,
+>>>>>>> c69a056 (Add KenPom (POM) feature from Kaggle Massey Ordinals)
       "accuracy": 0.7575757575757576,
       "games": 66,
       "season": 2021
     },
     {
+<<<<<<< HEAD
       "log_loss": 0.5333397605805634,
       "brier": 0.17532074388960725,
       "accuracy": 0.7761194029850746,
+=======
+      "log_loss": 0.5421208713467041,
+      "brier": 0.17857756858104093,
+      "accuracy": 0.7313432835820896,
+>>>>>>> c69a056 (Add KenPom (POM) feature from Kaggle Massey Ordinals)
       "games": 67,
       "season": 2022
     },
     {
+<<<<<<< HEAD
       "log_loss": 0.5713454298333159,
       "brier": 0.18832313176068644,
       "accuracy": 0.6865671641791045,
+=======
+      "log_loss": 0.5693827531761709,
+      "brier": 0.1874679884383968,
+      "accuracy": 0.7313432835820896,
+>>>>>>> c69a056 (Add KenPom (POM) feature from Kaggle Massey Ordinals)
       "games": 67,
       "season": 2023
     },
     {
+<<<<<<< HEAD
       "log_loss": 0.5315858850093729,
       "brier": 0.182297173244275,
+=======
+      "log_loss": 0.5329116591127708,
+      "brier": 0.18243143426545097,
+>>>>>>> c69a056 (Add KenPom (POM) feature from Kaggle Massey Ordinals)
       "accuracy": 0.7164179104477612,
       "games": 67,
       "season": 2024
     },
     {
+<<<<<<< HEAD
       "log_loss": 0.38399347454620003,
       "brier": 0.11827764921655977,
       "accuracy": 0.8208955223880597,
+=======
+      "log_loss": 0.38767945370114054,
+      "brier": 0.1199871757367481,
+      "accuracy": 0.8059701492537313,
+>>>>>>> c69a056 (Add KenPom (POM) feature from Kaggle Massey Ordinals)
       "games": 67,
       "season": 2025
     }
   ],
   "overall_holdout_ensemble": {
+<<<<<<< HEAD
     "log_loss": 0.5133275625227002,
     "brier": 0.16943527655932633,
     "accuracy": 0.7529215358931552,
@@ -274,6 +454,15 @@
     "accuracy_ci_95": [
       0.7194908180300501,
       0.7880217028380634
+=======
+    "log_loss": 0.5142046871672922,
+    "brier": 0.17001552217050706,
+    "accuracy": 0.7479131886477463,
+    "games": 599,
+    "accuracy_ci_95": [
+      0.7145242070116862,
+      0.7829716193656093
+>>>>>>> c69a056 (Add KenPom (POM) feature from Kaggle Massey Ordinals)
     ]
   },
   "models": {

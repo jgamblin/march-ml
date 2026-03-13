@@ -806,6 +806,27 @@ def merge_net_rankings(df, out_dir, season):
     return result
 
 
+def merge_pom_rankings(df, out_dir, season):
+    """Left-join KenPom (POM) rank onto a features DataFrame.
+
+    Reads data/processed/features/pom_{season}.csv produced by
+    scripts/prepare_massey_features.py.  The file has columns: team, pom_rank.
+
+    Missing teams get sentinel pom_rank=999 (unranked / non-D1).
+    """
+    pom_path = Path(out_dir) / f"pom_{season}.csv"
+    if not pom_path.exists():
+        return df
+
+    pom_df = pd.read_csv(pom_path)[["team", "pom_rank"]].drop_duplicates(subset=["team"])
+    result = df.merge(pom_df, on="team", how="left")
+    result["pom_rank"] = pd.to_numeric(result["pom_rank"], errors="coerce").fillna(999).astype(int)
+
+    matched = (result["pom_rank"] < 999).sum()
+    print(f"  POM (KenPom): merged {matched}/{len(result)} teams for season {season}")
+    return result
+
+
 def process_season(season, input_dir, out_dir):
     print(f"Processing season {season}")
     games = load_games_for_season(input_dir, season)
@@ -848,6 +869,9 @@ def process_season(season, input_dir, out_dir):
 
     full_season = merge_net_rankings(full_season, out_dir, season)
     pre_tournament = merge_net_rankings(pre_tournament, out_dir, season)
+
+    full_season = merge_pom_rankings(full_season, out_dir, season)
+    pre_tournament = merge_pom_rankings(pre_tournament, out_dir, season)
 
     full_path = Path(out_dir) / f"season_aggregates_{season}.csv"
     snap_path = Path(out_dir) / f"tournament_team_features_{season}.csv"
