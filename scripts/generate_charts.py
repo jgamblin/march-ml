@@ -98,19 +98,34 @@ class ProfessionalVisualizer:
         ax.grid(axis=grid_axis, color=self.GRID_COLOR, linewidth=0.8)
 
     def _set_title(self, ax, title, subtitle=None):
-        ax.set_title(title, fontsize=14, fontweight='bold', color=self.TEXT_DARK,
-                     loc='left', pad=14)
+        """Left-aligned title + subtitle with guaranteed vertical separation."""
         if subtitle:
-            ax.text(0, 1.025, subtitle, transform=ax.transAxes,
+            # Title sits higher; subtitle is a smaller, lighter second line
+            ax.text(0, 1.13, title, transform=ax.transAxes,
+                    fontsize=14, fontweight='bold', color=self.TEXT_DARK, va='bottom')
+            ax.text(0, 1.02, subtitle, transform=ax.transAxes,
                     fontsize=9, color=self.TEXT_LIGHT, va='bottom')
+        else:
+            ax.text(0, 1.04, title, transform=ax.transAxes,
+                    fontsize=14, fontweight='bold', color=self.TEXT_DARK, va='bottom')
 
     def _add_footer(self, fig, generated_at=None):
-        ts = generated_at or datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M UTC')
-        fig.text(0.01, -0.015, f'{self.SIGNATURE}  ·  Updated {ts}',
+        if generated_at:
+            try:
+                # Parse ISO format (e.g. "2026-03-13T14:28:25.304598Z") → readable
+                dt = datetime.fromisoformat(generated_at.rstrip('Z'))
+                ts = dt.strftime('%Y-%m-%d %H:%M UTC')
+            except (ValueError, AttributeError):
+                ts = str(generated_at)
+        else:
+            ts = datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M UTC')
+        fig.text(0.01, 0.005, f'{self.SIGNATURE}  ·  Updated {ts}',
                  transform=fig.transFigure,
-                 fontsize=7.5, color=self.TEXT_LIGHT, style='italic', va='top')
+                 fontsize=7.5, color=self.TEXT_LIGHT, style='italic', va='bottom')
 
-    def _save(self, fig, filename):
+    def _save(self, fig, filename, top_pad=0.88):
+        """Save figure; top_pad leaves room for title block (use lower value for subtitles)."""
+        fig.subplots_adjust(top=top_pad, bottom=0.10)
         path = self.out_dir / filename
         fig.savefig(path, dpi=self.dpi, bbox_inches='tight',
                     facecolor=self.FIG_BG, edgecolor='none')
@@ -195,11 +210,10 @@ class ProfessionalVisualizer:
                     ha='right', va='bottom', style='italic')
 
         self._add_footer(fig, generated_at)
-        fig.tight_layout()
-        self._save(fig, f'champion_probs_{season}.png')
+        self._save(fig, f'champion_probs_{season}.png', top_pad=0.84)
 
     def chart_round_probs(self, sim, top_n=16):
-        """Grouped horizontal bar chart: round-by-round reach probabilities."""
+        """Heatmap of round-by-round reach probabilities (teams × rounds)."""
         round_probs = sim.get('round_probs', {})
         if not round_probs:
             print("  Skipping round-probs chart: no round_probs in sim")
@@ -207,49 +221,68 @@ class ProfessionalVisualizer:
 
         round_keys   = ['sweet_16', 'elite_8', 'final_4', 'title_game', 'champion']
         round_labels = ['Sweet 16', 'Elite 8', 'Final Four', 'Title Game', 'Champion']
-        round_colors = sns.color_palette('mako', len(round_keys))
 
-        by_f4 = sorted(round_probs.items(),
-                        key=lambda kv: kv[1].get('final_4', 0), reverse=True)
-        top   = list(reversed(by_f4[:top_n]))
-        teams = [t for t, _ in top]
+        # Sort by champion probability, highest at top
+        by_champ = sorted(round_probs.items(),
+                          key=lambda kv: kv[1].get('champion', 0), reverse=True)[:top_n]
+        teams  = [t for t, _ in by_champ]
+        matrix = np.array([[rp.get(rk, 0) for rk in round_keys] for _, rp in by_champ])
         season       = sim.get('season', '')
         n_sims       = sim.get('sims', '')
         generated_at = sim.get('generated_at')
 
-        fig, ax = self._make_figure((12, max(7, top_n * 0.56)))
+        row_h = 0.52
+        fig, ax = self._make_figure((9, max(6.5, top_n * row_h)))
 
-        bar_h = 0.13
-        gap   = 0.07
-        group = len(round_keys) * bar_h + gap
+        # mako_r: high probability → dark navy, low probability → light mint
+        sns.heatmap(
+            matrix, ax=ax,
+            xticklabels=round_labels,
+            yticklabels=teams,
+            cmap='mako_r',
+            vmin=0, vmax=1,
+            annot=False,          # draw custom annotations below for color control
+            linewidths=0.8,
+            linecolor=self.FIG_BG,
+            cbar=True,
+            cbar_kws=dict(shrink=0.55, aspect=22, pad=0.02),
+        )
 
-        for ri, (rkey, rlabel, rcolor) in enumerate(zip(round_keys, round_labels, round_colors)):
-            probs   = [round_probs[t].get(rkey, 0) for t, _ in top]
-            offsets = [i * group + ri * bar_h for i in range(len(teams))]
-            ax.barh(offsets, probs, height=bar_h * 0.88,
-                    color=rcolor, label=rlabel, edgecolor='white', linewidth=0.4)
+        # Adaptive text color: white on dark cells, dark on light cells
+        for i in range(matrix.shape[0]):
+            for j in range(matrix.shape[1]):
+                val = matrix[i, j]
+                txt_color = 'white' if val > 0.28 else self.TEXT_DARK
+                weight    = 'bold'  if val > 0.45 else 'normal'
+                ax.text(j + 0.5, i + 0.5, f'{val:.0%}',
+                        ha='center', va='center',
+                        fontsize=9, color=txt_color, fontweight=weight)
 
-        centers = [i * group + (len(round_keys) * bar_h) / 2 for i in range(len(teams))]
-        ax.set_yticks(centers)
-        ax.set_yticklabels(teams, fontsize=9)
-        ax.set_xlabel('Probability of Reaching Round', fontsize=10, labelpad=8, color=self.TEXT_MID)
-        ax.xaxis.set_major_formatter(mticker.PercentFormatter(xmax=1.0))
-        ax.set_xlim(0, 1.12)
-        self._clean_axes(ax, grid_axis='x')
-        self._set_title(ax, f'{season} Road to the Championship',
-                        subtitle=f'Top {top_n} teams by Final Four probability  ·  {n_sims:,} simulations')
-        ax.legend(loc='lower right', fontsize=8, frameon=False,
-                  ncol=len(round_keys), bbox_to_anchor=(1.0, -0.06),
-                  labelcolor=self.TEXT_MID)
+        # Style colorbar
+        cbar = ax.collections[0].colorbar
+        cbar.ax.tick_params(length=0, labelsize=7)
+        cbar.set_label('Probability', fontsize=8, color=self.TEXT_LIGHT, labelpad=6)
+        cbar.ax.yaxis.set_major_formatter(mticker.PercentFormatter(xmax=1.0))
+        cbar.outline.set_visible(False)
 
+        # Style axes — labels on bottom so they don't collide with title block
+        ax.tick_params(left=False, bottom=False, top=False, length=0)
+        ax.set_yticklabels(teams, fontsize=9.5, color=self.TEXT_DARK, va='center')
+        ax.set_xticklabels(round_labels, fontsize=10.5, fontweight='bold',
+                           color=self.TEXT_DARK, rotation=0)
+        for spine in ax.spines.values():
+            spine.set_visible(False)
+
+        # Source note below chart if pre-bracket
         if sim.get('bracket_source') == 'generated_top64':
-            ax.text(0.99, 1.02, '⚠ Efficiency-based selection — not official bracket',
+            ax.text(0.99, -0.04, '⚠ Efficiency-based selection — not official bracket',
                     transform=ax.transAxes, fontsize=7.5, color=self.WARNING_ORANGE,
-                    ha='right', va='bottom', style='italic')
+                    ha='right', va='top', style='italic')
 
+        self._set_title(ax, f'{season} Road to the Championship',
+                        subtitle=f'Probability of reaching each round  ·  Top {top_n} teams by championship odds  ·  {n_sims:,} simulations')
         self._add_footer(fig, generated_at)
-        fig.tight_layout()
-        self._save(fig, f'round_probs_{season}.png')
+        self._save(fig, f'round_probs_{season}.png', top_pad=0.84)
 
     def chart_loso_per_season(self, summary):
         """Bar chart of rolling CV accuracy by season with CI band."""
@@ -296,7 +329,6 @@ class ProfessionalVisualizer:
         ax.legend(fontsize=8, frameon=False, loc='lower right', labelcolor=self.TEXT_MID)
 
         self._add_footer(fig)
-        fig.tight_layout()
         self._save(fig, 'loso_by_season.png')
 
     def chart_model_vs_baselines(self, summary):
@@ -344,7 +376,6 @@ class ProfessionalVisualizer:
         ], fontsize=8, frameon=False, loc='lower right', labelcolor=self.TEXT_MID)
 
         self._add_footer(fig)
-        fig.tight_layout()
         self._save(fig, 'model_vs_baselines.png')
 
     def chart_shap_importance(self, shap_data):
@@ -374,7 +405,6 @@ class ProfessionalVisualizer:
         self._set_title(ax, 'Feature Importance',
                         subtitle='SHAP values  ·  Higher = more influential  ·  Gold = top feature')
         self._add_footer(fig)
-        fig.tight_layout()
         self._save(fig, 'shap_importance.png')
 
     def chart_shap_beeswarm(self, shap_data):
@@ -424,7 +454,6 @@ class ProfessionalVisualizer:
         cb.outline.set_visible(False)
 
         self._add_footer(fig)
-        fig.tight_layout()
         self._save(fig, 'shap_beeswarm.png')
 
 
