@@ -157,7 +157,7 @@ def chart_model_vs_baselines(summary, out_dir):
 
 
 def chart_champion_probs(sim, out_dir, top_n=15):
-    """Horizontal bar chart of top-N champion probabilities."""
+    """Horizontal bar chart of top-N champion probabilities with 95% CI error bars."""
     champs = sim.get('champion_probs', [])
     if not champs:
         print("  Skipping champion chart: no champion_probs in sim")
@@ -167,7 +167,19 @@ def chart_champion_probs(sim, out_dir, top_n=15):
     champs_sorted = list(reversed(champs_sorted))  # bottom = lowest for horizontal
     teams, probs = zip(*champs_sorted)
     season = sim.get('season', '')
-    sims = sim.get('sims', '')
+    sims = sim.get('sims', 1)
+
+    # 95% Wilson CI for each binomial proportion (n = number of simulations)
+    z = 1.96
+    n = sims
+    ci_lo, ci_hi = [], []
+    for p in probs:
+        # Wilson score interval: more accurate than normal approx near 0/1
+        center = (p + z**2 / (2 * n)) / (1 + z**2 / n)
+        margin = z * np.sqrt(p * (1 - p) / n + z**2 / (4 * n**2)) / (1 + z**2 / n)
+        ci_lo.append(max(0, p - (center - (center - margin))))
+        ci_hi.append(min(1, (center + margin) - p))
+    xerr = [ci_lo, ci_hi]
 
     apply_style()
     fig, ax = plt.subplots(figsize=(10, max(5, top_n * 0.45)))
@@ -178,14 +190,17 @@ def chart_champion_probs(sim, out_dir, top_n=15):
     # Highlight top team
     colors[-1] = NCAA_GOLD
 
-    bars = ax.barh(teams, probs, color=colors, height=0.65, edgecolor='#21262d', linewidth=0.6, zorder=3)
-    for bar, prob in zip(bars, probs):
-        ax.text(prob + 0.002, bar.get_y() + bar.get_height() / 2,
+    bars = ax.barh(teams, probs, xerr=xerr, color=colors, height=0.65,
+                   edgecolor='#21262d', linewidth=0.6, zorder=3,
+                   error_kw=dict(ecolor='#8b949e', elinewidth=1.2, capsize=3, capthick=1.2, zorder=4))
+    for i, (bar, prob) in enumerate(zip(bars, probs)):
+        ax.text(prob + ci_hi[i] + 0.003,
+                bar.get_y() + bar.get_height() / 2,
                 f'{prob:.1%}', va='center', fontsize=9, color='#c9d1d9')
 
-    ax.set_xlim(0, max(probs) * 1.25)
+    ax.set_xlim(0, max(p + h for p, h in zip(probs, ci_hi)) * 1.3)
     ax.set_xlabel('Championship Probability', fontsize=12, labelpad=8)
-    ax.set_title(f'{season} Tournament Championship Probabilities\n({sims:,} simulations)',
+    ax.set_title(f'{season} Tournament Championship Probabilities\n({sims:,} simulations, bars show 95% CI)',
                  fontsize=13, fontweight='bold', pad=12)
     ax.xaxis.set_major_formatter(matplotlib.ticker.PercentFormatter(xmax=1.0))
     ax.grid(axis='x', zorder=1)
