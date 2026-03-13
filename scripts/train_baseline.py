@@ -73,6 +73,7 @@ BASE_FEATURES = [
 # conf_strength_tier, form_rating: removed — 97% same value and 94% zeros.
 OPTIONAL_NUMERIC_FEATURES: list[str] = [
     "net_rank",
+    "pom_rank",
     "quad1_wins",
 ]
 
@@ -272,8 +273,8 @@ def feature_columns_from_df(features_df):
     # that function has been called before build_match_dataset.
     for col in OPTIONAL_NUMERIC_FEATURES:
         if col in features_df.columns:
-            # net_rank uses 999 as sentinel for "not in system"; treat those as missing
-            if col == "net_rank":
+            # net_rank and pom_rank use 999 as sentinel for "not in system"
+            if col in ("net_rank", "pom_rank"):
                 coverage = (pd.to_numeric(features_df[col], errors="coerce") < 999).mean()
             else:
                 coverage = features_df[col].notna().mean()

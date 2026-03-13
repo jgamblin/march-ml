@@ -265,3 +265,25 @@ plan.md
 
 # Combined games CSV (generated from data/processed/, not source data)
 data/games_all_seasons.csv
+
+# Kaggle March Mania raw data — large files excluded, small reference files committed
+data/kaggle/
+!data/kaggle/MTeams.csv
+!data/kaggle/MTeamSpellings.csv
+!data/kaggle/MNCAATourneySeeds.csv
+# MMasseyOrdinals.csv is 122 MB — gitignored; run scripts/prepare_massey_features.py locally
+# to regenerate data/processed/features/pom_*.csv from it.
+
+# Processed POM (KenPom proxy) feature files — committed like barttorvik_*.csv
+!data/processed/features/pom_2015.csv
+!data/processed/features/pom_2016.csv
+!data/processed/features/pom_2017.csv
+!data/processed/features/pom_2018.csv
+!data/processed/features/pom_2019.csv
+!data/processed/features/pom_2020.csv
+!data/processed/features/pom_2021.csv
+!data/processed/features/pom_2022.csv
+!data/processed/features/pom_2023.csv
+!data/processed/features/pom_2024.csv
+!data/processed/features/pom_2025.csv
+!data/processed/features/pom_2026.csv
