@@ -9,6 +9,7 @@ Usage:
 """
 import argparse
 import json
+import re as _re
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -212,7 +213,7 @@ class ProfessionalVisualizer:
         self._add_footer(fig, generated_at)
         self._save(fig, f'champion_probs_{season}.png', top_pad=0.84)
 
-    def chart_round_probs(self, sim, top_n=16):
+    def chart_round_probs(self, sim, top_n=5):
         """Heatmap of round-by-round reach probabilities (teams × rounds)."""
         round_probs = sim.get('round_probs', {})
         if not round_probs:
@@ -456,6 +457,71 @@ class ProfessionalVisualizer:
         self._add_footer(fig)
         self._save(fig, 'shap_beeswarm.png')
 
+    def chart_team_profiles(self, sim, out_subdir='teams'):
+        """Generate one round-probability chart per team in results/charts/teams/.
+
+        Each chart shows the team's probability of reaching every tournament round,
+        styled consistently with the other charts and saved as a sanitized filename.
+        """
+        round_probs = sim.get('round_probs', {})
+        if not round_probs:
+            print("  Skipping team charts: no round_probs in sim")
+            return
+
+        round_keys   = ['round_of_64', 'round_of_32', 'sweet_16',
+                        'elite_8', 'final_4', 'title_game', 'champion']
+        round_labels = ['First Round', 'Round of 32', 'Sweet 16',
+                        'Elite 8', 'Final Four', 'Title Game', 'Champion']
+        season       = sim.get('season', '')
+        n_sims       = sim.get('sims', '')
+        generated_at = sim.get('generated_at')
+
+        # Championship rank per team (1 = most likely champion)
+        champ_rank = {team: rank + 1 for rank, (team, _) in enumerate(
+            sorted(sim.get('champion_probs', []), key=lambda x: x[1], reverse=True))}
+
+        teams_out = self.out_dir / out_subdir
+        teams_out.mkdir(parents=True, exist_ok=True)
+
+        count = 0
+        for team, rp in sorted(round_probs.items(),
+                                key=lambda kv: champ_rank.get(kv[0], 999)):
+            # Build ordered list of (label, value) for rounds present in this team's data
+            rows = [(lbl, rp[key]) for key, lbl in zip(round_keys, round_labels) if key in rp]
+            if not rows:
+                continue
+            labels, probs = zip(*rows)
+            colors = self._bar_colors(list(probs))
+
+            fig, ax = self._make_figure((8, 4.5))
+            bars = ax.barh(labels, probs, color=colors, height=0.62,
+                           edgecolor='white', linewidth=0.5)
+
+            for bar, prob in zip(bars, probs):
+                ax.text(min(prob + 0.015, 0.95), bar.get_y() + bar.get_height() / 2,
+                        f'{prob:.0%}', va='center', ha='left',
+                        fontsize=9.5, color=self.TEXT_DARK, fontweight='semibold')
+
+            ax.set_xlim(0, 1.20)
+            ax.xaxis.set_major_formatter(mticker.PercentFormatter(xmax=1.0))
+            self._clean_axes(ax, grid_axis='x')
+
+            rank      = champ_rank.get(team, '?')
+            champ_pct = rp.get('champion', 0)
+            self._set_title(ax, team,
+                            subtitle=(f'#{rank} overall  ·  Champion odds: {champ_pct:.1%}'
+                                      f'  ·  {season}  ·  {n_sims:,} simulations'))
+            self._add_footer(fig, generated_at)
+
+            safe = _re.sub(r'[^a-z0-9]+', '_', team.lower()).strip('_') + '.png'
+            fig.subplots_adjust(top=0.84, bottom=0.10)
+            fig.savefig(teams_out / safe, dpi=self.dpi, bbox_inches='tight',
+                        facecolor=self.FIG_BG, edgecolor='none')
+            plt.close(fig)
+            count += 1
+
+        print(f"  Saved {count} team charts to {teams_out}/")
+
 
 # ---------------------------------------------------------------------------
 # Standalone loaders
@@ -491,6 +557,8 @@ def main():
     p.add_argument('--highlight', default=None,
                    help='comma-separated team names to highlight e.g. "Missouri Tigers,Kansas"')
     p.add_argument('--dpi', type=int, default=180, help='output DPI (default: 180)')
+    p.add_argument('--teams', action='store_true',
+                   help='also generate individual team charts in results/charts/teams/')
     args = p.parse_args()
 
     highlight_teams = [t.strip() for t in args.highlight.split(',')] if args.highlight else []
@@ -533,6 +601,8 @@ def main():
             sim = load_sim(sim_path)
             viz.chart_champion_probs(sim)
             viz.chart_round_probs(sim)
+            if args.teams:
+                viz.chart_team_profiles(sim)
         except FileNotFoundError as e:
             print(f"  Warning: {e}")
 
