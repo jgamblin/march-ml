@@ -25,6 +25,7 @@ from sklearn.calibration import CalibratedClassifierCV
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import accuracy_score, brier_score_loss, log_loss
 from sklearn.preprocessing import StandardScaler
+from scipy.special import expit as sigmoid
 
 try:
     from xgboost import XGBClassifier
@@ -75,6 +76,7 @@ OPTIONAL_NUMERIC_FEATURES: list[str] = [
     "net_rank",
     "pom_rank",
     "quad1_wins",
+    "luck_percentile",
 ]
 
 # Minimum fraction of training rows that must have non-null values for an
@@ -546,15 +548,23 @@ def build_xgb_model():
     )
 
 
-def compute_metrics(y_true, probs):
+def compute_metrics(y_true, probs, seed_probs=None):
     clipped = np.clip(np.asarray(probs), 1e-6, 1 - 1e-6)
     preds = (clipped >= 0.5).astype(int)
-    return {
+    model_brier = float(brier_score_loss(y_true, clipped))
+    result = {
         "log_loss": float(log_loss(y_true, clipped, labels=[0, 1])),
-        "brier": float(brier_score_loss(y_true, clipped)),
+        "brier": model_brier,
         "accuracy": float(accuracy_score(y_true, preds)),
         "games": int(len(y_true)),
     }
+    if seed_probs is not None:
+        seed_clipped = np.clip(np.asarray(seed_probs), 1e-6, 1 - 1e-6)
+        brier_ref = float(brier_score_loss(y_true, seed_clipped))
+        bss = 1.0 - (model_brier / brier_ref) if brier_ref > 1e-9 else 0.0
+        result["bss"] = float(bss)
+        result["brier_ref"] = float(brier_ref)
+    return result
 
 
 def _compute_baseline_accuracy(X, y, meta, col="diff_adj_margin"):
@@ -574,6 +584,7 @@ def evaluate_loso(X, y, meta, lr_weight=0.5, xgb_weight=0.5):
     per_season = []
     all_probs = []
     all_y = []
+    all_seed_probs = []
 
     for holdout in seasons:
         train_mask = meta["season"] != holdout
@@ -604,14 +615,18 @@ def evaluate_loso(X, y, meta, lr_weight=0.5, xgb_weight=0.5):
         weights = [lr_weight] + ([xgb_weight] if HAS_XGB else [])
         p_ens = sum(w * p for w, p in zip(weights, model_probs)) / total_w
 
-        season_result = compute_metrics(y_test, p_ens)
+        season_result = compute_metrics(y_test, p_ens,
+            seed_probs=sigmoid(X_test["diff_seed"].to_numpy() * 0.3) if "diff_seed" in X_test.columns else None)
         season_result["season"] = int(holdout)
         per_season.append(season_result)
 
         all_probs.extend(p_ens.tolist())
         all_y.extend(y_test.tolist())
+        if "diff_seed" in X_test.columns:
+            all_seed_probs.extend(sigmoid(X_test["diff_seed"].to_numpy() * 0.3).tolist())
 
-    overall = compute_metrics(np.asarray(all_y), np.asarray(all_probs)) if all_y else {}
+    overall = compute_metrics(np.asarray(all_y), np.asarray(all_probs),
+        seed_probs=np.asarray(all_seed_probs) if all_seed_probs else None) if all_y else {}
 
     # Bootstrap CI on overall accuracy
     if all_y:
@@ -641,6 +656,7 @@ def evaluate_rolling_cv(X, y, meta, sample_weight=None, lr_weight=0.5, xgb_weigh
     per_season = []
     all_probs = []
     all_y = []
+    all_seed_probs = []
 
     season_arr = meta["season"].to_numpy()
     tourney_mask = (sample_weight == 1.0) if sample_weight is not None else np.ones(len(y), dtype=bool)
@@ -682,14 +698,18 @@ def evaluate_rolling_cv(X, y, meta, sample_weight=None, lr_weight=0.5, xgb_weigh
         fold_weights = [lr_weight] + ([xgb_weight] if HAS_XGB else [])
         p_ens = sum(w * p for w, p in zip(fold_weights, model_probs)) / total_w
 
-        season_result = compute_metrics(y_test, p_ens)
+        season_result = compute_metrics(y_test, p_ens,
+            seed_probs=sigmoid(X_test["diff_seed"].to_numpy() * 0.3) if "diff_seed" in X_test.columns else None)
         season_result["season"] = int(test_season)
         per_season.append(season_result)
 
         all_probs.extend(p_ens.tolist())
         all_y.extend(y_test.tolist())
+        if "diff_seed" in X_test.columns:
+            all_seed_probs.extend(sigmoid(X_test["diff_seed"].to_numpy() * 0.3).tolist())
 
-    overall = compute_metrics(np.asarray(all_y), np.asarray(all_probs)) if all_y else {}
+    overall = compute_metrics(np.asarray(all_y), np.asarray(all_probs),
+        seed_probs=np.asarray(all_seed_probs) if all_seed_probs else None) if all_y else {}
 
     if all_y:
         rng = np.random.default_rng(42)
@@ -892,8 +912,10 @@ def main():
         "baselines": baselines,
         "loso_per_season": loso_per_season,
         "loso_overall": loso_overall,
+        "loso_bss": loso_overall.get("bss") if loso_overall else None,
         "rolling_cv_per_season": rolling_per_season,
         "rolling_cv_overall": rolling_overall,
+        "rolling_cv_bss": rolling_overall.get("bss") if rolling_overall else None,
         # backward-compatible keys (use rolling CV as the primary reported metric)
         "holdout_results": rolling_per_season,
         "overall_holdout_ensemble": rolling_overall,

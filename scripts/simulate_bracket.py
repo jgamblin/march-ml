@@ -13,6 +13,7 @@ Supported custom bracket formats:
 import argparse
 import gc
 import json
+import math
 import os
 from collections import Counter
 from datetime import datetime
@@ -31,6 +32,16 @@ except ImportError:
 
 def ensure_dir(path):
     os.makedirs(path, exist_ok=True)
+
+
+def apply_temperature(p: float, temperature: float) -> float:
+    """Scale win probability via logit transform.
+    T > 1: more chaos (probs toward 0.5). T < 1: more chalk (probs toward 0/1)."""
+    if abs(temperature - 1.0) < 1e-9:
+        return p
+    p_clip = max(1e-6, min(1 - 1e-6, float(p)))
+    logit_p = math.log(p_clip / (1.0 - p_clip))
+    return 1.0 / (1.0 + math.exp(-logit_p / temperature))
 
 
 def load_models(models_dir='models'):
@@ -808,7 +819,7 @@ def simulate_once_fast(
 def precompute_matchup_probs(
     teams, season, default_models, seed_models, feat_names,
     team_feats_dict, team_overrides, lr_weight, xgb_weight,
-    feature_scaler=None,
+    feature_scaler=None, temperature=1.0,
 ):
     """Pre-compute win probability for every possible pair among bracket teams.
 
@@ -867,9 +878,11 @@ def precompute_matchup_probs(
             feature_scaler=feature_scaler,
         )
         for (i, j, flipped), p in zip(valid_triples, raw_probs):
-            p_i_beats_j = 1.0 - float(p) if flipped else float(p)
-            prob_lookup[(teams[i], teams[j])] = p_i_beats_j
-            prob_lookup[(teams[j], teams[i])] = 1.0 - p_i_beats_j
+            raw_p = float(p)
+            p_i_beats_j_raw = 1.0 - raw_p if flipped else raw_p
+            p_j_beats_i_raw = raw_p if flipped else 1.0 - raw_p
+            prob_lookup[(teams[i], teams[j])] = apply_temperature(p_i_beats_j_raw, temperature)
+            prob_lookup[(teams[j], teams[i])] = apply_temperature(p_j_beats_i_raw, temperature)
 
     for (i, j), p in fallback.items():
         prob_lookup[(teams[i], teams[j])] = p
@@ -915,6 +928,8 @@ def main():
     p.add_argument('--allow_nd', action='store_true', help='allow non-D1 (nd-) teams in demo bracket selection')
     p.add_argument('--lr_weight', type=float, default=None, help='ensemble weight for Logistic Regression (default: read from models/ensemble_weights.json or 0.5)')
     p.add_argument('--xgb_weight', type=float, default=None, help='ensemble weight for XGBoost (default: read from models/ensemble_weights.json or 0.5)')
+    p.add_argument('--temperature', type=float, default=1.0,
+                   help='probability temperature scaling: T>1 = more chaos/contrarian (toward 0.5), T<1 = more chalk (toward 0/1). Default=1.0 (no scaling)')
     args = p.parse_args()
 
     ensure_dir(Path(args.out).parent)
@@ -1000,7 +1015,7 @@ def main():
     prob_lookup = precompute_matchup_probs(
         teams, season, default_models_dict, seed_models, feat_names,
         team_feats_dict, team_overrides, lr_weight, xgb_weight,
-        feature_scaler=feature_scaler,
+        feature_scaler=feature_scaler, temperature=args.temperature,
     )
 
     sims = args.sims
