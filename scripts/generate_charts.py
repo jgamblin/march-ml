@@ -1,46 +1,436 @@
 #!/usr/bin/env python3
-"""Generate charts from training summary and simulation output.
+"""Generate publication-ready charts from training summary and simulation output.
 
 Usage:
     python scripts/generate_charts.py
     python scripts/generate_charts.py --sim results/sim_2026_5000.json
     python scripts/generate_charts.py --out_dir results/charts
+    python scripts/generate_charts.py --highlight "Missouri Tigers,Kansas Jayhawks"
 """
 import argparse
 import json
+from datetime import datetime, timezone
 from pathlib import Path
 
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
+import matplotlib.ticker as mticker
 import matplotlib.patches as mpatches
 import numpy as np
+import seaborn as sns
 
 
-CHART_STYLE = {
-    'figure.facecolor': '#0d1117',
-    'axes.facecolor': '#161b22',
-    'axes.edgecolor': '#30363d',
-    'axes.labelcolor': '#c9d1d9',
-    'xtick.color': '#8b949e',
-    'ytick.color': '#8b949e',
-    'text.color': '#c9d1d9',
-    'grid.color': '#21262d',
-    'grid.linestyle': '--',
-    'grid.alpha': 0.6,
-}
+# ---------------------------------------------------------------------------
+# ProfessionalVisualizer
+# ---------------------------------------------------------------------------
 
-NCAA_BLUE = '#1a73e8'
-NCAA_GOLD = '#f5a623'
-BASELINE_COLOR = '#8b949e'
-SUCCESS_GREEN = '#3fb950'
-WARNING_RED = '#f85149'
+class ProfessionalVisualizer:
+    """Produces FiveThirtyEight-inspired, publication-ready charts.
+
+    All charts share:
+    - Light gray background, white axes, Helvetica Neue typography
+    - Seaborn 'mako' sequential palette for gradient encoding
+    - No top/right spines, no tick marks, axis-aligned gridlines only
+    - Branding footer: '@jgamblin | march-ml · Updated <timestamp>'
+    - Optional per-team highlight color for user-interest teams
+    """
+
+    # ── palette constants ──────────────────────────────────────────────────
+    FIG_BG         = '#F0F0F0'   # FiveThirtyEight-style light gray
+    AXES_BG        = '#FFFFFF'
+    TEXT_DARK      = '#1A1A2E'
+    TEXT_MID       = '#555555'
+    TEXT_LIGHT     = '#888888'
+    GRID_COLOR     = '#E0E0E0'
+    SPINE_COLOR    = '#CCCCCC'
+    ACCENT_GOLD    = '#E8A838'   # top-ranked / winner
+    ACCENT_CORAL   = '#E05263'   # user-interest highlight
+    BASELINE_GRAY  = '#AAAAAA'
+    SUCCESS_GREEN  = '#3BB273'
+    WARNING_ORANGE = '#E07B39'
+    SIGNATURE      = '@jgamblin | march-ml'
+
+    def __init__(self, out_dir='results/charts', highlight_teams=None, dpi=180):
+        self.out_dir = Path(out_dir)
+        self.out_dir.mkdir(parents=True, exist_ok=True)
+        self.dpi = dpi
+        self.highlight_teams = [t.strip().lower() for t in (highlight_teams or [])]
+
+    # ── internal helpers ───────────────────────────────────────────────────
+
+    def _apply_base_style(self):
+        available_fonts = {f.name for f in matplotlib.font_manager.fontManager.ttflist}
+        font = next((f for f in ('Helvetica Neue', 'Helvetica', 'DejaVu Sans')
+                     if f in available_fonts), 'sans-serif')
+        plt.rcParams.update({
+            'figure.facecolor':  self.FIG_BG,
+            'axes.facecolor':    self.AXES_BG,
+            'axes.edgecolor':    self.SPINE_COLOR,
+            'axes.labelcolor':   self.TEXT_MID,
+            'xtick.color':       self.TEXT_LIGHT,
+            'ytick.color':       self.TEXT_DARK,
+            'text.color':        self.TEXT_DARK,
+            'grid.color':        self.GRID_COLOR,
+            'grid.linestyle':    '-',
+            'grid.linewidth':    0.8,
+            'grid.alpha':        1.0,
+            'font.family':       font,
+            'axes.titlepad':     14,
+            'figure.dpi':        self.dpi,
+            'xtick.bottom':      False,
+            'ytick.left':        False,
+            'xtick.major.size':  0,
+            'ytick.major.size':  0,
+        })
+
+    def _make_figure(self, figsize):
+        self._apply_base_style()
+        return plt.subplots(figsize=figsize)
+
+    def _clean_axes(self, ax, grid_axis='x'):
+        ax.spines['top'].set_visible(False)
+        ax.spines['right'].set_visible(False)
+        ax.spines['left'].set_color(self.SPINE_COLOR)
+        ax.spines['bottom'].set_color(self.SPINE_COLOR)
+        ax.tick_params(length=0)
+        ax.set_axisbelow(True)
+        ax.grid(axis=grid_axis, color=self.GRID_COLOR, linewidth=0.8)
+
+    def _set_title(self, ax, title, subtitle=None):
+        ax.set_title(title, fontsize=14, fontweight='bold', color=self.TEXT_DARK,
+                     loc='left', pad=14)
+        if subtitle:
+            ax.text(0, 1.025, subtitle, transform=ax.transAxes,
+                    fontsize=9, color=self.TEXT_LIGHT, va='bottom')
+
+    def _add_footer(self, fig, generated_at=None):
+        ts = generated_at or datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M UTC')
+        fig.text(0.01, -0.015, f'{self.SIGNATURE}  ·  Updated {ts}',
+                 transform=fig.transFigure,
+                 fontsize=7.5, color=self.TEXT_LIGHT, style='italic', va='top')
+
+    def _save(self, fig, filename):
+        path = self.out_dir / filename
+        fig.savefig(path, dpi=self.dpi, bbox_inches='tight',
+                    facecolor=self.FIG_BG, edgecolor='none')
+        plt.close(fig)
+        print(f"  Saved {path}")
+
+    def _bar_colors(self, values, names=None):
+        """Map values to mako palette; override top item and user highlights."""
+        palette = sns.color_palette('mako', 256)
+        lo, hi  = min(values), max(values)
+        span    = hi - lo or 1.0
+        # Sample from [index 25..85] — skip very dark + very light extremes
+        colors  = [list(palette[int(25 + 60 * (v - lo) / span)]) for v in values]
+        # Highlight top value (last element after ascending sort to index -1)
+        colors[-1] = list(matplotlib.colors.to_rgb(self.ACCENT_GOLD))
+        if names:
+            for i, name in enumerate(names):
+                if name.lower() in self.highlight_teams:
+                    colors[i] = list(matplotlib.colors.to_rgb(self.ACCENT_CORAL))
+        return colors
+
+    @staticmethod
+    def _wilson_ci(probs, n, z=1.96):
+        ci_lo, ci_hi = [], []
+        for p in probs:
+            center = (p + z**2 / (2 * n)) / (1 + z**2 / n)
+            margin = z * np.sqrt(p * (1 - p) / n + z**2 / (4 * n**2)) / (1 + z**2 / n)
+            ci_lo.append(max(0.0, p - (center - margin)))
+            ci_hi.append(min(1.0, (center + margin) - p))
+        return ci_lo, ci_hi
+
+    # ── public chart methods ───────────────────────────────────────────────
+
+    def chart_champion_probs(self, sim, top_n=15):
+        """Horizontal bar chart with 95% Wilson CI error bars."""
+        champs = sim.get('champion_probs', [])
+        if not champs:
+            print("  Skipping champion chart: no champion_probs in sim")
+            return
+
+        champs_sorted = list(reversed(
+            sorted(champs, key=lambda x: x[1], reverse=True)[:top_n]
+        ))
+        teams, probs  = zip(*champs_sorted)
+        season        = sim.get('season', '')
+        n_sims        = sim.get('sims', 1)
+        generated_at  = sim.get('generated_at')
+
+        ci_lo, ci_hi  = self._wilson_ci(probs, n_sims)
+        colors        = self._bar_colors(list(probs), names=list(teams))
+
+        fig, ax = self._make_figure((11, max(5.5, top_n * 0.54)))
+
+        bars = ax.barh(teams, probs, xerr=[ci_lo, ci_hi],
+                       color=colors, height=0.62, edgecolor='white', linewidth=0.5,
+                       error_kw=dict(ecolor=self.TEXT_LIGHT, elinewidth=1.0,
+                                     capsize=3, capthick=1.0))
+
+        for i, (bar, prob) in enumerate(zip(bars, probs)):
+            ax.text(prob + ci_hi[i] + 0.004,
+                    bar.get_y() + bar.get_height() / 2,
+                    f'{prob:.1%}', va='center', ha='left',
+                    fontsize=9, color=self.TEXT_DARK, fontweight='semibold')
+
+        ax.set_xlim(0, max(p + h for p, h in zip(probs, ci_hi)) * 1.32)
+        ax.set_xlabel('Championship Probability', fontsize=10, labelpad=8, color=self.TEXT_MID)
+        ax.xaxis.set_major_formatter(mticker.PercentFormatter(xmax=1.0))
+        self._clean_axes(ax, grid_axis='x')
+        self._set_title(ax, f'{season} Championship Favorites',
+                        subtitle=(f'Top {top_n} by win probability  ·  {n_sims:,} Monte Carlo sims  '
+                                  f'·  Error bars = 95% CI'))
+
+        legend_items = [mpatches.Patch(color=self.ACCENT_GOLD, label='#1 Favorite')]
+        if self.highlight_teams:
+            legend_items.append(mpatches.Patch(color=self.ACCENT_CORAL, label='Your team'))
+        ax.legend(handles=legend_items, fontsize=8, frameon=False,
+                  loc='lower right', labelcolor=self.TEXT_MID)
+
+        if sim.get('bracket_source') == 'generated_top64':
+            ax.text(0.99, 1.02, '⚠ Efficiency-based selection — not official bracket',
+                    transform=ax.transAxes, fontsize=7.5, color=self.WARNING_ORANGE,
+                    ha='right', va='bottom', style='italic')
+
+        self._add_footer(fig, generated_at)
+        fig.tight_layout()
+        self._save(fig, f'champion_probs_{season}.png')
+
+    def chart_round_probs(self, sim, top_n=16):
+        """Grouped horizontal bar chart: round-by-round reach probabilities."""
+        round_probs = sim.get('round_probs', {})
+        if not round_probs:
+            print("  Skipping round-probs chart: no round_probs in sim")
+            return
+
+        round_keys   = ['sweet_16', 'elite_8', 'final_4', 'title_game', 'champion']
+        round_labels = ['Sweet 16', 'Elite 8', 'Final Four', 'Title Game', 'Champion']
+        round_colors = sns.color_palette('mako', len(round_keys))
+
+        by_f4 = sorted(round_probs.items(),
+                        key=lambda kv: kv[1].get('final_4', 0), reverse=True)
+        top   = list(reversed(by_f4[:top_n]))
+        teams = [t for t, _ in top]
+        season       = sim.get('season', '')
+        n_sims       = sim.get('sims', '')
+        generated_at = sim.get('generated_at')
+
+        fig, ax = self._make_figure((12, max(7, top_n * 0.56)))
+
+        bar_h = 0.13
+        gap   = 0.07
+        group = len(round_keys) * bar_h + gap
+
+        for ri, (rkey, rlabel, rcolor) in enumerate(zip(round_keys, round_labels, round_colors)):
+            probs   = [round_probs[t].get(rkey, 0) for t, _ in top]
+            offsets = [i * group + ri * bar_h for i in range(len(teams))]
+            ax.barh(offsets, probs, height=bar_h * 0.88,
+                    color=rcolor, label=rlabel, edgecolor='white', linewidth=0.4)
+
+        centers = [i * group + (len(round_keys) * bar_h) / 2 for i in range(len(teams))]
+        ax.set_yticks(centers)
+        ax.set_yticklabels(teams, fontsize=9)
+        ax.set_xlabel('Probability of Reaching Round', fontsize=10, labelpad=8, color=self.TEXT_MID)
+        ax.xaxis.set_major_formatter(mticker.PercentFormatter(xmax=1.0))
+        ax.set_xlim(0, 1.12)
+        self._clean_axes(ax, grid_axis='x')
+        self._set_title(ax, f'{season} Road to the Championship',
+                        subtitle=f'Top {top_n} teams by Final Four probability  ·  {n_sims:,} simulations')
+        ax.legend(loc='lower right', fontsize=8, frameon=False,
+                  ncol=len(round_keys), bbox_to_anchor=(1.0, -0.06),
+                  labelcolor=self.TEXT_MID)
+
+        if sim.get('bracket_source') == 'generated_top64':
+            ax.text(0.99, 1.02, '⚠ Efficiency-based selection — not official bracket',
+                    transform=ax.transAxes, fontsize=7.5, color=self.WARNING_ORANGE,
+                    ha='right', va='bottom', style='italic')
+
+        self._add_footer(fig, generated_at)
+        fig.tight_layout()
+        self._save(fig, f'round_probs_{season}.png')
+
+    def chart_loso_per_season(self, summary):
+        """Bar chart of rolling CV accuracy by season with CI band."""
+        seasons_data = summary.get('rolling_cv_per_season') or summary.get('loso_per_season', [])
+        cv_label     = 'Rolling CV' if summary.get('rolling_cv_per_season') else 'LOSO'
+        if not seasons_data:
+            print("  Skipping accuracy-by-season chart: no per-season data")
+            return
+
+        seasons = [str(d['season']) for d in seasons_data]
+        accs    = [d['accuracy'] for d in seasons_data]
+        overall = summary.get('rolling_cv_overall') or summary.get('loso_overall', {})
+        overall_acc  = overall.get('accuracy', float(np.mean(accs)))
+        ci           = overall.get('accuracy_ci_95', [overall_acc - 0.05, overall_acc + 0.05])
+        seed_baseline = summary.get('baselines', {}).get('lower_seed')
+
+        fig, ax = self._make_figure((10, 5.5))
+
+        bar_colors = [self.SUCCESS_GREEN if a >= overall_acc
+                      else sns.color_palette('mako', 1)[0] for a in accs]
+        bars = ax.bar(seasons, accs, color=bar_colors, width=0.55, zorder=3,
+                      edgecolor='white', linewidth=0.6)
+
+        ax.axhline(overall_acc, color=self.ACCENT_GOLD, linewidth=2.0, zorder=4,
+                   label=f'{cv_label} avg {overall_acc:.1%}')
+        ax.axhspan(ci[0], ci[1], alpha=0.12, color=self.ACCENT_GOLD, zorder=2,
+                   label=f'95% CI [{ci[0]:.1%} – {ci[1]:.1%}]')
+        if seed_baseline:
+            ax.axhline(seed_baseline, color=self.ACCENT_CORAL, linewidth=1.5,
+                       linestyle='--', zorder=4, label=f'Seed baseline {seed_baseline:.1%}')
+
+        for bar, acc in zip(bars, accs):
+            ax.text(bar.get_x() + bar.get_width() / 2, acc + 0.006,
+                    f'{acc:.0%}', ha='center', va='bottom',
+                    fontsize=9, color=self.TEXT_DARK, fontweight='bold')
+
+        ax.set_ylim(0.45, min(1.0, max(accs) + 0.13))
+        ax.set_xlabel('Season (test year)', fontsize=10, labelpad=8, color=self.TEXT_MID)
+        ax.set_ylabel('Accuracy', fontsize=10, labelpad=8, color=self.TEXT_MID)
+        ax.yaxis.set_major_formatter(mticker.PercentFormatter(xmax=1.0))
+        self._clean_axes(ax, grid_axis='y')
+        self._set_title(ax, f'{cv_label} Accuracy by Season',
+                        subtitle='Green bars exceed average  ·  Dashed line = lower-seed baseline')
+        ax.legend(fontsize=8, frameon=False, loc='lower right', labelcolor=self.TEXT_MID)
+
+        self._add_footer(fig)
+        fig.tight_layout()
+        self._save(fig, 'loso_by_season.png')
+
+    def chart_model_vs_baselines(self, summary):
+        """Horizontal bar chart: model accuracy vs. naive baselines."""
+        overall   = summary.get('rolling_cv_overall') or summary.get('loso_overall', {})
+        cv_label  = 'Rolling CV' if summary.get('rolling_cv_overall') else 'LOSO'
+        model_acc = overall.get('accuracy')
+        baselines = summary.get('baselines', {})
+        if model_acc is None or not baselines:
+            print("  Skipping baselines chart: missing data")
+            return
+
+        label_map = {
+            'always_team_a':   'Always stronger team (adj_margin)',
+            'adj_margin_sign': 'Sign of adj_margin difference',
+            'win_pct_sign':    'Sign of win-rate difference',
+            'lower_seed':      'Lower seed always wins',
+        }
+        items = [(label_map.get(k, k), v) for k, v in baselines.items()]
+        items.append(('ML Model  (LR + XGBoost ensemble)', model_acc))
+        items.sort(key=lambda x: x[1])
+
+        labels, values = zip(*items)
+        colors = [self.ACCENT_GOLD if 'ML Model' in lbl else self.BASELINE_GRAY
+                  for lbl in labels]
+
+        fig, ax = self._make_figure((10, 4.5))
+        bars = ax.barh(labels, values, color=colors, height=0.55,
+                       edgecolor='white', linewidth=0.5)
+
+        for bar, val in zip(bars, values):
+            ax.text(val + 0.004, bar.get_y() + bar.get_height() / 2,
+                    f'{val:.1%}', va='center', ha='left',
+                    fontsize=9.5, color=self.TEXT_DARK, fontweight='bold')
+
+        ax.set_xlim(0.0, max(values) + 0.12)
+        ax.set_xlabel('Accuracy', fontsize=10, labelpad=8, color=self.TEXT_MID)
+        ax.xaxis.set_major_formatter(mticker.PercentFormatter(xmax=1.0))
+        self._clean_axes(ax, grid_axis='x')
+        self._set_title(ax, 'Model vs. Baselines',
+                        subtitle=f'{cv_label} accuracy on held-out tournament games  ·  Gold bar = our model')
+        ax.legend(handles=[
+            mpatches.Patch(color=self.ACCENT_GOLD, label='ML Model'),
+            mpatches.Patch(color=self.BASELINE_GRAY, label='Naive baselines'),
+        ], fontsize=8, frameon=False, loc='lower right', labelcolor=self.TEXT_MID)
+
+        self._add_footer(fig)
+        fig.tight_layout()
+        self._save(fig, 'model_vs_baselines.png')
+
+    def chart_shap_importance(self, shap_data):
+        """Horizontal bar chart of mean |SHAP| per feature."""
+        mean_abs = shap_data.get('mean_abs_shap', {})
+        if not mean_abs:
+            print("  Skipping SHAP importance chart: no mean_abs_shap data")
+            return
+
+        feats  = sorted(mean_abs, key=lambda k: mean_abs[k])
+        vals   = [mean_abs[f] for f in feats]
+        clean  = [f.replace('diff_', '\u0394 ').replace('_', ' ').title() for f in feats]
+        colors = list(sns.color_palette('mako_r', len(feats)))
+        colors[-1] = list(matplotlib.colors.to_rgb(self.ACCENT_GOLD))
+
+        fig, ax = self._make_figure((10, max(4.5, len(feats) * 0.48)))
+        bars = ax.barh(clean, vals, color=colors, height=0.62,
+                       edgecolor='white', linewidth=0.5)
+
+        for bar, val in zip(bars, vals):
+            ax.text(val + max(vals) * 0.012, bar.get_y() + bar.get_height() / 2,
+                    f'{val:.4f}', va='center', ha='left', fontsize=8.5, color=self.TEXT_DARK)
+
+        ax.set_xlabel('Mean |SHAP value|  (impact on win probability)',
+                      fontsize=10, labelpad=8, color=self.TEXT_MID)
+        self._clean_axes(ax, grid_axis='x')
+        self._set_title(ax, 'Feature Importance',
+                        subtitle='SHAP values  ·  Higher = more influential  ·  Gold = top feature')
+        self._add_footer(fig)
+        fig.tight_layout()
+        self._save(fig, 'shap_importance.png')
+
+    def chart_shap_beeswarm(self, shap_data):
+        """Beeswarm scatter: each dot = one game, x = SHAP impact, color = feature value."""
+        shap_vals = shap_data.get('shap_values')
+        x_vals    = shap_data.get('x_values')
+        feat_cols = shap_data.get('feature_columns')
+        if not shap_vals or not x_vals or not feat_cols:
+            print("  Skipping SHAP beeswarm: missing data")
+            return
+
+        sv       = np.array(shap_vals)
+        xv       = np.array(x_vals)
+        mean_abs = np.abs(sv).mean(axis=0)
+        order    = np.argsort(mean_abs)
+
+        fig, ax = self._make_figure((11, max(5.5, len(feat_cols) * 0.58)))
+        cmap = plt.cm.RdBu_r
+
+        for plot_idx, feat_idx in enumerate(order):
+            sv_col  = sv[:, feat_idx]
+            xv_col  = xv[:, feat_idx]
+            xv_span = xv_col.max() - xv_col.min()
+            xv_norm = (xv_col - xv_col.min()) / (xv_span + 1e-9)
+            rng     = np.random.default_rng(feat_idx)
+            y_jit   = plot_idx + rng.uniform(-0.28, 0.28, size=len(sv_col))
+            ax.scatter(sv_col, y_jit, c=xv_norm, cmap=cmap,
+                       alpha=0.55, s=12, linewidths=0)
+
+        clean = [feat_cols[i].replace('diff_', '\u0394 ').replace('_', ' ').title()
+                 for i in order]
+        ax.set_yticks(range(len(feat_cols)))
+        ax.set_yticklabels(clean, fontsize=8.5)
+        ax.axvline(0, color=self.SPINE_COLOR, linewidth=1.2, linestyle='--')
+        ax.set_xlabel('SHAP value  (positive = favors team A winning)',
+                      fontsize=10, labelpad=8, color=self.TEXT_MID)
+        self._clean_axes(ax, grid_axis='x')
+        self._set_title(ax, 'SHAP Beeswarm \u2014 Per-Game Feature Impact',
+                        subtitle='Each dot = one game  \u00b7  Color = feature value (blue low to red high)')
+
+        sm = plt.cm.ScalarMappable(cmap=cmap, norm=plt.Normalize(0, 1))
+        sm.set_array([])
+        cb = fig.colorbar(sm, ax=ax, pad=0.02, shrink=0.5, aspect=20)
+        cb.set_label('Feature value\n(low to high)', fontsize=8, color=self.TEXT_LIGHT)
+        cb.ax.tick_params(labelsize=7, length=0)
+        plt.setp(cb.ax.yaxis.get_ticklabels(), color=self.TEXT_LIGHT)
+        cb.outline.set_visible(False)
+
+        self._add_footer(fig)
+        fig.tight_layout()
+        self._save(fig, 'shap_beeswarm.png')
 
 
-def apply_style():
-    plt.rcParams.update(CHART_STYLE)
-    plt.rcParams['font.family'] = 'DejaVu Sans'
-
+# ---------------------------------------------------------------------------
+# Standalone loaders
+# ---------------------------------------------------------------------------
 
 def load_training_summary(models_dir='models'):
     path = Path(models_dir) / 'training_summary.json'
@@ -56,344 +446,54 @@ def load_sim(sim_path):
     return json.loads(path.read_text())
 
 
-def chart_loso_per_season(summary, out_dir):
-    """Bar chart of Rolling CV accuracy per season with overall CI band."""
-    # Prefer rolling CV (deployment metric); fall back to loso_per_season for compatibility
-    seasons_data = summary.get('rolling_cv_per_season') or summary.get('loso_per_season', [])
-    cv_label = 'Rolling CV' if summary.get('rolling_cv_per_season') else 'LOSO'
-    if not seasons_data:
-        print("  Skipping accuracy-by-season chart: no per-season data")
-        return
-
-    seasons = [str(d['season']) for d in seasons_data]
-    accs = [d['accuracy'] for d in seasons_data]
-    overall_data = summary.get('rolling_cv_overall') or summary.get('loso_overall', {})
-    overall_acc = overall_data.get('accuracy', np.mean(accs))
-    ci = overall_data.get('accuracy_ci_95', [overall_acc - 0.05, overall_acc + 0.05])
-    ci_lo, ci_hi = ci[0], ci[1]
-    baselines = summary.get('baselines', {})
-    seed_baseline = baselines.get('lower_seed', None)
-
-    apply_style()
-    fig, ax = plt.subplots(figsize=(9, 5))
-
-    colors = [SUCCESS_GREEN if a >= overall_acc else NCAA_BLUE for a in accs]
-    bars = ax.bar(seasons, accs, color=colors, width=0.55, zorder=3, edgecolor='#21262d', linewidth=0.8)
-
-    ax.axhline(overall_acc, color=NCAA_GOLD, linewidth=2, linestyle='-', zorder=4, label=f'{cv_label} Overall {overall_acc:.1%}')
-    ax.axhspan(ci_lo, ci_hi, alpha=0.15, color=NCAA_GOLD, zorder=2, label=f'95% CI [{ci_lo:.1%}, {ci_hi:.1%}]')
-    if seed_baseline:
-        ax.axhline(seed_baseline, color=WARNING_RED, linewidth=1.5, linestyle='--', zorder=4, label=f'Lower-seed baseline {seed_baseline:.1%}')
-
-    for bar, acc in zip(bars, accs):
-        ax.text(bar.get_x() + bar.get_width() / 2, acc + 0.005, f'{acc:.1%}',
-                ha='center', va='bottom', fontsize=10, color='#c9d1d9', fontweight='bold')
-
-    ax.set_ylim(0.40, min(1.0, max(accs) + 0.12))
-    ax.set_xlabel('Season', fontsize=12, labelpad=8)
-    ax.set_ylabel('Accuracy', fontsize=12, labelpad=8)
-    ax.set_title(f'{cv_label} Accuracy by Season', fontsize=14, fontweight='bold', pad=12)
-    ax.legend(fontsize=9, loc='lower right', framealpha=0.3)
-    ax.yaxis.set_major_formatter(matplotlib.ticker.PercentFormatter(xmax=1.0))
-    ax.grid(axis='y', zorder=1)
-
-    out_path = Path(out_dir) / 'loso_by_season.png'
-    fig.tight_layout()
-    fig.savefig(out_path, dpi=150, bbox_inches='tight')
-    plt.close(fig)
-    print(f"  Saved {out_path}")
-
-
-def chart_model_vs_baselines(summary, out_dir):
-    """Horizontal bar chart comparing model accuracy to all baselines."""
-    # Prefer rolling CV (deployment metric); fall back to loso_overall for compatibility
-    overall = summary.get('rolling_cv_overall') or summary.get('loso_overall', {})
-    cv_label = 'Rolling CV' if summary.get('rolling_cv_overall') else 'LOSO'
-    model_acc = overall.get('accuracy')
-    if model_acc is None:
-        print("  Skipping baselines chart: no accuracy in summary")
-        return
-    baselines = summary.get('baselines', {})
-    if not baselines:
-        print("  Skipping baselines chart: no baselines in summary")
-        return
-
-    label_map = {
-        'always_team_a': 'Always stronger team (adj_margin)',
-        'adj_margin_sign': 'Sign of adj_margin diff',
-        'win_pct_sign': 'Sign of win% diff',
-        'lower_seed': 'Lower seed wins',
-    }
-    items = [(label_map.get(k, k), v) for k, v in baselines.items()]
-    items.append(('Model (LR + XGBoost ensemble)', model_acc))
-    items.sort(key=lambda x: x[1])
-
-    labels, values = zip(*items)
-    colors = [NCAA_GOLD if 'Model' in l else NCAA_BLUE for l in labels]
-
-    apply_style()
-    fig, ax = plt.subplots(figsize=(9, 4.5))
-    bars = ax.barh(labels, values, color=colors, height=0.55, edgecolor='#21262d', linewidth=0.8, zorder=3)
-
-    for bar, val in zip(bars, values):
-        ax.text(val + 0.002, bar.get_y() + bar.get_height() / 2,
-                f'{val:.1%}', va='center', fontsize=10, color='#c9d1d9', fontweight='bold')
-
-    ax.set_xlim(0.0, max(values) + 0.10)
-    ax.set_xlabel('Accuracy', fontsize=12, labelpad=8)
-    ax.set_title(f'Model vs. Baselines ({cv_label} Tournament Accuracy)', fontsize=14, fontweight='bold', pad=12)
-    ax.xaxis.set_major_formatter(matplotlib.ticker.PercentFormatter(xmax=1.0))
-    ax.grid(axis='x', zorder=1)
-
-    model_patch = mpatches.Patch(color=NCAA_GOLD, label='Model')
-    baseline_patch = mpatches.Patch(color=NCAA_BLUE, label='Baselines')
-    ax.legend(handles=[model_patch, baseline_patch], fontsize=9, loc='lower right', framealpha=0.3)
-
-    out_path = Path(out_dir) / 'model_vs_baselines.png'
-    fig.tight_layout()
-    fig.savefig(out_path, dpi=150, bbox_inches='tight')
-    plt.close(fig)
-    print(f"  Saved {out_path}")
-
-
-def chart_champion_probs(sim, out_dir, top_n=15):
-    """Horizontal bar chart of top-N champion probabilities with 95% CI error bars."""
-    champs = sim.get('champion_probs', [])
-    if not champs:
-        print("  Skipping champion chart: no champion_probs in sim")
-        return
-
-    champs_sorted = sorted(champs, key=lambda x: x[1], reverse=True)[:top_n]
-    champs_sorted = list(reversed(champs_sorted))  # bottom = lowest for horizontal
-    teams, probs = zip(*champs_sorted)
-    season = sim.get('season', '')
-    sims = sim.get('sims', 1)
-
-    # 95% Wilson CI for each binomial proportion (n = number of simulations)
-    z = 1.96
-    n = sims
-    ci_lo, ci_hi = [], []
-    for p in probs:
-        # Wilson score interval: more accurate than normal approx near 0/1
-        center = (p + z**2 / (2 * n)) / (1 + z**2 / n)
-        margin = z * np.sqrt(p * (1 - p) / n + z**2 / (4 * n**2)) / (1 + z**2 / n)
-        ci_lo.append(max(0, p - (center - (center - margin))))
-        ci_hi.append(min(1, (center + margin) - p))
-    xerr = [ci_lo, ci_hi]
-
-    apply_style()
-    fig, ax = plt.subplots(figsize=(10, max(5, top_n * 0.45)))
-
-    norm = plt.Normalize(vmin=min(probs), vmax=max(probs))
-    cmap = plt.cm.Blues
-    colors = [cmap(0.4 + 0.6 * norm(p)) for p in probs]
-    # Highlight top team
-    colors[-1] = NCAA_GOLD
-
-    bars = ax.barh(teams, probs, xerr=xerr, color=colors, height=0.65,
-                   edgecolor='#21262d', linewidth=0.6, zorder=3,
-                   error_kw=dict(ecolor='#8b949e', elinewidth=1.2, capsize=3, capthick=1.2, zorder=4))
-    for i, (bar, prob) in enumerate(zip(bars, probs)):
-        ax.text(prob + ci_hi[i] + 0.003,
-                bar.get_y() + bar.get_height() / 2,
-                f'{prob:.1%}', va='center', fontsize=9, color='#c9d1d9')
-
-    ax.set_xlim(0, max(p + h for p, h in zip(probs, ci_hi)) * 1.3)
-    ax.set_xlabel('Championship Probability', fontsize=12, labelpad=8)
-    ax.set_title(f'{season} Tournament Championship Probabilities\n({sims:,} simulations, bars show 95% CI)',
-                 fontsize=13, fontweight='bold', pad=12)
-    ax.xaxis.set_major_formatter(matplotlib.ticker.PercentFormatter(xmax=1.0))
-    ax.grid(axis='x', zorder=1)
-
-    note = sim.get('bracket_source', '')
-    if note == 'generated_top64':
-        ax.text(0.99, 0.01, '⚠ adj_margin selection — not official bracket',
-                transform=ax.transAxes, fontsize=8, color=WARNING_RED,
-                ha='right', va='bottom', style='italic')
-
-    out_path = Path(out_dir) / f'champion_probs_{season}.png'
-    fig.tight_layout()
-    fig.savefig(out_path, dpi=150, bbox_inches='tight')
-    plt.close(fig)
-    print(f"  Saved {out_path}")
-
-
-def chart_shap_importance(shap_data, out_dir):
-    """Horizontal bar chart of mean absolute SHAP values per feature."""
-    mean_abs = shap_data.get("mean_abs_shap", {})
-    if not mean_abs:
-        print("  Skipping SHAP importance chart: no mean_abs_shap data")
-        return
-
-    feats = sorted(mean_abs.keys(), key=lambda k: mean_abs[k])
-    vals = [mean_abs[f] for f in feats]
-    clean_labels = [f.replace("diff_", "Δ ").replace("_", " ") for f in feats]
-
-    apply_style()
-    fig, ax = plt.subplots(figsize=(9, max(4, len(feats) * 0.45)))
-    colors = [NCAA_GOLD if v == max(vals) else NCAA_BLUE for v in vals]
-    bars = ax.barh(clean_labels, vals, color=colors, height=0.6, edgecolor='#21262d', linewidth=0.8, zorder=3)
-    for bar, val in zip(bars, vals):
-        ax.text(val + max(vals) * 0.01, bar.get_y() + bar.get_height() / 2,
-                f'{val:.4f}', va='center', fontsize=9, color='#c9d1d9')
-    ax.set_xlabel('Mean |SHAP value|', fontsize=12, labelpad=8)
-    ax.set_title('Feature Importance (SHAP)', fontsize=14, fontweight='bold', pad=12)
-    ax.grid(axis='x', zorder=1)
-    out_path = Path(out_dir) / 'shap_importance.png'
-    fig.tight_layout()
-    fig.savefig(out_path, dpi=150, bbox_inches='tight')
-    plt.close(fig)
-    print(f"  Saved {out_path}")
-
-
-def chart_shap_beeswarm(shap_data, out_dir):
-    """Beeswarm-style scatter: each dot is a game, x=SHAP value, color=feature value magnitude."""
-    shap_vals = shap_data.get("shap_values")
-    x_vals = shap_data.get("x_values")
-    feat_cols = shap_data.get("feature_columns")
-    if not shap_vals or not x_vals or not feat_cols:
-        print("  Skipping SHAP beeswarm: missing data")
-        return
-
-    sv = np.array(shap_vals)      # (n_games, n_features)
-    xv = np.array(x_vals)         # (n_games, n_features)
-    mean_abs = np.abs(sv).mean(axis=0)
-    order = np.argsort(mean_abs)  # ascending — bottom = least important
-
-    apply_style()
-    fig, ax = plt.subplots(figsize=(10, max(5, len(feat_cols) * 0.55)))
-    cmap = plt.cm.RdBu_r
-
-    for plot_idx, feat_idx in enumerate(order):
-        sv_col = sv[:, feat_idx]
-        xv_col = xv[:, feat_idx]
-        # Normalize feature values to [0,1] for color mapping
-        xv_range = xv_col.max() - xv_col.min()
-        xv_norm = (xv_col - xv_col.min()) / (xv_range + 1e-9)
-        # Jitter y-axis for beeswarm effect
-        rng = np.random.default_rng(feat_idx)
-        y_jitter = plot_idx + rng.uniform(-0.3, 0.3, size=len(sv_col))
-        sc = ax.scatter(sv_col, y_jitter, c=xv_norm, cmap=cmap,
-                        alpha=0.6, s=14, linewidths=0, zorder=3)
-
-    clean_labels = [feat_cols[i].replace("diff_", "Δ ").replace("_", " ") for i in order]
-    ax.set_yticks(range(len(feat_cols)))
-    ax.set_yticklabels(clean_labels, fontsize=9)
-    ax.axvline(0, color='#8b949e', linewidth=1, linestyle='--', zorder=2)
-    ax.set_xlabel('SHAP value (impact on win probability)', fontsize=11, labelpad=8)
-    ax.set_title('SHAP Beeswarm — Per-Game Feature Impact', fontsize=13, fontweight='bold', pad=12)
-    ax.grid(axis='x', zorder=1)
-    cb = fig.colorbar(sc, ax=ax, pad=0.01)
-    cb.set_label('Feature value\n(low → high)', fontsize=8, color='#c9d1d9')
-    cb.ax.yaxis.set_tick_params(color='#8b949e')
-    plt.setp(cb.ax.yaxis.get_ticklabels(), color='#8b949e')
-
-    out_path = Path(out_dir) / 'shap_beeswarm.png'
-    fig.tight_layout()
-    fig.savefig(out_path, dpi=150, bbox_inches='tight')
-    plt.close(fig)
-    print(f"  Saved {out_path}")
-
-
-def chart_round_probs(sim, out_dir, top_n=16):
-    """Grouped bar chart of per-round reach probabilities for top teams."""
-    round_probs = sim.get('round_probs', {})
-    if not round_probs:
-        print("  Skipping round-probs chart: no round_probs in sim")
-        return
-
-    round_keys = ['sweet_16', 'elite_8', 'final_4', 'title_game', 'champion']
-    round_labels = ['Sweet 16', 'Elite 8', 'Final Four', 'Title Game', 'Champion']
-    round_colors = ['#1a73e8', '#4a9eff', '#f5a623', '#ff8c00', '#3fb950']
-
-    # Rank by Final Four probability
-    by_f4 = sorted(round_probs.items(), key=lambda kv: kv[1].get('final_4', 0), reverse=True)
-    top = by_f4[:top_n]
-    top = list(reversed(top))  # bottom = lowest for horizontal chart
-
-    teams = [t for t, _ in top]
-    season = sim.get('season', '')
-    sims = sim.get('sims', '')
-
-    apply_style()
-    fig, ax = plt.subplots(figsize=(12, max(6, top_n * 0.52)))
-
-    n_rounds = len(round_keys)
-    bar_height = 0.14
-    group_gap = 0.08
-    group_height = n_rounds * bar_height + group_gap
-
-    for ri, (rkey, rlabel, rcolor) in enumerate(zip(round_keys, round_labels, round_colors)):
-        probs = [round_probs[t].get(rkey, 0) for t, _ in top]
-        offsets = [i * group_height + ri * bar_height for i in range(len(teams))]
-        ax.barh(offsets, probs, height=bar_height * 0.9,
-                color=rcolor, label=rlabel, zorder=3, edgecolor='#0d1117', linewidth=0.4)
-
-    # Y-tick labels at center of each team's group
-    group_centers = [i * group_height + (n_rounds * bar_height) / 2 for i in range(len(teams))]
-    ax.set_yticks(group_centers)
-    ax.set_yticklabels(teams, fontsize=9)
-
-    ax.set_xlabel('Probability of Reaching Round', fontsize=11, labelpad=8)
-    ax.set_title(f'{season} Tournament — Road to the Championship\n'
-                 f'Top {top_n} teams by Final Four odds ({sims:,} simulations)',
-                 fontsize=13, fontweight='bold', pad=12)
-    ax.xaxis.set_major_formatter(matplotlib.ticker.PercentFormatter(xmax=1.0))
-    ax.set_xlim(0, 1.08)
-    ax.legend(loc='lower right', fontsize=9, framealpha=0.3)
-    ax.grid(axis='x', zorder=1)
-
-    note = sim.get('bracket_source', '')
-    if note == 'generated_top64':
-        ax.text(0.99, 0.01, '⚠ Efficiency-based selection — not official bracket',
-                transform=ax.transAxes, fontsize=8, color=WARNING_RED,
-                ha='right', va='bottom', style='italic')
-
-    out_path = Path(out_dir) / f'round_probs_{season}.png'
-    fig.tight_layout()
-    fig.savefig(out_path, dpi=150, bbox_inches='tight')
-    plt.close(fig)
-    print(f"  Saved {out_path}")
-
+# ---------------------------------------------------------------------------
+# CLI entry point
+# ---------------------------------------------------------------------------
 
 def main():
-    p = argparse.ArgumentParser(description='Generate charts from model training and simulation output')
-    p.add_argument('--models_dir', default='models', help='directory containing training_summary.json')
-    p.add_argument('--sim', default=None, help='path to simulation JSON (default: latest in results/)')
-    p.add_argument('--out_dir', default='results/charts', help='output directory for chart PNGs')
+    p = argparse.ArgumentParser(
+        description='Generate publication-ready charts from model training and simulation output')
+    p.add_argument('--models_dir', default='models',
+                   help='directory containing training_summary.json')
+    p.add_argument('--sim', default=None,
+                   help='path to simulation JSON (default: latest in results/)')
+    p.add_argument('--out_dir', default='results/charts',
+                   help='output directory for chart PNGs')
+    p.add_argument('--highlight', default=None,
+                   help='comma-separated team names to highlight e.g. "Missouri Tigers,Kansas"')
+    p.add_argument('--dpi', type=int, default=180, help='output DPI (default: 180)')
     args = p.parse_args()
 
-    out_dir = Path(args.out_dir)
-    out_dir.mkdir(parents=True, exist_ok=True)
+    highlight_teams = [t.strip() for t in args.highlight.split(',')] if args.highlight else []
+    viz = ProfessionalVisualizer(out_dir=args.out_dir,
+                                 highlight_teams=highlight_teams,
+                                 dpi=args.dpi)
 
-    # Resolve sim path
     sim_path = args.sim
     if sim_path is None:
         candidates = sorted(Path('results').glob('sim_*.json'))
         candidates = [c for c in candidates if 'smoke' not in c.name]
-        if not candidates:
-            print("No simulation JSON found in results/. Run simulate first.")
-            sim_path = None
-        else:
+        if candidates:
             sim_path = str(candidates[-1])
             print(f"Using latest sim: {sim_path}")
+        else:
+            print("No simulation JSON found in results/. Run simulate first.")
 
     print("Generating charts...")
 
     try:
         summary = load_training_summary(args.models_dir)
-        chart_loso_per_season(summary, out_dir)
-        chart_model_vs_baselines(summary, out_dir)
+        viz.chart_loso_per_season(summary)
+        viz.chart_model_vs_baselines(summary)
     except FileNotFoundError as e:
         print(f"  Warning: {e}")
 
-    # SHAP charts (generated during training; optional)
     shap_path = Path(args.models_dir) / 'shap_summary.json'
     if shap_path.exists():
         try:
             shap_data = json.loads(shap_path.read_text())
-            chart_shap_importance(shap_data, out_dir)
-            chart_shap_beeswarm(shap_data, out_dir)
+            viz.chart_shap_importance(shap_data)
+            viz.chart_shap_beeswarm(shap_data)
         except Exception as e:
             print(f"  Warning: SHAP charts failed: {e}")
     else:
@@ -402,12 +502,12 @@ def main():
     if sim_path:
         try:
             sim = load_sim(sim_path)
-            chart_champion_probs(sim, out_dir)
-            chart_round_probs(sim, out_dir)
+            viz.chart_champion_probs(sim)
+            viz.chart_round_probs(sim)
         except FileNotFoundError as e:
             print(f"  Warning: {e}")
 
-    print(f"Done. Charts saved to {out_dir}/")
+    print(f"Done. Charts saved to {args.out_dir}/")
 
 
 if __name__ == '__main__':
