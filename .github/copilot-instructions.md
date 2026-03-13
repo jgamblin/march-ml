@@ -120,10 +120,10 @@ cbbpy stores the NCAA tournament seed in `home_rank`/`away_rank` columns for tou
 ### Model Training
 
 - **Label orientation**: each matchup row is oriented so `team_A` = higher `adj_margin` team. This prevents systematic label bias (cbbpy assigns better teams as "home" in tournament records).
-- **Evaluation**: true Leave-One-Season-Out (LOSO) with 1000-sample bootstrap CI. Never use forward-chaining holdout — small early seasons (67 rows) cause wild variance.
-- **Current LOSO accuracy**: **64.7%** (95% CI: 59.3–70.1%), seasons 2021–2025
-- **Baselines to beat**: `lower_seed` = 70.4%, `win_pct_sign` = 54.5%, `always_team_a` = 52.4%
-- **Calibration**: XGBoost uses isotonic regression calibration (≥1000 rows) or sigmoid (fallback). LR uses sigmoid. Do **not** use sigmoid for XGBoost — it is designed for SVMs.
+- **Evaluation**: true Leave-One-Season-Out (LOSO) with 1000-sample bootstrap CI. **Also run rolling CV** (strictly forward-looking: train on seasons 1..k-1, test on k) — this is the deployment-relevant metric. Never use forward-chaining holdout without augmented data.
+- **Current accuracy (March 2026)**: Rolling CV **74.6%** (95% CI: [69.0%, 79.5%]) · LOSO **78.4%** (95% CI: [74.3%, 82.6%]). LOSO is ~2pp optimistic for 2015–2025 because BartTorvik year-end JSON includes tournament game results; 2026 production predictions are clean (pre-tournament data only).
+- **Baselines to beat**: `lower_seed` = 69.8%, `win_pct_sign` = 54.5%, `always_team_a` = 52.4%
+- **Calibration**: XGBoost uses isotonic regression (≥3000 rows) or sigmoid/Platt scaling (fallback). LR always uses sigmoid. The 3000-row threshold means: tournament-only training (~670 rows) → sigmoid; `--include_regular_season` augmentation (~33K rows) → isotonic. Do **not** lower this threshold — isotonic regression on ≤1000 rows is prone to overfitting the calibration curve.
 - `model_features.joblib` stores the feature list used at training time — simulation must use the same features
 - `training_summary.json` records metadata including `loso_per_season`, `baselines`, and `feature_columns`
 
@@ -151,7 +151,25 @@ Legacy formats: plain text (one team per line), CSV with `team` + optional `slot
 
 When no bracket file is provided, simulation auto-selects by `adj_margin` rank with a warning — this does **not** reflect real tournament selection criteria.
 
-### Pool Scoring Profiles
+### NET Rank Imputation
+
+`net_rank` (NCAA NET rankings) is only available for seasons where the scraper successfully fetched it (~2026 coverage). Historical seasons (2015–2025) have `NaN` for this column, which normally causes it to be excluded from the model due to the `_OPTIONAL_COVERAGE_THRESHOLD = 0.5` check.
+
+`impute_net_rank_from_efficiency(features_df)` in `train_baseline.py` fills historical `net_rank` with a within-season `barthag` percentile rank (rank 1 = best team). Correlation between NET and barthag ≈ 0.85, making this a high-quality proxy. After imputation, `net_rank` has ~100% coverage and passes the threshold check, adding it as a training feature.
+
+This function **must** be called in `main()` before `build_match_dataset` — the imputed column must be in the features DataFrame before matchup pairs are built.
+
+### Manual Features Fallback
+
+If the cbbpy API goes down and `scrape_with_cbbpy.py` cannot fetch game data, a fallback path exists:
+
+1. Copy `data/manual_features_template.csv` to `data/processed/features/tournament_teams.csv`.
+2. Populate one row per team with the required columns (all `BASE_FEATURES` plus optional efficiency columns).
+3. Run `python scripts/run_pipeline.py --mode train --game_scope ncaa_tourney` — the training script will use the provided features directly without needing game logs.
+
+During inference (simulation), `simulate_bracket.py` reads `data/processed/features/tournament_teams.csv` for 2026 team stats. If this file was manually populated, the simulation will run normally but accuracy depends entirely on the quality of the manually entered stats. Log a clear warning if `games_dir` contains no processed game CSVs for the current season so the user knows they're in fallback mode.
+
+
 
 Defined in `pool_scorer.py` as `SCORING_PROFILES`. Built-in: `espn`, `cbs`, `simple`. Pass `--profile espn` (default) or `--profile cbs` to scoring/optimizer scripts.
 

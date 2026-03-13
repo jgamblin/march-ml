@@ -6,16 +6,65 @@ Examples:
     python scripts/run_pipeline.py --mode full --sims 5000
 """
 import argparse
+import logging
 import subprocess
 import sys
 
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(message)s",
+    datefmt="%H:%M:%S",
+)
+logger = logging.getLogger(__name__)
+
 
 def run_command(cmd):
-    print("Running:", " ".join(cmd))
+    logger.info("Running: %s", " ".join(cmd))
     subprocess.check_call(cmd)
 
 
-def run_scrape(fetch_pbp=False, seasons=None, historical=False, since=None, lookback_days=None):
+def check_joblib_tracking(models_dir="models"):
+    """Warn if any .joblib model artifacts are being silently ignored by git.
+
+    The .gitignore includes ``models/`` to keep large binary files out of the
+    repo by default.  Committed exceptions (training_summary.json,
+    ensemble_weights.json) are force-added by GitHub Actions.  If someone
+    tries to commit the .joblib files, this check surfaces the issue early.
+    """
+    from pathlib import Path
+    import shutil
+
+    if not shutil.which("git"):
+        return  # git not available; skip silently
+
+    joblib_files = list(Path(models_dir).glob("*.joblib"))
+    if not joblib_files:
+        return
+
+    ignored = []
+    for jf in joblib_files:
+        result = subprocess.run(
+            ["git", "check-ignore", "-q", str(jf)],
+            capture_output=True,
+        )
+        if result.returncode == 0:
+            ignored.append(str(jf))
+
+    if ignored:
+        logger.warning(
+            "The following model artifacts are gitignored and will NOT be committed:\n"
+            "  %s\n"
+            "  This is intentional — .joblib files are regenerated on each training run.\n"
+            "  To force-track them: git add -f %s",
+            "\n  ".join(ignored),
+            models_dir + "/*.joblib",
+        )
+    else:
+        logger.info("Model artifacts in %s/ are tracked by git.", models_dir)
+
+
+def run_scrape(
+        fetch_pbp=False, seasons=None, historical=False, since=None, lookback_days=None):
     cmd = [sys.executable, "scripts/scrape_with_cbbpy.py", "--out", "data/processed", "--raw", "data/raw"]
     if seasons:
         cmd.extend(["--seasons", *[str(season) for season in seasons]])
@@ -118,12 +167,12 @@ def run_optimize(sim_out=None, profile="espn", strategy="balanced", num_entries=
 
 def run_smoke(d1_list=None, seed_map=None, conf_map=None):
     """Fast validation: features (2025) → train → simulate (100) → validate."""
-    print("=== SMOKE TEST: Fast pipeline validation ===")
+    logger.info("=== SMOKE TEST: Fast pipeline validation ===")
     run_features(seasons=[2025], d1_list=d1_list, seed_map=seed_map, conf_map=conf_map)
     run_train(game_scope="ncaa_tourney")
-    print("Smoke test: running simulation with 100 sims...")
+    logger.info("Smoke test: running simulation with 100 sims...")
     run_simulation(sims=100, season=2025, out_path="results/smoke_test.json", min_games=10, allow_nd=False)
-    print("Smoke test complete. Results in results/smoke_test.json")
+    logger.info("Smoke test complete. Results in results/smoke_test.json")
 
 
 def main():
@@ -175,6 +224,7 @@ def main():
             include_regular_season=args.include_regular_season,
             regular_season_weight=args.regular_season_weight,
         )
+        check_joblib_tracking()
     if args.mode in {"simulate", "full"}:
         run_simulation(
             sims=args.sims,

@@ -1,0 +1,773 @@
+season,team,team_id,seed
+2015,Manhattan Jaspers,2363,16
+2015,Hampton Pirates,2261,16
+2015,Ole Miss Rebels,145,11
+2015,BYU Cougars,252,11
+2015,North Florida Ospreys,2454,16
+2015,Robert Morris Colonials,2523,16
+2015,Boise State Broncos,68,11
+2015,Dayton Flyers,2168,11
+2015,Notre Dame Fighting Irish,87,3
+2015,Northeastern Huskies,111,14
+2015,Iowa State Cyclones,66,3
+2015,UAB Blazers,5,14
+2015,Baylor Bears,239,3
+2015,Georgia State Panthers,2247,14
+2015,Arizona Wildcats,12,2
+2015,Texas Southern Tigers,2640,15
+2015,Butler Bulldogs,2086,6
+2015,Texas Longhorns,251,11
+2015,SMU Mustangs,2567,6
+2015,UCLA Bruins,26,11
+2015,Xavier Musketeers,2752,6
+2015,VCU Rams,2670,7
+2015,Ohio State Buckeyes,194,10
+2015,Villanova Wildcats,222,1
+2015,Lafayette Leopards,322,16
+2015,Cincinnati Bearcats,2132,8
+2015,Purdue Boilermakers,2509,9
+2015,North Carolina Tar Heels,153,4
+2015,Harvard Crimson,108,13
+2015,Utah Utes,254,5
+2015,Stephen F. Austin Lumberjacks,2617,12
+2015,NC State Wolfpack,152,8
+2015,LSU Tigers,99,9
+2015,Arkansas Razorbacks,8,5
+2015,Wofford Terriers,2747,12
+2015,Kentucky Wildcats,96,1
+2015,Georgetown Hoyas,46,4
+2015,Eastern Washington Eagles,331,13
+2015,Kansas Jayhawks,2305,2
+2015,New Mexico State Aggies,166,15
+2015,Michigan State Spartans,127,7
+2015,Georgia Bulldogs,61,10
+2015,Northern Iowa Panthers,2460,5
+2015,Wyoming Cowboys,2751,12
+2015,West Virginia Mountaineers,277,5
+2015,Buffalo Bulls,2084,12
+2015,Wichita State Shockers,2724,7
+2015,Indiana Hoosiers,84,10
+2015,Virginia Cavaliers,258,2
+2015,Belmont Bruins,2057,15
+2015,Louisville Cardinals,97,4
+2015,UC Irvine Anteaters,300,13
+2015,Maryland Terrapins,120,4
+2015,Valparaiso Beacons,2674,13
+2015,Oregon Ducks,2483,8
+2015,Oklahoma State Cowboys,197,9
+2015,Duke Blue Devils,150,1
+2015,Iowa Hawkeyes,2294,7
+2015,Davidson Wildcats,2166,10
+2015,Oklahoma Sooners,201,3
+2015,UAlbany Great Danes,399,14
+2015,Wisconsin Badgers,275,1
+2015,Coastal Carolina Chanticleers,324,16
+2015,San Diego State Aztecs,21,8
+2015,St. John's Red Storm,2599,9
+2015,Gonzaga Bulldogs,2250,2
+2015,North Dakota State Bison,2449,15
+2015,Providence Friars,2507,6
+2016,Florida Gulf Coast Eagles,526,16
+2016,Fairleigh Dickinson Knights,161,16
+2016,Vanderbilt Commodores,238,11
+2016,Wichita State Shockers,2724,11
+2016,Southern Jaguars,2582,16
+2016,Holy Cross Crusaders,107,16
+2016,Michigan Wolverines,130,11
+2016,Tulsa Golden Hurricane,202,11
+2016,Duke Blue Devils,150,4
+2016,UNC Wilmington Seahawks,350,13
+2016,Texas Tech Red Raiders,2641,8
+2016,Butler Bulldogs,2086,9
+2016,Colorado Buffaloes,38,8
+2016,UConn Huskies,41,9
+2016,Iowa State Cyclones,66,4
+2016,Iona Gaels,314,13
+2016,Baylor Bears,239,5
+2016,Yale Bulldogs,43,12
+2016,Virginia Cavaliers,258,1
+2016,Hampton Pirates,2261,16
+2016,Kansas Jayhawks,2305,1
+2016,Austin Peay Governors,2046,16
+2016,Purdue Boilermakers,2509,5
+2016,Little Rock Trojans,2031,12
+2016,Miami Hurricanes,2390,3
+2016,Buffalo Bulls,2084,14
+2016,Indiana Hoosiers,84,5
+2016,Chattanooga Mocs,236,12
+2016,North Carolina Tar Heels,153,1
+2016,Utah Utes,254,3
+2016,Fresno State Bulldogs,278,14
+2016,Arizona Wildcats,12,6
+2016,Kentucky Wildcats,96,4
+2016,Stony Brook Seawolves,2619,13
+2016,USC Trojans,30,8
+2016,Providence Friars,2507,9
+2016,Seton Hall Pirates,2550,6
+2016,Gonzaga Bulldogs,2250,11
+2016,Dayton Flyers,2168,7
+2016,Syracuse Orange,183,10
+2016,Villanova Wildcats,222,2
+2016,UNC Asheville Bulldogs,2427,15
+2016,Oregon State Beavers,204,7
+2016,VCU Rams,2670,10
+2016,California Golden Bears,25,4
+2016,Hawai'i Rainbow Warriors,62,13
+2016,Michigan State Spartans,127,2
+2016,Middle Tennessee Blue Raiders,2393,15
+2016,Iowa Hawkeyes,2294,7
+2016,Temple Owls,218,10
+2016,Oklahoma Sooners,201,2
+2016,Cal State Bakersfield Roadrunners,2934,15
+2016,Maryland Terrapins,120,5
+2016,South Dakota State Jackrabbits,2571,12
+2016,Wisconsin Badgers,275,7
+2016,Pittsburgh Panthers,221,10
+2016,West Virginia Mountaineers,277,3
+2016,Stephen F. Austin Lumberjacks,2617,14
+2016,Texas A&M Aggies,245,3
+2016,Green Bay Phoenix,2739,14
+2016,Oregon Ducks,2483,1
+2016,Xavier Musketeers,2752,2
+2016,Weber State Wildcats,2692,15
+2016,Texas Longhorns,251,6
+2016,Northern Iowa Panthers,2460,11
+2016,Notre Dame Fighting Irish,87,6
+2016,Saint Joseph's Hawks,2603,8
+2016,Cincinnati Bearcats,2132,9
+2017,UC Davis Aggies,302,16
+2017,North Carolina Central Eagles,2428,16
+2017,Providence Friars,2507,11
+2017,USC Trojans,30,11
+2017,Notre Dame Fighting Irish,87,5
+2017,Princeton Tigers,163,12
+2017,Virginia Cavaliers,258,5
+2017,UNC Wilmington Seahawks,350,12
+2017,Butler Bulldogs,2086,4
+2017,Winthrop Eagles,2737,13
+2017,Gonzaga Bulldogs,2250,1
+2017,South Dakota State Jackrabbits,2571,16
+2017,West Virginia Mountaineers,277,4
+2017,Bucknell Bison,2083,13
+2017,Florida Gators,57,4
+2017,East Tennessee State Buccaneers,2193,13
+2017,Minnesota Golden Gophers,135,5
+2017,Middle Tennessee Blue Raiders,2393,12
+2017,Northwestern Wildcats,77,8
+2017,Vanderbilt Commodores,238,9
+2017,Maryland Terrapins,120,6
+2017,Xavier Musketeers,2752,11
+2017,Villanova Wildcats,222,1
+2017,Mount St. Mary's Mountaineers,116,16
+2017,Saint Mary's Gaels,2608,7
+2017,VCU Rams,2670,10
+2017,Purdue Boilermakers,2509,4
+2017,Vermont Catamounts,261,13
+2017,Florida State Seminoles,52,3
+2017,Florida Gulf Coast Eagles,526,14
+2017,Wisconsin Badgers,275,8
+2017,Virginia Tech Hokies,259,9
+2017,Iowa State Cyclones,66,5
+2017,Nevada Wolf Pack,2440,12
+2017,Arizona Wildcats,12,2
+2017,North Dakota Fighting Hawks,155,15
+2017,Michigan Wolverines,130,7
+2017,Oklahoma State Cowboys,197,10
+2017,Baylor Bears,239,3
+2017,New Mexico State Aggies,166,14
+2017,Arkansas Razorbacks,8,8
+2017,Seton Hall Pirates,2550,9
+2017,Oregon Ducks,2483,3
+2017,Iona Gaels,314,14
+2017,Louisville Cardinals,97,2
+2017,Jacksonville State Gamecocks,55,15
+2017,SMU Mustangs,2567,6
+2017,North Carolina Tar Heels,153,1
+2017,Texas Southern Tigers,2640,16
+2017,Creighton Bluejays,156,6
+2017,Rhode Island Rams,227,11
+2017,Kansas Jayhawks,2305,1
+2017,Dayton Flyers,2168,7
+2017,Wichita State Shockers,2724,10
+2017,Duke Blue Devils,150,2
+2017,Troy Trojans,2653,15
+2017,Cincinnati Bearcats,2132,6
+2017,Kansas State Wildcats,2306,11
+2017,Miami Hurricanes,2390,8
+2017,Michigan State Spartans,127,9
+2017,South Carolina Gamecocks,2579,7
+2017,Marquette Golden Eagles,269,10
+2017,Kentucky Wildcats,96,2
+2017,Northern Kentucky Norse,94,15
+2017,UCLA Bruins,26,3
+2017,Kent State Golden Flashes,2309,14
+2018,Radford Highlanders,2515,16
+2018,UCLA Bruins,26,11
+2018,St. Bonaventure Bonnies,179,11
+2018,North Carolina Central Eagles,2428,16
+2018,Texas Southern Tigers,2640,16
+2018,Arizona State Sun Devils,9,11
+2018,Syracuse Orange,183,11
+2018,Rhode Island Rams,227,7
+2018,Oklahoma Sooners,201,10
+2018,Tennessee Volunteers,2633,3
+2018,Wright State Raiders,2750,14
+2018,Gonzaga Bulldogs,2250,4
+2018,UNC Greensboro Spartans,2430,13
+2018,Kansas Jayhawks,2305,1
+2018,Pennsylvania Quakers,219,16
+2018,Duke Blue Devils,150,2
+2018,Iona Gaels,314,15
+2018,Miami Hurricanes,2390,6
+2018,Loyola Chicago Ramblers,2350,11
+2018,Ohio State Buckeyes,194,5
+2018,South Dakota State Jackrabbits,2571,12
+2018,Seton Hall Pirates,2550,8
+2018,NC State Wolfpack,152,9
+2018,Villanova Wildcats,222,1
+2018,Kentucky Wildcats,96,5
+2018,Davidson Wildcats,2166,12
+2018,Texas Tech Red Raiders,2641,3
+2018,Stephen F. Austin Lumberjacks,2617,14
+2018,Houston Cougars,248,6
+2018,San Diego State Aztecs,21,11
+2018,Virginia Tech Hokies,259,8
+2018,Alabama Crimson Tide,333,9
+2018,Arizona Wildcats,12,4
+2018,Buffalo Bulls,2084,13
+2018,Florida Gators,57,6
+2018,Michigan Wolverines,130,3
+2018,Montana Grizzlies,149,14
+2018,Texas A&M Aggies,245,7
+2018,Providence Friars,2507,10
+2018,Purdue Boilermakers,2509,2
+2018,Cal State Fullerton Titans,2239,15
+2018,Wichita State Shockers,2724,4
+2018,Marshall Thundering Herd,276,13
+2018,Cincinnati Bearcats,2132,2
+2018,Georgia State Panthers,2247,15
+2018,North Carolina Tar Heels,153,2
+2018,Lipscomb Bisons,288,15
+2018,Arkansas Razorbacks,8,7
+2018,Butler Bulldogs,2086,10
+2018,West Virginia Mountaineers,277,5
+2018,Murray State Racers,93,12
+2018,Nevada Wolf Pack,2440,7
+2018,Texas Longhorns,251,10
+2018,Creighton Bluejays,156,8
+2018,Kansas State Wildcats,2306,9
+2018,Michigan State Spartans,127,3
+2018,Bucknell Bison,2083,14
+2018,Auburn Tigers,2,4
+2018,Charleston Cougars,232,13
+2018,Xavier Musketeers,2752,1
+2018,Virginia Cavaliers,258,1
+2018,UMBC Retrievers,2378,16
+2018,TCU Horned Frogs,2628,6
+2018,Clemson Tigers,228,5
+2018,New Mexico State Aggies,166,12
+2018,Missouri Tigers,142,8
+2018,Florida State Seminoles,52,9
+2019,Prairie View A&M Panthers,2504,16
+2019,Fairleigh Dickinson Knights,161,16
+2019,Belmont Bruins,2057,11
+2019,Temple Owls,218,11
+2019,North Dakota State Bison,2449,16
+2019,North Carolina Central Eagles,2428,16
+2019,Arizona State Sun Devils,9,11
+2019,St. John's Red Storm,2599,11
+2019,Louisville Cardinals,97,7
+2019,Minnesota Golden Gophers,135,10
+2019,LSU Tigers,99,3
+2019,Yale Bulldogs,43,14
+2019,Auburn Tigers,2,5
+2019,New Mexico State Aggies,166,12
+2019,Florida State Seminoles,52,4
+2019,Vermont Catamounts,261,13
+2019,Michigan State Spartans,127,2
+2019,Bradley Braves,71,15
+2019,Maryland Terrapins,120,6
+2019,Kansas Jayhawks,2305,4
+2019,Northeastern Huskies,111,13
+2019,Marquette Golden Eagles,269,5
+2019,Murray State Racers,93,12
+2019,Nevada Wolf Pack,2440,7
+2019,Florida Gators,57,10
+2019,Kentucky Wildcats,96,2
+2019,Abilene Christian Wildcats,2000,15
+2019,Gonzaga Bulldogs,2250,1
+2019,Villanova Wildcats,222,6
+2019,Saint Mary's Gaels,2608,11
+2019,Wofford Terriers,2747,7
+2019,Seton Hall Pirates,2550,10
+2019,Michigan Wolverines,130,2
+2019,Montana Grizzlies,149,15
+2019,Syracuse Orange,183,8
+2019,Baylor Bears,239,9
+2019,Purdue Boilermakers,2509,3
+2019,Old Dominion Monarchs,295,14
+2019,Cincinnati Bearcats,2132,7
+2019,Iowa Hawkeyes,2294,10
+2019,Ole Miss Rebels,145,8
+2019,Oklahoma Sooners,201,9
+2019,Texas Tech Red Raiders,2641,3
+2019,Northern Kentucky Norse,94,14
+2019,Kansas State Wildcats,2306,4
+2019,UC Irvine Anteaters,300,13
+2019,Tennessee Volunteers,2633,2
+2019,Colgate Raiders,2142,15
+2019,Virginia Cavaliers,258,1
+2019,Gardner-Webb Runnin' Bulldogs,2241,16
+2019,Buffalo Bulls,2084,6
+2019,Wisconsin Badgers,275,5
+2019,Oregon Ducks,2483,12
+2019,Utah State Aggies,328,8
+2019,Washington Huskies,264,9
+2019,Duke Blue Devils,150,1
+2019,Houston Cougars,248,3
+2019,Georgia State Panthers,2247,14
+2019,Mississippi State Bulldogs,344,5
+2019,Liberty Flames,2335,12
+2019,North Carolina Tar Heels,153,1
+2019,Iona Gaels,314,16
+2019,VCU Rams,2670,8
+2019,UCF Knights,2116,9
+2019,Iowa State Cyclones,66,6
+2019,Ohio State Buckeyes,194,11
+2019,Virginia Tech Hokies,259,4
+2019,Saint Louis Billikens,139,13
+2021,Mount St. Mary's Mountaineers,116,16
+2021,Texas Southern Tigers,2640,16
+2021,Wichita State Shockers,2724,11
+2021,Drake Bulldogs,2181,11
+2021,Norfolk State Spartans,2450,16
+2021,App State Mountaineers,2026,16
+2021,Michigan State Spartans,127,11
+2021,UCLA Bruins,26,11
+2021,Florida Gators,57,7
+2021,Virginia Tech Hokies,259,10
+2021,Arkansas Razorbacks,8,3
+2021,Colgate Raiders,2142,14
+2021,Illinois Fighting Illini,356,1
+2021,Drexel Dragons,2182,16
+2021,Texas Tech Red Raiders,2641,6
+2021,Utah State Aggies,328,11
+2021,Ohio State Buckeyes,194,2
+2021,Oral Roberts Golden Eagles,198,15
+2021,Baylor Bears,239,1
+2021,Hartford Hawks,nd-hartford-hawks,16
+2021,Loyola Chicago Ramblers,2350,8
+2021,Georgia Tech Yellow Jackets,59,9
+2021,Tennessee Volunteers,2633,5
+2021,Oregon State Beavers,204,12
+2021,Oklahoma State Cowboys,197,4
+2021,Liberty Flames,2335,13
+2021,North Carolina Tar Heels,153,8
+2021,Wisconsin Badgers,275,9
+2021,Houston Cougars,248,2
+2021,Cleveland State Vikings,325,15
+2021,Purdue Boilermakers,2509,4
+2021,North Texas Mean Green,249,13
+2021,Clemson Tigers,228,7
+2021,Rutgers Scarlet Knights,164,10
+2021,San Diego State Aztecs,21,6
+2021,Syracuse Orange,183,11
+2021,Villanova Wildcats,222,5
+2021,Winthrop Eagles,2737,12
+2021,West Virginia Mountaineers,277,3
+2021,Morehead State Eagles,2413,14
+2021,Colorado Buffaloes,38,5
+2021,Georgetown Hoyas,46,12
+2021,Florida State Seminoles,52,4
+2021,UNC Greensboro Spartans,2430,13
+2021,Kansas Jayhawks,2305,3
+2021,Eastern Washington Eagles,331,14
+2021,LSU Tigers,99,8
+2021,St. Bonaventure Bonnies,179,9
+2021,Michigan Wolverines,130,1
+2021,Creighton Bluejays,156,5
+2021,UC Santa Barbara Gauchos,2540,12
+2021,Alabama Crimson Tide,333,2
+2021,Iona Gaels,314,15
+2021,USC Trojans,30,6
+2021,Iowa Hawkeyes,2294,2
+2021,Grand Canyon Lopes,2253,15
+2021,UConn Huskies,41,7
+2021,Maryland Terrapins,120,10
+2021,Virginia Cavaliers,258,4
+2021,Ohio Bobcats,195,13
+2021,Oklahoma Sooners,201,8
+2021,Missouri Tigers,142,9
+2021,Gonzaga Bulldogs,2250,1
+2021,BYU Cougars,252,6
+2021,Oregon Ducks,2483,7
+2021,VCU Rams,2670,10
+2021,Texas Longhorns,251,3
+2021,Abilene Christian Wildcats,2000,14
+2022,Texas Southern Tigers,2640,16
+2022,Texas A&M-Corpus Christi Islanders,357,16
+2022,Wyoming Cowboys,2751,12
+2022,Indiana Hoosiers,84,12
+2022,Wright State Raiders,2750,16
+2022,Bryant Bulldogs,2803,16
+2022,Rutgers Scarlet Knights,164,11
+2022,Notre Dame Fighting Irish,87,11
+2022,Colorado State Rams,36,6
+2022,Michigan Wolverines,130,11
+2022,Providence Friars,2507,4
+2022,South Dakota State Jackrabbits,2571,13
+2022,Boise State Broncos,68,8
+2022,Memphis Tigers,235,9
+2022,Baylor Bears,239,1
+2022,Norfolk State Spartans,2450,16
+2022,Tennessee Volunteers,2633,3
+2022,Longwood Lancers,2344,14
+2022,Iowa Hawkeyes,2294,5
+2022,Richmond Spiders,257,12
+2022,Gonzaga Bulldogs,2250,1
+2022,Georgia State Panthers,2247,16
+2022,North Carolina Tar Heels,153,8
+2022,Marquette Golden Eagles,269,9
+2022,UConn Huskies,41,5
+2022,New Mexico State Aggies,166,12
+2022,Kentucky Wildcats,96,2
+2022,Saint Peter's Peacocks,2612,15
+2022,Saint Mary's Gaels,2608,5
+2022,San Diego State Aztecs,21,8
+2022,Creighton Bluejays,156,9
+2022,Arkansas Razorbacks,8,4
+2022,Vermont Catamounts,261,13
+2022,UCLA Bruins,26,4
+2022,Akron Zips,2006,13
+2022,Murray State Racers,93,7
+2022,San Francisco Dons,2539,10
+2022,Kansas Jayhawks,2305,1
+2022,Ohio State Buckeyes,194,7
+2022,Loyola Chicago Ramblers,2350,10
+2022,Auburn Tigers,2,2
+2022,Jacksonville State Gamecocks,55,15
+2022,Texas Tech Red Raiders,2641,3
+2022,Montana State Bobcats,147,14
+2022,Purdue Boilermakers,2509,3
+2022,Yale Bulldogs,43,14
+2022,Villanova Wildcats,222,2
+2022,Delaware Blue Hens,48,15
+2022,USC Trojans,30,7
+2022,Miami Hurricanes,2390,10
+2022,Alabama Crimson Tide,333,6
+2022,Texas Longhorns,251,6
+2022,Virginia Tech Hokies,259,11
+2022,Illinois Fighting Illini,356,4
+2022,Chattanooga Mocs,236,13
+2022,Duke Blue Devils,150,2
+2022,Cal State Fullerton Titans,2239,15
+2022,Arizona Wildcats,12,1
+2022,LSU Tigers,99,6
+2022,Iowa State Cyclones,66,11
+2022,Michigan State Spartans,127,7
+2022,Davidson Wildcats,2166,10
+2022,Houston Cougars,248,5
+2022,UAB Blazers,5,12
+2022,Seton Hall Pirates,2550,8
+2022,TCU Horned Frogs,2628,9
+2022,Wisconsin Badgers,275,3
+2022,Colgate Raiders,2142,14
+2023,Texas A&M-Corpus Christi Islanders,357,16
+2023,Southeast Missouri State Redhawks,2546,16
+2023,Mississippi State Bulldogs,344,11
+2023,Pittsburgh Panthers,221,11
+2023,Texas Southern Tigers,2640,16
+2023,Fairleigh Dickinson Knights,161,16
+2023,Arizona State Sun Devils,9,11
+2023,Nevada Wolf Pack,2440,11
+2023,Maryland Terrapins,120,8
+2023,West Virginia Mountaineers,277,9
+2023,Virginia Cavaliers,258,4
+2023,Furman Paladins,231,13
+2023,Missouri Tigers,142,7
+2023,Utah State Aggies,328,10
+2023,Kansas Jayhawks,2305,1
+2023,Howard Bison,47,16
+2023,Alabama Crimson Tide,333,1
+2023,San Diego State Aztecs,21,5
+2023,Charleston Cougars,232,12
+2023,Arizona Wildcats,12,2
+2023,Princeton Tigers,163,15
+2023,Arkansas Razorbacks,8,8
+2023,Illinois Fighting Illini,356,9
+2023,Iowa Hawkeyes,2294,8
+2023,Auburn Tigers,2,9
+2023,Duke Blue Devils,150,5
+2023,Oral Roberts Golden Eagles,198,12
+2023,Northwestern Wildcats,77,7
+2023,Boise State Broncos,68,10
+2023,Texas Longhorns,251,2
+2023,Colgate Raiders,2142,15
+2023,Houston Cougars,248,1
+2023,Northern Kentucky Norse,94,16
+2023,Tennessee Volunteers,2633,4
+2023,Louisiana Ragin' Cajuns,309,13
+2023,UCLA Bruins,26,2
+2023,UNC Asheville Bulldogs,2427,15
+2023,Texas A&M Aggies,245,7
+2023,Penn State Nittany Lions,213,10
+2023,Michigan State Spartans,127,7
+2023,USC Trojans,30,10
+2023,Xavier Musketeers,2752,3
+2023,Kennesaw State Owls,338,14
+2023,Baylor Bears,239,3
+2023,UC Santa Barbara Gauchos,2540,14
+2023,Saint Mary's Gaels,2608,5
+2023,VCU Rams,2670,12
+2023,Marquette Golden Eagles,269,2
+2023,Vermont Catamounts,261,15
+2023,Iowa State Cyclones,66,6
+2023,Creighton Bluejays,156,6
+2023,NC State Wolfpack,152,11
+2023,UConn Huskies,41,4
+2023,Iona Gaels,314,13
+2023,Purdue Boilermakers,2509,1
+2023,Kentucky Wildcats,96,6
+2023,Providence Friars,2507,11
+2023,Gonzaga Bulldogs,2250,3
+2023,Grand Canyon Lopes,2253,14
+2023,Miami Hurricanes,2390,5
+2023,Drake Bulldogs,2181,12
+2023,Memphis Tigers,235,8
+2023,Florida Atlantic Owls,2226,9
+2023,Kansas State Wildcats,2306,3
+2023,Montana State Bobcats,147,14
+2023,TCU Horned Frogs,2628,6
+2023,Indiana Hoosiers,84,4
+2023,Kent State Golden Flashes,2309,13
+2024,Howard Bison,47,16
+2024,Wagner Seahawks,2681,16
+2024,Virginia Cavaliers,258,10
+2024,Colorado State Rams,36,10
+2024,Montana State Bobcats,147,16
+2024,Grambling Tigers,2755,16
+2024,Boise State Broncos,68,10
+2024,Colorado Buffaloes,38,10
+2024,Mississippi State Bulldogs,344,8
+2024,Michigan State Spartans,127,9
+2024,BYU Cougars,252,6
+2024,Duquesne Dukes,2184,11
+2024,Creighton Bluejays,156,3
+2024,Akron Zips,2006,14
+2024,Arizona Wildcats,12,2
+2024,Long Beach State Beach,299,15
+2024,North Carolina Tar Heels,153,1
+2024,Illinois Fighting Illini,356,3
+2024,Morehead State Eagles,2413,14
+2024,South Carolina Gamecocks,2579,6
+2024,Oregon Ducks,2483,11
+2024,Dayton Flyers,2168,7
+2024,Nevada Wolf Pack,2440,10
+2024,Texas Longhorns,251,7
+2024,Kentucky Wildcats,96,3
+2024,Oakland Golden Grizzlies,2473,14
+2024,Iowa State Cyclones,66,2
+2024,South Dakota State Jackrabbits,2571,15
+2024,Gonzaga Bulldogs,2250,5
+2024,McNeese Cowboys,2377,12
+2024,Tennessee Volunteers,2633,2
+2024,Saint Peter's Peacocks,2612,15
+2024,Texas Tech Red Raiders,2641,6
+2024,NC State Wolfpack,152,11
+2024,Washington State Cougars,265,7
+2024,Drake Bulldogs,2181,10
+2024,Kansas Jayhawks,2305,4
+2024,Samford Bulldogs,2535,13
+2024,Florida Atlantic Owls,2226,8
+2024,Northwestern Wildcats,77,9
+2024,Baylor Bears,239,3
+2024,Colgate Raiders,2142,14
+2024,San Diego State Aztecs,21,5
+2024,UAB Blazers,5,12
+2024,Marquette Golden Eagles,269,2
+2024,Western Kentucky Hilltoppers,98,15
+2024,Clemson Tigers,228,6
+2024,New Mexico Lobos,167,11
+2024,UConn Huskies,41,1
+2024,Stetson Hatters,56,16
+2024,Auburn Tigers,2,4
+2024,Yale Bulldogs,43,13
+2024,Florida Gators,57,7
+2024,Nebraska Cornhuskers,158,8
+2024,Texas A&M Aggies,245,9
+2024,Duke Blue Devils,150,4
+2024,Vermont Catamounts,261,13
+2024,Purdue Boilermakers,2509,1
+2024,Alabama Crimson Tide,333,4
+2024,Charleston Cougars,232,13
+2024,Houston Cougars,248,1
+2024,Longwood Lancers,2344,16
+2024,Wisconsin Badgers,275,5
+2024,James Madison Dukes,256,12
+2024,Utah State Aggies,328,8
+2024,TCU Horned Frogs,2628,9
+2024,Saint Mary's Gaels,2608,5
+2024,Grand Canyon Lopes,2253,12
+2025,Alabama State Hornets,2011,16
+2025,Saint Francis Red Flash,2598,16
+2025,San Diego State Aztecs,21,11
+2025,North Carolina Tar Heels,153,11
+2025,American University Eagles,44,16
+2025,Mount St. Mary's Mountaineers,116,16
+2025,Texas Longhorns,251,11
+2025,Xavier Musketeers,2752,11
+2025,Louisville Cardinals,97,8
+2025,Creighton Bluejays,156,9
+2025,Purdue Boilermakers,2509,4
+2025,High Point Panthers,2272,13
+2025,Wisconsin Badgers,275,3
+2025,Montana Grizzlies,149,14
+2025,Houston Cougars,248,1
+2025,SIU Edwardsville Cougars,2565,16
+2025,Auburn Tigers,2,1
+2025,Clemson Tigers,228,5
+2025,McNeese Cowboys,2377,12
+2025,BYU Cougars,252,6
+2025,VCU Rams,2670,11
+2025,Gonzaga Bulldogs,2250,8
+2025,Georgia Bulldogs,61,9
+2025,Tennessee Volunteers,2633,2
+2025,Wofford Terriers,2747,15
+2025,Kansas Jayhawks,2305,7
+2025,Arkansas Razorbacks,8,10
+2025,Texas A&M Aggies,245,4
+2025,Yale Bulldogs,43,13
+2025,Missouri Tigers,142,6
+2025,Drake Bulldogs,2181,11
+2025,UCLA Bruins,26,7
+2025,Utah State Aggies,328,10
+2025,St. John's Red Storm,2599,2
+2025,Omaha Mavericks,2437,15
+2025,Michigan Wolverines,130,5
+2025,UC San Diego Tritons,28,12
+2025,Texas Tech Red Raiders,2641,3
+2025,UNC Wilmington Seahawks,350,14
+2025,Mississippi State Bulldogs,344,8
+2025,Baylor Bears,239,9
+2025,Alabama Crimson Tide,333,2
+2025,Robert Morris Colonials,2523,15
+2025,Iowa State Cyclones,66,3
+2025,Lipscomb Bisons,288,14
+2025,Memphis Tigers,235,5
+2025,Colorado State Rams,36,12
+2025,Duke Blue Devils,150,1
+2025,Saint Mary's Gaels,2608,7
+2025,Vanderbilt Commodores,238,10
+2025,Ole Miss Rebels,145,6
+2025,Maryland Terrapins,120,4
+2025,Grand Canyon Lopes,2253,13
+2025,Florida Gators,57,1
+2025,Norfolk State Spartans,2450,16
+2025,Kentucky Wildcats,96,3
+2025,Troy Trojans,2653,14
+2025,Marquette Golden Eagles,269,7
+2025,New Mexico Lobos,167,10
+2025,Arizona Wildcats,12,4
+2025,Akron Zips,2006,13
+2025,UConn Huskies,41,8
+2025,Oklahoma Sooners,201,9
+2025,Illinois Fighting Illini,356,6
+2025,Michigan State Spartans,127,2
+2025,Bryant Bulldogs,2803,15
+2025,Oregon Ducks,2483,5
+2025,Liberty Flames,2335,12
+2026,Duke Blue Devils,,1
+2026,Michigan Wolverines,,1
+2026,Arizona Wildcats,,1
+2026,Florida Gators,,1
+2026,UConn Huskies,,2
+2026,Houston Cougars,,2
+2026,Michigan State Spartans,,2
+2026,Illinois Fighting Illini,,2
+2026,Iowa State Cyclones,,3
+2026,Nebraska Cornhuskers,,3
+2026,Gonzaga Bulldogs,,3
+2026,Purdue Boilermakers,,3
+2026,Alabama Crimson Tide,,4
+2026,Virginia Cavaliers,,4
+2026,Kansas Jayhawks,,4
+2026,Texas Tech Red Raiders,,4
+2026,Vanderbilt Commodores,,5
+2026,Arkansas Razorbacks,,5
+2026,St. John's Red Storm,,5
+2026,North Carolina Tar Heels,,5
+2026,Tennessee Volunteers,,6
+2026,Wisconsin Badgers,,6
+2026,Louisville Cardinals,,6
+2026,BYU Cougars,,6
+2026,Kentucky Wildcats,,7
+2026,Saint Mary's Gaels,,7
+2026,Miami Hurricanes,,7
+2026,Villanova Wildcats,,7
+2026,Georgia Bulldogs,,8
+2026,UCLA Bruins,,8
+2026,Clemson Tigers,,8
+2026,Utah State Aggies,,8
+2026,TCU Horned Frogs,,9
+2026,Iowa Hawkeyes,,9
+2026,Saint Louis Billikens,,9
+2026,Ohio State Buckeyes,,9
+2026,Texas A&M Aggies,,10
+2026,UCF Knights,,10
+2026,NC State Wolfpack,,10
+2026,Miami (OH) RedHawks,,10
+2026,Missouri Tigers,,10
+2026,Santa Clara Broncos,,11
+2026,Texas Longhorns,,11
+2026,SMU Mustangs,,11
+2026,VCU Rams,,11
+2026,Auburn,,11
+2026,Indiana,,11
+2026,Cincinnati,,11
+2026,Boise State,,11
+2026,San Diego State,,11
+2026,Oklahoma,,11
+2026,Virginia Tech,,11
+2026,New Mexico,,11
+2026,South Florida Bulls,,12
+2026,Akron Zips,,12
+2026,Tulsa,,12
+2026,Belmont Bruins,,12
+2026,Yale Bulldogs,,12
+2026,McNeese Cowboys,,12
+2026,SFA Lumberjacks,,12
+2026,High Point Panthers,,12
+2026,Northern Iowa Panthers,,13
+2026,Liberty Flames,,13
+2026,Utah Valley Wolverines,,13
+2026,Missouri State,,13
+2026,Hofstra Pride,,13
+2026,Sam Houston Bearkats,,13
+2026,California Baptist,,13
+2026,UC San Diego,,14
+2026,Hawaii,,14
+2026,UC Irvine Anteaters,,14
+2026,Troy Trojans,,14
+2026,North Dakota State Bison,,14
+2026,Middle Tennessee,,14
+2026,Portland State,,14
+2026,Wright State Raiders,,14
+2026,Merrimack,,15
+2026,Tennessee State Tigers,,15
+2026,Furman Paladins,,15
+2026,Idaho Vandals,,15
+2026,Siena Saints,,15
+2026,Queens Royals,,15
+2026,Montana Grizzlies,,16
+2026,UMBC Retrievers,,16
+2026,LIU Sharks,,16
+2026,Howard,,16
+2026,Lehigh,,16
+2026,Florida A&M,,16
+2026,Boston University Terriers,,16
+2026,Alabama A&M,,16
+2026,Southern,,16
+2026,Bethune-Cookman Wildcats,,16
+2026,Prairie View A&M Panthers,,16
+2026,Vermont,,16
+2026,Norfolk State Spartans,,16
