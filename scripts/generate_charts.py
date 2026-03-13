@@ -51,6 +51,14 @@ class ProfessionalVisualizer:
     SUCCESS_GREEN  = '#3BB273'
     WARNING_ORANGE = '#E07B39'
     SIGNATURE      = '@jgamblin | march-ml'
+    SOCIAL_TOP     = 0.85
+
+    _HISTORICAL_CHAMP_PCT = {
+        1: 0.575, 2: 0.200, 3: 0.100, 4: 0.050,
+        5: 0.025, 6: 0.025, 7: 0.000, 8: 0.025,
+        9: 0.000, 10: 0.000, 11: 0.025, 12: 0.000,
+        13: 0.000, 14: 0.000, 15: 0.000, 16: 0.000,
+    }
 
     def __init__(self, out_dir='results/charts', highlight_teams=None, dpi=180):
         self.out_dir = Path(out_dir)
@@ -123,15 +131,77 @@ class ProfessionalVisualizer:
         fig.text(0.01, 0.005, f'{self.SIGNATURE}  ·  Updated {ts}',
                  transform=fig.transFigure,
                  fontsize=7.5, color=self.TEXT_LIGHT, style='italic', va='bottom')
+        fig.text(0.99, 0.005, '  PROJECTED BY march-ml  ',
+                 transform=fig.transFigure, fontsize=7.5, fontweight='bold',
+                 color=self.ACCENT_GOLD, va='bottom', ha='right',
+                 bbox=dict(boxstyle='round,pad=0.3', facecolor='#333333',
+                           edgecolor=self.ACCENT_GOLD, linewidth=0.9))
 
-    def _save(self, fig, filename, top_pad=0.88):
+    def _add_social_header(self, fig, title, subtitle=None, generated_at=None):
+        """Dark header bar with title, subtitle, branding badge, and timestamp footer."""
+        from matplotlib.patches import Rectangle as _Rect
+        rect = _Rect((0, self.SOCIAL_TOP), 1.0, 1.0 - self.SOCIAL_TOP,
+                     transform=fig.transFigure, facecolor='#222222',
+                     edgecolor='none', zorder=10, clip_on=False)
+        fig.add_artist(rect)
+        header_mid = (self.SOCIAL_TOP + 1.0) / 2
+        fig.text(0.015, header_mid + 0.025, title,
+                 transform=fig.transFigure, fontsize=13, fontweight='bold',
+                 color='white', va='center', zorder=11)
+        if subtitle:
+            fig.text(0.015, header_mid - 0.025, subtitle,
+                     transform=fig.transFigure, fontsize=8,
+                     color=self.ACCENT_GOLD, va='center', zorder=11)
+        fig.text(0.985, header_mid, '  PROJECTED BY march-ml  ',
+                 transform=fig.transFigure, fontsize=7.5, fontweight='bold',
+                 color=self.ACCENT_GOLD, va='center', ha='right', zorder=11,
+                 bbox=dict(boxstyle='round,pad=0.35', facecolor='#333333',
+                           edgecolor=self.ACCENT_GOLD, linewidth=1.0))
+        if generated_at:
+            try:
+                dt = datetime.fromisoformat(generated_at.rstrip('Z'))
+                ts = dt.strftime('%Y-%m-%d %H:%M UTC')
+            except (ValueError, AttributeError):
+                ts = str(generated_at)
+        else:
+            ts = datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M UTC')
+        fig.text(0.01, 0.005, f'Updated {ts}  ·  {self.SIGNATURE}',
+                 transform=fig.transFigure, fontsize=7, color=self.TEXT_LIGHT,
+                 style='italic', va='bottom')
+
+    def _save(self, fig, filename, top_pad=0.88, social=False):
         """Save figure; top_pad leaves room for title block (use lower value for subtitles)."""
         fig.subplots_adjust(top=top_pad, bottom=0.10)
         path = self.out_dir / filename
         fig.savefig(path, dpi=self.dpi, bbox_inches='tight',
                     facecolor=self.FIG_BG, edgecolor='none')
+        if social:
+            self._save_social(fig, path)
         plt.close(fig)
         print(f"  Saved {path}")
+
+    def _save_social(self, fig, original_path: Path):
+        """Save a 1200×675 (16:9) social-media-optimized version alongside the original."""
+        social_path = original_path.parent / (original_path.stem + '_social.png')
+        try:
+            from PIL import Image
+            img = Image.open(original_path).convert('RGB')
+            w, h = img.size
+            target_w, target_h = 1200, 675
+            scale = min(target_w / w, target_h / h)
+            new_w, new_h = int(w * scale), int(h * scale)
+            img_resized = img.resize((new_w, new_h), Image.LANCZOS)
+            bg_hex = self.FIG_BG.lstrip('#')
+            bg_rgb = tuple(int(bg_hex[i:i+2], 16) for i in (0, 2, 4))
+            canvas = Image.new('RGB', (target_w, target_h), bg_rgb)
+            offset = ((target_w - new_w) // 2, (target_h - new_h) // 2)
+            canvas.paste(img_resized, offset)
+            canvas.save(social_path, dpi=(150, 150))
+            print(f"  Saved {social_path} (16:9 social)")
+        except ImportError:
+            fig.savefig(social_path, dpi=100, bbox_inches='tight',
+                        facecolor=self.FIG_BG, edgecolor='none')
+            print(f"  Saved {social_path} (16:9 social, PIL not available)")
 
     def _bar_colors(self, values, names=None):
         """Map values to mako palette; override top item and user highlights."""
@@ -191,13 +261,31 @@ class ProfessionalVisualizer:
                     f'{prob:.1%}', va='center', ha='left',
                     fontsize=9, color=self.TEXT_DARK, fontweight='semibold')
 
-        ax.set_xlim(0, max(p + h for p, h in zip(probs, ci_hi)) * 1.32)
+        team_seeds = {entry['team']: entry.get('seed') for entry in sim.get('bracket', [])}
+
+        cinderellas = [
+            (i, team, prob, team_seeds.get(team))
+            for i, (team, prob) in enumerate(champs_sorted)
+            if team_seeds.get(team) and team_seeds.get(team) > 10 and prob > 0.02
+        ]
+        for i, team, prob, seed in cinderellas:
+            bar_y_center = bars[i].get_y() + bars[i].get_height() / 2
+            ax.annotate(
+                f"★ Cinderella?\nSeed #{seed}",
+                xy=(prob, bar_y_center),
+                xytext=(prob + 0.08, bar_y_center),
+                fontsize=8, color=self.ACCENT_CORAL, fontweight='bold', va='center',
+                bbox=dict(boxstyle='round,pad=0.4', facecolor='#FFF0F0',
+                          edgecolor=self.ACCENT_CORAL, linewidth=1.2, alpha=0.9),
+                arrowprops=dict(arrowstyle='->', color=self.ACCENT_CORAL, lw=1.2,
+                                connectionstyle='arc3,rad=0.1'),
+            )
+
+        xlim_mult = 1.55 if cinderellas else 1.32
+        ax.set_xlim(0, max(p + h for p, h in zip(probs, ci_hi)) * xlim_mult)
         ax.set_xlabel('Championship Probability', fontsize=10, labelpad=8, color=self.TEXT_MID)
         ax.xaxis.set_major_formatter(mticker.PercentFormatter(xmax=1.0))
         self._clean_axes(ax, grid_axis='x')
-        self._set_title(ax, f'{season} Championship Favorites',
-                        subtitle=(f'Top {top_n} by win probability  ·  {n_sims:,} Monte Carlo sims  '
-                                  f'·  Error bars = 95% CI'))
 
         legend_items = [mpatches.Patch(color=self.ACCENT_GOLD, label='#1 Favorite')]
         if self.highlight_teams:
@@ -210,8 +298,11 @@ class ProfessionalVisualizer:
                     transform=ax.transAxes, fontsize=7.5, color=self.WARNING_ORANGE,
                     ha='right', va='bottom', style='italic')
 
-        self._add_footer(fig, generated_at)
-        self._save(fig, f'champion_probs_{season}.png', top_pad=0.84)
+        title = f'{season} Championship Favorites'
+        subtitle = (f'Top {top_n} by win probability  ·  {n_sims:,} Monte Carlo sims  '
+                    f'·  Error bars = 95% CI')
+        self._add_social_header(fig, title, subtitle, generated_at)
+        self._save(fig, f'champion_probs_{season}.png', top_pad=self.SOCIAL_TOP, social=True)
 
     def chart_round_probs(self, sim, top_n=5):
         """Heatmap of round-by-round reach probabilities (teams × rounds)."""
@@ -259,6 +350,13 @@ class ProfessionalVisualizer:
                         ha='center', va='center',
                         fontsize=9, color=txt_color, fontweight=weight)
 
+        # Most Likely Path: golden border on the highest-confidence round per team
+        for i in range(matrix.shape[0]):
+            candidates = [j for j in range(matrix.shape[1]) if matrix[i, j] >= 0.50]
+            best_j = max(candidates) if candidates else int(np.argmax(matrix[i]))
+            ax.add_patch(plt.Rectangle((best_j, i), 1, 1, fill=False,
+                                       edgecolor=self.ACCENT_GOLD, linewidth=2.8, zorder=5))
+
         # Style colorbar
         cbar = ax.collections[0].colorbar
         cbar.ax.tick_params(length=0, labelsize=7)
@@ -280,10 +378,10 @@ class ProfessionalVisualizer:
                     transform=ax.transAxes, fontsize=7.5, color=self.WARNING_ORANGE,
                     ha='right', va='top', style='italic')
 
-        self._set_title(ax, f'{season} Road to the Championship',
-                        subtitle=f'Probability of reaching each round  ·  Top {top_n} teams by championship odds  ·  {n_sims:,} simulations')
-        self._add_footer(fig, generated_at)
-        self._save(fig, f'round_probs_{season}.png', top_pad=0.84)
+        self._add_social_header(fig, f'{season} Road to the Championship',
+                                subtitle=f'Probability of reaching each round  ·  Top {top_n} teams by championship odds  ·  {n_sims:,} simulations',
+                                generated_at=generated_at)
+        self._save(fig, f'round_probs_{season}.png', top_pad=self.SOCIAL_TOP, social=True)
 
     def chart_loso_per_season(self, summary):
         """Bar chart of rolling CV accuracy by season with CI band."""
@@ -481,6 +579,81 @@ class ProfessionalVisualizer:
         self._add_footer(fig)
         self._save(fig, 'shap_beeswarm.png')
 
+    def chart_chaos_index(self, sim):
+        """Grouped bar chart: current sim championship % by seed vs historical (1985-2025)."""
+        bracket = sim.get('bracket', [])
+        if not bracket:
+            print("  Skipping chaos chart: no bracket data")
+            return
+        team_seeds = {e['team']: e.get('seed', 0) for e in bracket}
+        champion_probs = sim.get('champion_probs', [])
+        season = sim.get('season', '')
+        n_sims = sim.get('sims', 1)
+        generated_at = sim.get('generated_at')
+
+        sim_by_seed = {}
+        for team, prob in champion_probs:
+            seed = team_seeds.get(team, 0)
+            if seed:
+                sim_by_seed[seed] = sim_by_seed.get(seed, 0) + prob
+
+        show_seeds = sorted(s for s in sim_by_seed if s <= 12)
+        if not show_seeds:
+            print("  Skipping chaos chart: insufficient seed data")
+            return
+
+        hist_vals = [self._HISTORICAL_CHAMP_PCT.get(s, 0) for s in show_seeds]
+        sim_vals  = [sim_by_seed.get(s, 0) for s in show_seeds]
+
+        chaos_score = sum(s * sim_by_seed.get(s, 0) for s in range(1, 17))
+        hist_chaos  = sum(s * self._HISTORICAL_CHAMP_PCT.get(s, 0) for s in range(1, 17))
+        chaos_delta = chaos_score - hist_chaos
+
+        x = np.arange(len(show_seeds))
+        width = 0.38
+        fig, ax = self._make_figure((12, 6))
+
+        ax.bar(x - width/2, hist_vals, width, label='Historical avg (1985–2025)',
+               color=self.BASELINE_GRAY, alpha=0.75, edgecolor='white', linewidth=0.5)
+        bars_sim = ax.bar(x + width/2, sim_vals, width, label=f'{season} Simulation',
+                          color=[self.ACCENT_CORAL if s > 5 else self.SUCCESS_GREEN
+                                 for s in show_seeds],
+                          edgecolor='white', linewidth=0.5)
+
+        for bar, val in zip(bars_sim, sim_vals):
+            if val > 0.01:
+                ax.text(bar.get_x() + bar.get_width() / 2, val + 0.004,
+                        f'{val:.0%}', ha='center', va='bottom',
+                        fontsize=8, color=self.TEXT_DARK)
+
+        chaos_label = 'MORE CHALK ↓' if chaos_delta < 0 else 'MORE CHAOS ↑'
+        chaos_color = self.ACCENT_GOLD if chaos_delta < 0 else self.ACCENT_CORAL
+        ax.text(0.98, 0.97,
+                f'Chaos Score: {chaos_score:.1f}  ({chaos_label})\n'
+                f'Historical avg: {hist_chaos:.1f}  |  Δ {chaos_delta:+.1f}',
+                transform=ax.transAxes, ha='right', va='top', fontsize=9.5,
+                color=chaos_color, fontweight='bold',
+                bbox=dict(boxstyle='round,pad=0.5', facecolor=self.AXES_BG,
+                          edgecolor=chaos_color, linewidth=1.5))
+
+        ax.set_xticks(x)
+        ax.set_xticklabels([f'Seed {s}' for s in show_seeds], fontsize=9)
+        ax.set_ylabel('Championship Probability', fontsize=10, labelpad=8, color=self.TEXT_MID)
+        ax.yaxis.set_major_formatter(mticker.PercentFormatter(xmax=1.0))
+        ax.set_ylim(0, max(max(hist_vals), max(sim_vals)) * 1.4)
+        self._clean_axes(ax, grid_axis='y')
+        ax.legend(fontsize=9, frameon=False, loc='upper right', labelcolor=self.TEXT_MID)
+
+        if sim.get('bracket_source') == 'generated_top64':
+            ax.text(0.99, -0.04, '⚠ Efficiency-based selection — not official bracket',
+                    transform=ax.transAxes, fontsize=7.5, color=self.WARNING_ORANGE,
+                    ha='right', va='top', style='italic')
+
+        self._add_social_header(fig, f'{season} Chaos Index',
+                                subtitle='Championship probability by seed vs. historical averages  ·  Green = favored seeds  ·  Red = upsets',
+                                generated_at=generated_at)
+        self._save(fig, f'chaos_index_{season}.png', top_pad=self.SOCIAL_TOP, social=True)
+
     def chart_team_profiles(self, sim, out_subdir='teams'):
         """Generate one round-probability chart per team in results/charts/teams/.
 
@@ -625,6 +798,7 @@ def main():
             sim = load_sim(sim_path)
             viz.chart_champion_probs(sim)
             viz.chart_round_probs(sim)
+            viz.chart_chaos_index(sim)
             if args.teams:
                 viz.chart_team_profiles(sim)
         except FileNotFoundError as e:
