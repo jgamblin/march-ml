@@ -3,7 +3,7 @@
   "games_dir": "data/processed",
   "game_scope": "ncaa_tourney",
   "include_interactions": false,
-  "rows": 66258,
+  "rows": 66278,
   "tourney_rows": 666,
   "feature_columns": [
     "diff_adj_margin",
