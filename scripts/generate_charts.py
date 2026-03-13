@@ -388,25 +388,49 @@ class ProfessionalVisualizer:
 
         feats  = sorted(mean_abs, key=lambda k: mean_abs[k])
         vals   = [mean_abs[f] for f in feats]
-        clean  = [f.replace('diff_', '\u0394 ').replace('_', ' ').title() for f in feats]
+
+        def _label(f):
+            name = f.replace('diff_', '\u0394 ').replace('_', ' ').title()
+            for old, new in (('Sos ', 'SOS '), ('Pom ', 'POM '), (' Net ', ' NET '),
+                             (' Em', ' EM'), ('Adj Em', 'Adj EM')):
+                name = name.replace(old, new)
+            return name.strip()
+
+        clean  = [_label(f) for f in feats]
         colors = list(sns.color_palette('mako_r', len(feats)))
         colors[-1] = list(matplotlib.colors.to_rgb(self.ACCENT_GOLD))
 
-        fig, ax = self._make_figure((10, max(4.5, len(feats) * 0.48)))
-        bars = ax.barh(clean, vals, color=colors, height=0.62,
+        n = len(feats)
+        fig, ax = self._make_figure((10, max(5.0, n * 0.52)))
+        bars = ax.barh(clean, vals, color=colors, height=0.65,
                        edgecolor='white', linewidth=0.5)
 
+        max_val = max(vals)
         for bar, val in zip(bars, vals):
-            ax.text(val + max(vals) * 0.012, bar.get_y() + bar.get_height() / 2,
-                    f'{val:.4f}', va='center', ha='left', fontsize=8.5, color=self.TEXT_DARK)
+            ax.text(val + max_val * 0.012, bar.get_y() + bar.get_height() / 2,
+                    f'{val:.3f}', va='center', ha='left',
+                    fontsize=8.5, color=self.TEXT_DARK)
 
+        # Thin separator line above the gold (#1) bar
+        sep_y = bars[-1].get_y() + bars[-1].get_height() + 0.45
+        ax.axhline(sep_y, color=self.GRID_COLOR, linewidth=1.2)
+
+        ax.set_xlim(0, max_val * 1.20)
+        ax.xaxis.set_major_formatter(mticker.FuncFormatter(
+            lambda x, _: f'{x:.1f}'
+        ))
         ax.set_xlabel('Mean |SHAP value|  (impact on win probability)',
                       fontsize=10, labelpad=8, color=self.TEXT_MID)
         self._clean_axes(ax, grid_axis='x')
-        self._set_title(ax, 'Feature Importance',
-                        subtitle='SHAP values  ·  Higher = more influential  ·  Gold = top feature')
+
+        # Inline compact title/subtitle — avoids proportional gap on tall figures
+        ax.text(0, 1.05, 'Feature Importance', transform=ax.transAxes,
+                fontsize=14, fontweight='bold', color=self.TEXT_DARK, va='bottom')
+        ax.text(0, 1.01, 'SHAP values  \u00b7  Higher = more influential  \u00b7  Gold = top feature',
+                transform=ax.transAxes, fontsize=9, color=self.TEXT_LIGHT, va='bottom')
+
         self._add_footer(fig)
-        self._save(fig, 'shap_importance.png')
+        self._save(fig, 'shap_importance.png', top_pad=0.92)
 
     def chart_shap_beeswarm(self, shap_data):
         """Beeswarm scatter: each dot = one game, x = SHAP impact, color = feature value."""
@@ -468,9 +492,9 @@ class ProfessionalVisualizer:
             print("  Skipping team charts: no round_probs in sim")
             return
 
-        round_keys   = ['round_of_64', 'round_of_32', 'sweet_16',
+        round_keys   = ['round_of_32', 'sweet_16',
                         'elite_8', 'final_4', 'title_game', 'champion']
-        round_labels = ['First Round', 'Round of 32', 'Sweet 16',
+        round_labels = ['Round of 32', 'Sweet 16',
                         'Elite 8', 'Final Four', 'Title Game', 'Champion']
         season       = sim.get('season', '')
         n_sims       = sim.get('sims', '')
@@ -502,7 +526,7 @@ class ProfessionalVisualizer:
                         f'{prob:.0%}', va='center', ha='left',
                         fontsize=9.5, color=self.TEXT_DARK, fontweight='semibold')
 
-            ax.set_xlim(0, 1.20)
+            ax.set_xlim(0, 1.0)
             ax.xaxis.set_major_formatter(mticker.PercentFormatter(xmax=1.0))
             self._clean_axes(ax, grid_axis='x')
 
