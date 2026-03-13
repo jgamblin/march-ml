@@ -1,0 +1,46 @@
+{
+  "features_path": "data/processed/features/tournament_teams.csv",
+  "games_dir": "data/processed",
+  "game_scope": "ncaa_tourney",
+  "include_interactions": false,
+  "rows": 67,
+  "tourney_rows": 67,
+  "feature_columns": [
+    "diff_adj_margin",
+    "diff_win_pct",
+    "diff_sos_win_pct",
+    "diff_adj_em",
+    "diff_barthag",
+    "diff_luck",
+    "diff_seed",
+    "neutral_site",
+    "is_tournament",
+    "seed_matchup_prior",
+    "seed_close_match",
+    "adj_when_close",
+    "adj_when_far",
+    "bart_em_when_close",
+    "bart_em_when_far",
+    "tempo_mismatch"
+  ],
+  "seasons": [
+    2025
+  ],
+  "baselines": {
+    "always_team_a": 0.8208955223880597,
+    "adj_margin_sign": 0.7910447761194029,
+    "win_pct_sign": 0.5671641791044776,
+    "lower_seed": 0.7761194029850746
+  },
+  "loso_per_season": [],
+  "loso_overall": {},
+  "rolling_cv_per_season": [],
+  "rolling_cv_overall": {},
+  "holdout_results": [],
+  "overall_holdout_ensemble": {},
+  "models": {
+    "logistic_regression": true,
+    "xgboost": true,
+    "calibration": "CalibratedClassifierCV(sigmoid/isotonic, cv=5)"
+  }
+}

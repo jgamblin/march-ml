@@ -12,29 +12,17 @@ Data updates automatically every 6 hours via GitHub Actions. The bracket and cha
 
 ## 2026 Championship Odds
 
-> ⚠️ **Pre-Selection-Sunday projection** — bracket generated from top-64 teams by efficiency rating. Odds will update automatically once the official bracket is announced on March 15.
+> ⚠️ **Pre-Selection-Sunday projection** — bracket generated from top-64 teams by efficiency rating. Odds will update automatically once the official bracket is announced on March 15, and every 6 hours thereafter.
+
+### Road to the Championship
+
+![Round-by-round probabilities](results/charts/round_probs_2026.png)
+
+### Championship favorites
 
 ![2026 Champion Probabilities](results/charts/champion_probs_2026.png)
 
-| # | Team | Championship% |
-|---|------|--------------|
-| 1 | Duke Blue Devils | 24.7% |
-| 2 | Michigan Wolverines | 23.5% |
-| 3 | Arizona Wildcats | 19.2% |
-| 4 | Florida Gators | 6.5% |
-| 5 | Gonzaga Bulldogs | 2.8% |
-| 6 | Michigan State Spartans | 2.7% |
-| 7 | North Carolina Tar Heels | 2.0% |
-| 8 | UConn Huskies | 1.7% |
-| 9 | Nebraska Cornhuskers | 1.6% |
-| 10 | Illinois Fighting Illini | 1.5% |
-| 11 | Saint Mary's Gaels | 1.4% |
-| 12 | Houston Cougars | 1.2% |
-| 13 | St. John's Red Storm | 1.2% |
-| 14 | Arkansas Razorbacks | 1.0% |
-| 15 | Iowa State Cyclones | 1.0% |
-
-Simulated across **5,000 bracket runs**. See [`results/sim_5000.json`](results/sim_5000.json) for full round-by-round probabilities for all 64 teams.
+> Charts and odds refresh automatically via GitHub Actions after each data update. Run `python show_results.py` locally for a full breakdown including the path-to-championship table.
 
 ---
 

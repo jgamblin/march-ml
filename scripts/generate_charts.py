@@ -280,6 +280,67 @@ def chart_shap_beeswarm(shap_data, out_dir):
     print(f"  Saved {out_path}")
 
 
+def chart_round_probs(sim, out_dir, top_n=16):
+    """Grouped bar chart of per-round reach probabilities for top teams."""
+    round_probs = sim.get('round_probs', {})
+    if not round_probs:
+        print("  Skipping round-probs chart: no round_probs in sim")
+        return
+
+    round_keys = ['sweet_16', 'elite_8', 'final_4', 'title_game', 'champion']
+    round_labels = ['Sweet 16', 'Elite 8', 'Final Four', 'Title Game', 'Champion']
+    round_colors = ['#1a73e8', '#4a9eff', '#f5a623', '#ff8c00', '#3fb950']
+
+    # Rank by Final Four probability
+    by_f4 = sorted(round_probs.items(), key=lambda kv: kv[1].get('final_4', 0), reverse=True)
+    top = by_f4[:top_n]
+    top = list(reversed(top))  # bottom = lowest for horizontal chart
+
+    teams = [t for t, _ in top]
+    season = sim.get('season', '')
+    sims = sim.get('sims', '')
+
+    apply_style()
+    fig, ax = plt.subplots(figsize=(12, max(6, top_n * 0.52)))
+
+    n_rounds = len(round_keys)
+    bar_height = 0.14
+    group_gap = 0.08
+    group_height = n_rounds * bar_height + group_gap
+
+    for ri, (rkey, rlabel, rcolor) in enumerate(zip(round_keys, round_labels, round_colors)):
+        probs = [round_probs[t].get(rkey, 0) for t, _ in top]
+        offsets = [i * group_height + ri * bar_height for i in range(len(teams))]
+        ax.barh(offsets, probs, height=bar_height * 0.9,
+                color=rcolor, label=rlabel, zorder=3, edgecolor='#0d1117', linewidth=0.4)
+
+    # Y-tick labels at center of each team's group
+    group_centers = [i * group_height + (n_rounds * bar_height) / 2 for i in range(len(teams))]
+    ax.set_yticks(group_centers)
+    ax.set_yticklabels(teams, fontsize=9)
+
+    ax.set_xlabel('Probability of Reaching Round', fontsize=11, labelpad=8)
+    ax.set_title(f'{season} Tournament — Road to the Championship\n'
+                 f'Top {top_n} teams by Final Four odds ({sims:,} simulations)',
+                 fontsize=13, fontweight='bold', pad=12)
+    ax.xaxis.set_major_formatter(matplotlib.ticker.PercentFormatter(xmax=1.0))
+    ax.set_xlim(0, 1.08)
+    ax.legend(loc='lower right', fontsize=9, framealpha=0.3)
+    ax.grid(axis='x', zorder=1)
+
+    note = sim.get('bracket_source', '')
+    if note == 'generated_top64':
+        ax.text(0.99, 0.01, '⚠ Efficiency-based selection — not official bracket',
+                transform=ax.transAxes, fontsize=8, color=WARNING_RED,
+                ha='right', va='bottom', style='italic')
+
+    out_path = Path(out_dir) / f'round_probs_{season}.png'
+    fig.tight_layout()
+    fig.savefig(out_path, dpi=150, bbox_inches='tight')
+    plt.close(fig)
+    print(f"  Saved {out_path}")
+
+
 def main():
     p = argparse.ArgumentParser(description='Generate charts from model training and simulation output')
     p.add_argument('--models_dir', default='models', help='directory containing training_summary.json')
@@ -327,6 +388,7 @@ def main():
         try:
             sim = load_sim(sim_path)
             chart_champion_probs(sim, out_dir)
+            chart_round_probs(sim, out_dir)
         except FileNotFoundError as e:
             print(f"  Warning: {e}")
 
