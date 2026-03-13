@@ -90,6 +90,96 @@ def grid_search_weights(all_y, all_p_lr, all_p_xgb, step=0.05):
     return results, best_acc, best_ll, baseline
 
 
+def nested_loso_eval(X, y, meta, weights=None, step=0.05):
+    """Nested LOSO: unbiased estimate of ensemble performance.
+
+    For each test season t (starting from the 3rd so we have ≥2 prior seasons):
+      - Inner loop: optimize lr_weight by log-loss on LOSO over prior seasons only.
+      - Outer loop: train on all-but-t, blend with inner-optimal lr_weight, eval on t.
+
+    Returns a dict with per_season list and overall accuracy/log_loss.
+    This is diagnostic only — production weights still come from the naive LOSO.
+    """
+    from sklearn.metrics import accuracy_score, log_loss as sk_log_loss
+
+    tourney_mask = (weights == 1.0) if weights is not None else np.ones(len(y), dtype=bool)
+    seasons = sorted(meta.loc[tourney_mask, "season"].unique().tolist())
+
+    if len(seasons) < 3:
+        return {"per_season": [], "accuracy": None, "log_loss": None}
+
+    per_season = []
+    all_y_out: list = []
+    all_p_out: list = []
+
+    for idx in range(2, len(seasons)):
+        test_season = seasons[idx]
+        prior_seasons = seasons[:idx]
+
+        # ── Inner loop: find optimal lr_weight using LOSO on prior seasons only ──
+        inner_row_mask = np.isin(meta["season"].to_numpy(), prior_seasons)
+        X_inner = X.loc[inner_row_mask]
+        y_inner = y[inner_row_mask]
+        meta_inner = meta.loc[inner_row_mask]
+        w_inner = weights[inner_row_mask] if weights is not None else None
+
+        inner_all_y, inner_p_lr, inner_p_xgb = loso_per_model_probs(
+            X_inner, y_inner, meta_inner, weights=w_inner
+        )
+        if len(inner_all_y) == 0:
+            continue
+        _, _, inner_best_ll, _ = grid_search_weights(inner_all_y, inner_p_lr, inner_p_xgb, step=step)
+        lr_w = inner_best_ll["lr_weight"]
+        xgb_w = inner_best_ll["xgb_weight"]
+
+        # ── Outer loop: train on all-but-test_season, evaluate on test_season ──
+        train_mask = meta["season"] != test_season
+        test_mask = (meta["season"] == test_season) & tourney_mask
+
+        if train_mask.sum() == 0 or test_mask.sum() == 0:
+            continue
+
+        X_train = X.loc[train_mask]
+        y_train = y[train_mask.to_numpy()]
+        w_train = weights[train_mask.to_numpy()] if weights is not None else None
+        X_test = X.loc[test_mask]
+        y_test = y[test_mask.to_numpy()]
+
+        lr = build_lr_model()
+        lr.fit(X_train, y_train, sample_weight=w_train)
+        p_lr = lr.predict_proba(X_test)[:, 1]
+
+        if HAS_XGB:
+            xgb = build_xgb_model()
+            xgb.fit(X_train, y_train, sample_weight=w_train)
+            p_xgb = xgb.predict_proba(X_test)[:, 1]
+        else:
+            p_xgb = p_lr
+
+        p_ens = lr_w * p_lr + xgb_w * p_xgb
+        preds = (p_ens >= 0.5).astype(int)
+
+        per_season.append({
+            "season": int(test_season),
+            "lr_weight_used": round(float(lr_w), 4),
+            "accuracy": float(accuracy_score(y_test, preds)),
+            "log_loss": float(sk_log_loss(y_test, np.clip(p_ens, 1e-6, 1 - 1e-6))),
+            "n": int(len(y_test)),
+        })
+        all_y_out.extend(y_test.tolist())
+        all_p_out.extend(p_ens.tolist())
+
+    if all_y_out:
+        preds_all = (np.array(all_p_out) >= 0.5).astype(int)
+        overall_acc = float(accuracy_score(all_y_out, preds_all))
+        overall_ll = float(sk_log_loss(all_y_out, np.clip(all_p_out, 1e-6, 1 - 1e-6)))
+    else:
+        overall_acc = None
+        overall_ll = None
+
+    return {"per_season": per_season, "accuracy": overall_acc, "log_loss": overall_ll}
+
+
 def main():
     parser = argparse.ArgumentParser(description="LOSO-based ensemble weight optimizer")
     parser.add_argument("--features", default="data/processed/features/tournament_teams.csv")
@@ -135,7 +225,7 @@ def main():
 
     # Save canonical weights file — simulate_bracket.py reads this automatically
     out_path = Path(args.models_dir) / "ensemble_weights.json"
-    chosen = best_acc  # prefer accuracy for bracket prediction
+    chosen = best_ll  # log-loss objective: better calibration for Monte Carlo sims
     output = {
         "lr_weight": chosen["lr_weight"],
         "xgb_weight": chosen["xgb_weight"],
@@ -143,12 +233,28 @@ def main():
         "log_loss": chosen["log_loss"],
         "baseline_5050_accuracy": baseline["accuracy"],
         "accuracy_improvement": round(chosen["accuracy"] - baseline["accuracy"], 4),
+        "optimization_objective": "log_loss",
         "method": "loso_grid_search",
         "all_results": results,
     }
     out_path.write_text(json.dumps(output, indent=2))
     print(f"\n✓ Saved ensemble weights to {out_path}")
     print(f"  simulate_bracket.py will use LR={chosen['lr_weight']:.0%} / XGB={chosen['xgb_weight']:.0%} automatically")
+
+    # ── Nested LOSO (unbiased diagnostic) ──────────────────────────────────────
+    print("\n=== Nested LOSO (unbiased) — diagnostic only, does NOT change saved weights ===\n")
+    print("Running nested LOSO (inner weight optimization + outer evaluation)...")
+    nested = nested_loso_eval(X, y, meta, weights=weights, step=args.step)
+    if nested["per_season"]:
+        print(f"\n{'Season':>8}  {'LR Used':>8}  {'Accuracy':>10}  {'LogLoss':>10}  {'N':>5}")
+        print("-" * 50)
+        for r in nested["per_season"]:
+            print(f"{r['season']:>8d}  {r['lr_weight_used']:>8.0%}  "
+                  f"{r['accuracy']:>10.4f}  {r['log_loss']:>10.4f}  {r['n']:>5d}")
+        print(f"\nNaive LOSO (optimistic):  acc={best_ll['accuracy']:.4f}  ll={best_ll['log_loss']:.4f}")
+        print(f"Nested LOSO (unbiased):   acc={nested['accuracy']:.4f}  ll={nested['log_loss']:.4f}")
+    else:
+        print("Not enough seasons for nested LOSO (need ≥3 holdout-eligible seasons).")
 
 
 if __name__ == "__main__":

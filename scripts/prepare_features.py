@@ -737,6 +737,7 @@ def merge_barttorvik(df, out_dir, season):
         "luck": 0.0,
         "wab": 0.0,
         "adj_t": 68.0,   # ~D-I average tempo; neutral diff when data is missing
+        "luck_percentile": 0.5,
     }
     for col, sentinel in sentinels.items():
         if col in result.columns:
@@ -744,6 +745,16 @@ def merge_barttorvik(df, out_dir, season):
 
     matched = (result["adj_em"] != 0.0).sum()
     print(f"  BartTorvik: merged {matched}/{len(result)} teams for season {season}")
+
+    # Compute luck_percentile: within-season percentile rank vs full D-I field
+    # This ensures cross-year comparability (raw luck values shift seasonally)
+    if "luck" in result.columns and bart_df is not None and "luck" in bart_df.columns:
+        all_luck = bart_df["luck"].dropna().values
+        if len(all_luck) >= 10:
+            result["luck_percentile"] = result["luck"].apply(
+                lambda x: float((all_luck <= x).mean()) if pd.notna(x) else 0.5
+            )
+
     return result
 
 
