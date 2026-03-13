@@ -14,6 +14,7 @@ Artifacts written under `models/`:
 """
 import argparse
 import json
+import logging
 import os
 from pathlib import Path
 
@@ -31,6 +32,13 @@ try:
     HAS_XGB = True
 except Exception:
     HAS_XGB = False
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(message)s",
+    datefmt="%H:%M:%S",
+)
+logger = logging.getLogger(__name__)
 
 
 # Core independent features — kept deliberately small to prevent overfitting.
@@ -118,6 +126,77 @@ def _lookup_seed_prior(seed_a: float, seed_b: float) -> float:
     return rate if sa == lo else 1.0 - rate
 
 
+def _load_ensemble_weights(models_dir: str = "models") -> tuple[float, float]:
+    """Load LR/XGB blend weights from models/ensemble_weights.json if it exists.
+
+    Returns (lr_weight, xgb_weight).  Falls back to (0.0, 1.0) — XGB-only —
+    when the file is absent or malformed.  The weights file is written by
+    optimize_ensemble_weights.py after every training run.
+    """
+    path = Path(models_dir) / "ensemble_weights.json"
+    if path.exists():
+        try:
+            data = json.loads(path.read_text())
+            lr_w = float(data.get("lr_weight", 0.0))
+            xgb_w = float(data.get("xgb_weight", 1.0))
+            logger.info("Loaded ensemble weights from %s: LR=%.0f%% XGB=%.0f%%",
+                        path, lr_w * 100, xgb_w * 100)
+            return lr_w, xgb_w
+        except Exception as exc:
+            logger.warning("Could not parse %s (%s); using LR=0%% XGB=100%%", path, exc)
+    return 0.0, 1.0
+
+
+def impute_net_rank_from_efficiency(features_df: pd.DataFrame) -> pd.DataFrame:
+    """Impute missing net_rank values using within-season barthag percentile rank.
+
+    NCAA NET rankings are only scraped for the current season (2026).  For
+    historical training seasons (2015–2025) we synthesise a NET-equivalent
+    rank from BartTorvik ``barthag`` (Pythagorean win probability vs avg D-I
+    opponent).  The two metrics correlate ~0.85: both measure adjusted
+    efficiency against D-I competition.
+
+    Imputation logic (per season):
+    - If the season already has real NET data (any net_rank < 999), skip it.
+    - Otherwise rank teams by ``barthag`` descending: rank 1 = best (highest
+      Pythagorean win probability).  Scale matches real NET (1–364).
+
+    After imputation, net_rank coverage reaches ~100% across all training
+    seasons, allowing it to clear the 50% ``_OPTIONAL_COVERAGE_THRESHOLD``
+    and be included as a training feature.
+    """
+    df = features_df.copy()
+    if "net_rank" not in df.columns:
+        df["net_rank"] = 999
+
+    df["net_rank"] = pd.to_numeric(df["net_rank"], errors="coerce").fillna(999)
+    has_real_net = df["net_rank"] < 999
+
+    seasons_imputed = []
+    for season in sorted(df["season"].unique()):
+        season_mask = df["season"] == season
+        if (season_mask & has_real_net).sum() > 0:
+            continue  # already has real NET data for this season
+        if "barthag" not in df.columns:
+            continue
+        barthag_vals = pd.to_numeric(df.loc[season_mask, "barthag"], errors="coerce")
+        valid = barthag_vals.notna() & (barthag_vals > 0)
+        if valid.sum() == 0:
+            continue
+        # rank() with ascending=False → rank 1 = highest barthag = best team
+        df.loc[season_mask, "net_rank"] = barthag_vals.rank(ascending=False, method="min")
+        seasons_imputed.append(int(season))
+
+    if seasons_imputed:
+        logger.info(
+            "Imputed net_rank from barthag percentile for seasons: %s "
+            "(real NET available for remaining seasons)",
+            seasons_imputed,
+        )
+    return df
+
+
+
 def ensure_dir(path):
     os.makedirs(path, exist_ok=True)
 
@@ -188,8 +267,9 @@ def lookup_feature_row(by_id, by_name, season, team_id, team_name):
 def feature_columns_from_df(features_df):
     cols = [col for col in BASE_FEATURES if col in features_df.columns]
     # Optional features: only include if coverage exceeds threshold.
-    # This prevents low-coverage features (e.g. net_rank only present for 2026
-    # while training on 2021-2025) from becoming noisy mostly-zero columns.
+    # net_rank is imputed from barthag for historical seasons (see
+    # impute_net_rank_from_efficiency), so coverage should be ~100% when
+    # that function has been called before build_match_dataset.
     for col in OPTIONAL_NUMERIC_FEATURES:
         if col in features_df.columns:
             # net_rank uses 999 as sentinel for "not in system"; treat those as missing
@@ -200,7 +280,10 @@ def feature_columns_from_df(features_df):
             if coverage >= _OPTIONAL_COVERAGE_THRESHOLD:
                 cols.append(col)
             else:
-                print(f"  Skipping optional feature '{col}': coverage={coverage:.1%} < {_OPTIONAL_COVERAGE_THRESHOLD:.0%}")
+                logger.warning(
+                    "Skipping optional feature '%s': coverage=%.1f%% < %.0f%%",
+                    col, coverage * 100, _OPTIONAL_COVERAGE_THRESHOLD * 100,
+                )
     if "seed" in features_df.columns:
         cols.append("seed")
     return cols
@@ -347,7 +430,7 @@ def build_match_dataset(games_dir, features_df, game_scope, include_interactions
     # This expands from ~334 rows to ~30k rows, dramatically improving XGBoost stability.
     # Regular-season games use game_scope="all" so neutral_site varies and adds signal.
     if include_regular_season and game_scope == "ncaa_tourney":
-        print(f"Augmenting with regular-season games (weight={regular_season_weight})...")
+        logger.info("Augmenting with regular-season games (weight=%.2f)...", regular_season_weight)
         orig_len = len(X_rows)
         for games_file in sorted(Path(games_dir).glob("games_*.csv")):
             season = int(games_file.stem.split("_")[1])
@@ -417,7 +500,7 @@ def build_match_dataset(games_dir, features_df, game_scope, include_interactions
                     "team_a": str(team_a_row.get("team", "")),
                     "team_b": str(team_b_row.get("team", "")),
                 })
-        print(f"  Added {len(X_rows) - orig_len} regular-season rows (total: {len(X_rows)})")
+        logger.info("  Added %d regular-season rows (total: %d)", len(X_rows) - orig_len, len(X_rows))
 
     X = pd.DataFrame(X_rows).fillna(0.0)
     y = np.asarray(y_rows)
@@ -650,8 +733,8 @@ def fit_and_save_final_models(X, y, out_dir, sample_weight=None):
     scaler.fit(X[tourney_mask])
     X_sc = scaler.transform(X)
     joblib.dump(scaler, Path(out_dir) / "feature_scaler.joblib")
-    print(f"  Saved feature scaler to {out_dir}/feature_scaler.joblib  "
-          f"(fit on {tourney_mask.sum()} tournament rows)")
+    logger.info("Saved feature scaler to %s/feature_scaler.joblib (fit on %d tournament rows)",
+                out_dir, tourney_mask.sum())
 
     lr = build_lr_model()
     lr.fit(X_sc, y, sample_weight=sample_weight)
@@ -666,9 +749,14 @@ def fit_and_save_final_models(X, y, out_dir, sample_weight=None):
         xgb = build_xgb_model()
         xgb.fit(X_sc, y, sample_weight=sample_weight)
         joblib.dump(xgb, Path(out_dir) / "xgb_model.joblib")
-        # XGBoost: isotonic regression is recommended over Platt scaling for tree ensembles.
-        # Fall back to sigmoid when too few samples for isotonic (needs ~1000+).
-        cal_method = "isotonic" if len(y) >= 1000 else "sigmoid"
+        # XGBoost calibration: isotonic regression is theoretically preferred for tree
+        # ensembles, but requires enough data to avoid overfitting the calibration curve.
+        # Threshold set at 3000 rows (conservative vs. the original 1000) — isotonic
+        # needs ~50+ unique probability buckets to fit reliably.  With regular-season
+        # augmentation (~33K rows) isotonic is used; tournament-only (~670 rows) falls
+        # back to sigmoid (Platt scaling), which is better-behaved on small datasets.
+        cal_method = "isotonic" if len(y) >= 3000 else "sigmoid"
+        logger.info("XGBoost calibration: %s (%d training rows)", cal_method, len(y))
         xgb_cal = CalibratedClassifierCV(build_xgb_model(), method=cal_method, cv=5)
         xgb_cal.fit(X_sc, y, sample_weight=sample_weight)
         joblib.dump(xgb_cal, Path(out_dir) / "xgb_cal.joblib")
@@ -676,7 +764,8 @@ def fit_and_save_final_models(X, y, out_dir, sample_weight=None):
     # SHAP feature importance — compute on tournament rows only for interpretability
     try:
         import shap as _shap
-        X_shap_sc = X_sc[sample_weight == 1.0] if sample_weight is not None else X_sc
+        tourney_idx = np.where(tourney_mask)[0]
+        X_shap_sc = X_sc[tourney_idx]
         shap_vals_lr = _shap.LinearExplainer(lr, X_shap_sc).shap_values(X_shap_sc)
         if HAS_XGB:
             shap_vals_xgb = _shap.TreeExplainer(xgb).shap_values(X_shap_sc)
@@ -690,13 +779,13 @@ def fit_and_save_final_models(X, y, out_dir, sample_weight=None):
                 for i, feat in enumerate(X.columns)
             },
             "shap_values": shap_arr.tolist(),
-            "x_values": X_shap.values.tolist(),
+            "x_values": X.iloc[tourney_idx].values.tolist(),
         }
         with open(Path(out_dir) / "shap_summary.json", "w", encoding="utf-8") as f:
             json.dump(shap_summary, f, indent=2)
-        print("  Saved SHAP summary to shap_summary.json")
+        logger.info("Saved SHAP summary to shap_summary.json")
     except Exception as exc:
-        print(f"  SHAP computation skipped: {exc}")
+        logger.warning("SHAP computation skipped: %s", exc)
 
 
 def main():
@@ -711,24 +800,40 @@ def main():
                    help="Augment tournament training data with regular-season games at reduced weight (~100x more rows)")
     p.add_argument("--regular_season_weight", type=float, default=0.3,
                    help="Sample weight for regular-season rows when --include_regular_season is set (default: 0.3)")
-    p.add_argument("--lr_weight", type=float, default=0.5)
-    p.add_argument("--xgb_weight", type=float, default=0.5)
+    # lr_weight / xgb_weight default to None so we can detect when they were NOT
+    # explicitly supplied and fall back to models/ensemble_weights.json.
+    p.add_argument("--lr_weight", type=float, default=None,
+                   help="LR blend weight (default: load from models/ensemble_weights.json or 0.0)")
+    p.add_argument("--xgb_weight", type=float, default=None,
+                   help="XGB blend weight (default: load from models/ensemble_weights.json or 1.0)")
     args = p.parse_args()
 
     ensure_dir(args.out_dir)
+
+    # Resolve ensemble weights: explicit CLI args override JSON; JSON overrides built-in default.
+    json_lr, json_xgb = _load_ensemble_weights(args.out_dir)
+    lr_weight = args.lr_weight if args.lr_weight is not None else json_lr
+    xgb_weight = args.xgb_weight if args.xgb_weight is not None else json_xgb
 
     features_path = Path(args.features)
     if not features_path.exists() and features_path.name == "tournament_teams.csv":
         features_path = features_path.with_name("teams.csv")
 
     feats = load_features(features_path)
+
+    # Impute net_rank for seasons without real NET data (uses barthag percentile rank).
+    # This raises net_rank coverage from ~12% (2026-only) to ~100% so it clears the
+    # _OPTIONAL_COVERAGE_THRESHOLD and can be used as a training feature.
+    feats = impute_net_rank_from_efficiency(feats)
+
     X, y, meta, weights = build_match_dataset(
         args.games_dir, feats, args.game_scope,
         include_interactions=args.interactions,
         include_regular_season=args.include_regular_season,
         regular_season_weight=args.regular_season_weight,
     )
-    print(f"Built dataset {X.shape} across seasons {sorted(meta['season'].unique().tolist())}")
+    logger.info("Built dataset %s across seasons %s",
+                X.shape, sorted(meta["season"].unique().tolist()))
 
     # LOSO evaluation runs only on tournament rows (weight==1.0) for fair evaluation
     tourney_mask = weights == 1.0
@@ -737,34 +842,38 @@ def main():
     meta_tourney = meta.loc[tourney_mask].reset_index(drop=True)
 
     loso_per_season, loso_overall = evaluate_loso(X_tourney, y_tourney, meta_tourney,
-                                                   lr_weight=args.lr_weight,
-                                                   xgb_weight=args.xgb_weight)
+                                                   lr_weight=lr_weight,
+                                                   xgb_weight=xgb_weight)
     # Rolling CV: train on seasons 1..k-1 (all rows), test on tournament rows of season k.
     # This is the deployment-relevant metric — strictly forward-looking, no future data leakage.
     rolling_per_season, rolling_overall = evaluate_rolling_cv(
         X, y, meta, weights,
-        lr_weight=args.lr_weight,
-        xgb_weight=args.xgb_weight,
+        lr_weight=lr_weight,
+        xgb_weight=xgb_weight,
     )
     baselines = compute_baselines(X_tourney, y_tourney, meta_tourney)
 
     if loso_per_season:
-        print("LOSO evaluation (leave-one-season-out, tournament-only training):")
+        logger.info("LOSO evaluation (leave-one-season-out, tournament-only training):")
         for r in loso_per_season:
-            print(f"  {r['season']}: accuracy={r['accuracy']:.4f} logloss={r['log_loss']:.4f} ({r['games']} games)")
+            logger.info("  %d: accuracy=%.4f logloss=%.4f (%d games)",
+                        r["season"], r["accuracy"], r["log_loss"], r["games"])
     if loso_overall:
         ci = loso_overall.get("accuracy_ci_95", [None, None])
-        print(f"LOSO overall: accuracy={loso_overall['accuracy']:.4f} 95%CI=[{ci[0]:.3f},{ci[1]:.3f}]")
+        logger.info("LOSO overall: accuracy=%.4f 95%%CI=[%.3f,%.3f]",
+                    loso_overall["accuracy"], ci[0], ci[1])
 
     if rolling_per_season:
-        print("Rolling CV (forward-looking, deployment metric):")
+        logger.info("Rolling CV (forward-looking, deployment metric):")
         for r in rolling_per_season:
-            print(f"  {r['season']}: accuracy={r['accuracy']:.4f} logloss={r['log_loss']:.4f} ({r['games']} games)")
+            logger.info("  %d: accuracy=%.4f logloss=%.4f (%d games)",
+                        r["season"], r["accuracy"], r["log_loss"], r["games"])
     if rolling_overall:
         ci = rolling_overall.get("accuracy_ci_95", [None, None])
-        print(f"Rolling CV overall: accuracy={rolling_overall['accuracy']:.4f} 95%CI=[{ci[0]:.3f},{ci[1]:.3f}]")
+        logger.info("Rolling CV overall: accuracy=%.4f 95%%CI=[%.3f,%.3f]",
+                    rolling_overall["accuracy"], ci[0], ci[1])
 
-    print(f"Baselines: {baselines}")
+    logger.info("Baselines: %s", baselines)
 
     fit_and_save_final_models(X, y, args.out_dir,
                               sample_weight=weights if args.include_regular_season else None)
@@ -790,13 +899,13 @@ def main():
         "models": {
             "logistic_regression": True,
             "xgboost": bool(HAS_XGB),
-            "calibration": "CalibratedClassifierCV(sigmoid/isotonic, cv=5)",
+            "calibration": f"CalibratedClassifierCV(sigmoid/{'isotonic' if len(y) >= 3000 else 'sigmoid'}, cv=5)",
         },
     }
     with open(Path(args.out_dir) / "training_summary.json", "w", encoding="utf-8") as handle:
         json.dump(summary, handle, indent=2)
 
-    print(f"Saved models and training summary to {args.out_dir}")
+    logger.info("Saved models and training summary to %s", args.out_dir)
 
 
 if __name__ == "__main__":

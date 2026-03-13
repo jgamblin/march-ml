@@ -12,6 +12,7 @@
     "diff_adj_em",
     "diff_barthag",
     "diff_luck",
+    "diff_net_rank",
     "diff_seed",
     "neutral_site",
     "is_tournament",
@@ -278,6 +279,6 @@
   "models": {
     "logistic_regression": true,
     "xgboost": true,
-    "calibration": "CalibratedClassifierCV(sigmoid/isotonic, cv=5)"
+    "calibration": "CalibratedClassifierCV(sigmoid/sigmoid, cv=5)"
   }
 }
