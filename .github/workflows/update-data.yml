@@ -65,13 +65,13 @@ jobs:
     steps:
       # ── 1. Checkout ────────────────────────────────────────────────────────
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0  # full history so git push works cleanly
 
       # ── 2. Python env ──────────────────────────────────────────────────────
       - name: Set up Python 3.11
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: '3.11'
           cache: 'pip'
@@ -83,7 +83,7 @@ jobs:
       #   Caches data/raw pickles so repeat runs of full-rescrape are faster.
       - name: Restore raw data cache
         if: inputs.full_rescrape == true
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: data/raw
           key: raw-data-v1
