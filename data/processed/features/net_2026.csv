@@ -1,41 +1,41 @@
 season,team,source_name,net_rank,quad1_wins,quad1_losses,quad2_wins,quad2_losses
-2026,Duke Blue Devils,Duke,1,15,2,6,0
-2026,Michigan Wolverines,Michigan,2,13,2,7,0
-2026,Arizona Wildcats,Arizona,3,14,2,8,0
-2026,Florida Gators,Florida,4,11,5,6,1
-2026,Illinois Fighting Illini,Illinois,5,7,7,5,0
+2026,Duke Blue Devils,Duke,1,16,2,6,0
+2026,Michigan Wolverines,Michigan,2,15,2,6,0
+2026,Arizona Wildcats,Arizona,3,15,2,8,0
+2026,Florida Gators,Florida,4,12,5,6,1
+2026,Houston Cougars,Houston,5,10,5,9,0
 2026,Gonzaga Bulldogs,Gonzaga,6,7,2,4,0
-2026,Iowa State Cyclones,Iowa St.,7,8,6,10,0
-2026,Houston Cougars,Houston,8,9,5,9,0
-2026,UConn Huskies,UConn,9,7,2,10,1
-2026,Purdue Boilermakers,Purdue,10,8,8,6,0
-2026,Michigan State Spartans,Michigan St.,11,8,5,6,1
-2026,Nebraska Cornhuskers,Nebraska,12,9,5,6,0
-2026,Virginia Cavaliers,Virginia,13,8,3,8,1
-2026,Alabama Crimson Tide,Alabama,14,7,7,9,1
-2026,Vanderbilt Commodores,Vanderbilt,15,8,6,7,1
-2026,Louisville Cardinals,Louisville,16,7,10,5,0
-2026,Arkansas Razorbacks,Arkansas,17,6,8,7,0
-2026,Kansas Jayhawks,Kansas,18,9,8,7,1
-2026,Tennessee Volunteers,Tennessee,19,6,9,6,1
-2026,Texas Tech,Texas Tech,20,7,9,5,1
-2026,St. John's Red Storm,St. John's (NY),21,3,5,11,0
+2026,Iowa State Cyclones,Iowa St.,7,8,7,10,0
+2026,Illinois Fighting Illini,Illinois,8,7,8,5,0
+2026,Purdue Boilermakers,Purdue,9,9,8,6,0
+2026,UConn Huskies,UConn,10,7,2,11,1
+2026,Michigan State Spartans,Michigan St.,11,9,6,5,1
+2026,Virginia Cavaliers,Virginia,12,8,3,9,1
+2026,Nebraska Cornhuskers,Nebraska,13,9,6,6,0
+2026,Vanderbilt Commodores,Vanderbilt,14,9,6,7,1
+2026,Louisville Cardinals,Louisville,15,7,10,5,0
+2026,Arkansas Razorbacks,Arkansas,16,7,8,7,0
+2026,Alabama Crimson Tide,Alabama,17,7,7,9,2
+2026,Texas Tech,Texas Tech,18,7,9,5,1
+2026,Tennessee Volunteers,Tennessee,19,6,10,6,1
+2026,St. John's Red Storm,St. John's (NY),20,3,5,12,0
+2026,Kansas Jayhawks,Kansas,21,9,9,7,1
 2026,Saint Mary's Gaels,Saint Mary's (CA),22,1,4,8,1
-2026,BYU Cougars,BYU,23,7,10,7,1
+2026,BYU Cougars,BYU,23,7,10,8,1
 2026,North Carolina Tar Heels,North Carolina,24,6,8,5,0
-2026,Iowa Hawkeyes,Iowa,25,3,9,6,1
-2026,Kentucky Wildcats,Kentucky,26,5,10,7,2
-2026,Wisconsin Badgers,Wisconsin,27,6,7,6,1
-2026,Utah State Aggies,Utah St.,28,3,4,8,1
-2026,Saint Louis Billikens,Saint Louis,29,2,1,5,2
-2026,Miami Hurricanes,Miami (FL),30,6,5,6,2
-2026,Ohio State Buckeyes,Ohio St.,31,4,10,5,1
-2026,Georgia Bulldogs,Georgia,32,6,7,6,2
-2026,UCLA Bruins,UCLA,33,4,7,5,3
-2026,Clemson Tigers,Clemson,34,7,5,6,4
-2026,NC State Wolfpack,NC State,35,5,9,6,3
-2026,Villanova Wildcats,Villanova,36,2,6,8,1
-2026,SMU Mustangs,SMU,37,4,10,5,3
+2026,Wisconsin Badgers,Wisconsin,25,8,7,5,1
+2026,Iowa Hawkeyes,Iowa,26,4,9,5,1
+2026,Utah State Aggies,Utah St.,27,3,4,9,1
+2026,Kentucky Wildcats,Kentucky,28,5,11,7,2
+2026,Saint Louis Billikens,Saint Louis,29,2,1,6,2
+2026,Ohio State Buckeyes,Ohio St.,30,4,11,5,1
+2026,UCLA Bruins,UCLA,31,5,7,5,3
+2026,Miami Hurricanes,Miami (FL),32,6,6,6,2
+2026,Georgia Bulldogs,Georgia,33,6,7,6,2
+2026,Clemson Tigers,Clemson,34,6,6,7,4
+2026,Villanova Wildcats,Villanova,35,2,6,8,1
+2026,NC State Wolfpack,NC State,36,5,8,6,4
+2026,SMU Mustangs,SMU,37,4,9,5,4
 2026,TCU Horned Frogs,TCU,38,6,7,7,2
 2026,Auburn Tigers,Auburn,39,4,13,3,2
 2026,Santa Clara Broncos,Santa Clara,40,2,6,6,1
@@ -43,37 +43,37 @@ season,team,source_name,net_rank,quad1_wins,quad1_losses,quad2_wins,quad2_losses
 2026,Texas Longhorns,Texas,42,6,9,1,4
 2026,Texas A&M Aggies,Texas A&M,43,5,8,4,3
 2026,VCU Rams,VCU,44,2,5,4,2
-2026,New Mexico Lobos,New Mexico,45,2,6,6,1
-2026,San Diego State Aztecs,San Diego St.,46,2,6,6,3
-2026,Oklahoma Sooners,Oklahoma,47,4,9,6,5
-2026,South Florida Bulls,South Fla.,48,2,3,5,2
-2026,Cincinnati Bearcats,Cincinnati,49,3,11,5,3
+2026,San Diego State Aztecs,San Diego St.,45,3,6,6,3
+2026,New Mexico Lobos,New Mexico,46,2,7,6,1
+2026,Oklahoma Sooners,Oklahoma,47,4,10,6,5
+2026,Cincinnati Bearcats,Cincinnati,48,3,11,5,3
+2026,South Florida Bulls,South Fla.,49,2,3,5,2
 2026,Tulsa Golden Hurricane,Tulsa,50,0,1,3,3
 2026,Baylor Bears,Baylor,51,4,12,3,4
 2026,UCF Knights,UCF,52,5,8,6,3
-2026,Seton Hall Pirates,Seton Hall,53,1,5,7,4
-2026,Akron Zips,Akron,54,0,2,0,2
+2026,Akron Zips,Akron,53,0,2,0,2
+2026,Seton Hall Pirates,Seton Hall,54,1,6,7,4
 2026,Virginia Tech Hokies,Virginia Tech,55,2,10,6,3
 2026,McNeese Cowboys,McNeese,56,0,2,2,2
-2026,Washington Huskies,Washington,57,1,11,5,4
+2026,Washington Huskies,Washington,57,2,11,4,4
 2026,Missouri Tigers,Missouri,58,5,7,4,5
 2026,West Virginia Mountaineers,West Virginia,59,5,9,2,4
 2026,Boise State Broncos,Boise St.,60,2,6,6,3
 2026,Stanford Cardinal,Stanford,61,5,6,4,2
-2026,Florida State Seminoles,Florida St.,62,3,10,6,4
+2026,Florida State Seminoles,Florida St.,62,3,9,6,5
 2026,Belmont Bruins,Belmont,63,1,0,5,2
-2026,Miami (OH) RedHawks,Miami (OH),64,0,0,2,0
-2026,Northwestern Wildcats,Northwestern,65,2,12,2,6
-2026,Yale Bulldogs,Yale,66,0,1,2,0
-2026,Wake Forest Demon Deacons,Wake Forest,67,1,11,6,4
+2026,Miami (OH) RedHawks,Miami (OH),64,0,0,3,0
+2026,Northwestern Wildcats,Northwestern,65,2,13,2,5
+2026,Yale Bulldogs,Yale,66,0,1,1,0
+2026,Wake Forest Demon Deacons,Wake Forest,67,1,10,6,5
 2026,California Golden Bears,California,68,4,6,2,4
-2026,Nevada Wolf Pack,Nevada,69,1,5,5,4
-2026,Grand Canyon Lopes,Grand Canyon,70,3,5,3,4
+2026,Grand Canyon Lopes,Grand Canyon,69,3,5,3,4
+2026,Nevada Wolf Pack,Nevada,70,1,6,5,4
 2026,Northern Iowa Panthers,UNI,71,0,3,4,4
 2026,Arizona State Sun Devils,Arizona St.,72,5,11,5,3
 2026,Dayton Flyers,Dayton,73,1,5,6,2
-2026,High Point Panthers,High Point,74,0,0,0,2
-2026,Oklahoma State Cowboys,Oklahoma St.,75,2,11,8,3
+2026,Oklahoma State Cowboys,Oklahoma St.,74,2,11,8,3
+2026,High Point Panthers,High Point,75,0,0,0,2
 2026,Colorado Buffaloes,Colorado,76,1,10,5,4
 2026,LSU Tigers,LSU,77,1,12,3,3
 2026,USC Trojans,Southern California,78,1,9,7,4
@@ -81,46 +81,46 @@ season,team,source_name,net_rank,quad1_wins,quad1_losses,quad2_wins,quad2_losses
 2026,Providence Friars,Providence,80,1,8,3,8
 2026,Wichita State Shockers,Wichita St.,81,2,3,3,3
 2026,Creighton Bluejays,Creighton,82,2,7,3,7
-2026,Utah Valley Wolverines,Utah Valley,83,0,2,0,1
-2026,Butler Bulldogs,Butler,84,2,6,3,8
-2026,Syracuse Orange,Syracuse,85,1,12,4,2
-2026,Ole Miss Rebels,Ole Miss,86,4,14,2,1
+2026,Ole Miss Rebels,Ole Miss,83,5,13,2,2
+2026,Utah Valley Wolverines,Utah Valley,84,0,2,0,1
+2026,Butler Bulldogs,Butler,85,2,6,3,8
+2026,Syracuse Orange,Syracuse,86,1,11,4,3
 2026,Colorado State Rams,Colorado St.,87,3,5,3,5
 2026,Hofstra Pride,Hofstra,88,0,1,2,2
-2026,Georgetown Hoyas,Georgetown,89,1,8,4,6
-2026,SFA Lumberjacks,SFA,90,0,1,2,1
-2026,George Washington Revolutionaries,George Washington,91,1,4,0,5
+2026,SFA Lumberjacks,SFA,89,0,1,2,1
+2026,Georgetown Hoyas,Georgetown,90,1,9,4,6
+2026,George Washington Revolutionaries,George Washington,91,1,5,0,5
 2026,George Mason Patriots,George Mason,92,1,2,1,3
-2026,Notre Dame Fighting Irish,Notre Dame,93,2,11,2,5
-2026,Marquette Golden Eagles,Marquette,94,1,9,2,8
-2026,Illinois State Redbirds,Illinois St.,95,1,2,4,4
+2026,Notre Dame Fighting Irish,Notre Dame,93,2,10,2,6
+2026,Illinois State Redbirds,Illinois St.,94,1,2,4,4
+2026,Marquette Golden Eagles,Marquette,95,1,9,2,8
 2026,UNC Wilmington Seahawks,UNCW,96,0,0,0,1
 2026,Xavier Musketeers,Xavier,97,0,9,4,8
 2026,Wyoming Cowboys,Wyoming,98,1,7,1,5
 2026,Kansas State Wildcats,Kansas St.,99,0,14,5,5
-2026,Sam Houston Bearkats,Sam Houston,100,0,2,0,2
-2026,California Baptist Lancers,California Baptist,101,0,1,1,4
-2026,DePaul Blue Demons,DePaul,102,1,5,4,8
-2026,St. Thomas-Minnesota Tommies,St. Thomas (MN),103,0,1,0,2
-2026,Pittsburgh Panthers,Pittsburgh,104,1,10,4,6
-2026,Murray State Racers,Murray St.,105,0,3,4,5
+2026,California Baptist Lancers,California Baptist,100,0,1,1,4
+2026,DePaul Blue Demons,DePaul,101,1,5,4,8
+2026,St. Thomas-Minnesota Tommies,St. Thomas (MN),102,0,1,0,2
+2026,Pittsburgh Panthers,Pittsburgh,103,2,10,3,6
+2026,Murray State Racers,Murray St.,104,0,3,4,5
+2026,Hawaii Rainbow Warriors,Hawaii,105,0,0,0,4
 2026,Liberty Flames,Liberty,106,1,1,1,0
-2026,Davidson Wildcats,Davidson,107,0,5,3,2
+2026,Sam Houston Bearkats,Sam Houston,107,0,2,0,2
 2026,South Carolina Gamecocks,South Carolina,108,0,13,3,5
-2026,Oregon Ducks,Oregon,109,1,13,2,4
-2026,Hawaii Rainbow Warriors,Hawaii,110,0,0,0,4
-2026,UIC Flames,UIC,111,1,2,3,5
-2026,UNLV Rebels,UNLV,112,4,5,5,4
+2026,Oregon Ducks,Oregon,109,1,14,2,3
+2026,UIC Flames,UIC,110,1,2,3,5
+2026,UNLV Rebels,UNLV,111,4,5,5,4
+2026,UC Irvine Anteaters,UC Irvine,112,0,0,1,4
 2026,Bradley Braves,Bradley,113,0,2,3,5
 2026,Mississippi State Bulldogs,Mississippi St.,114,1,12,4,5
 2026,North Dakota State Bison,North Dakota St.,115,0,0,0,1
-2026,Pacific Tigers,Pacific,116,0,7,0,3
-2026,UC Irvine Anteaters,UC Irvine,117,0,0,1,4
+2026,Davidson Wildcats,Davidson,116,0,5,3,2
+2026,Pacific Tigers,Pacific,117,0,7,0,3
 2026,UAB Blazers,UAB,118,2,1,2,2
-2026,San Francisco Dons,San Francisco,119,0,6,3,4
-2026,Southern Illinois Salukis,Southern Ill.,120,3,1,2,6
-2026,Seattle U Redhawks,Seattle U,121,1,5,1,1
-2026,Saint Joseph's Hawks,Saint Joseph's,122,0,3,2,3
+2026,Saint Joseph's Hawks,Saint Joseph's,119,0,3,2,3
+2026,San Francisco Dons,San Francisco,120,0,6,3,4
+2026,Southern Illinois Salukis,Southern Ill.,121,3,1,2,6
+2026,Seattle U Redhawks,Seattle U,122,1,5,1,1
 2026,Florida Atlantic Owls,Fla. Atlantic,123,0,2,1,7
 2026,UC San Diego Tritons,UC San Diego,124,0,1,1,1
 2026,Troy Trojans,Troy,125,1,0,2,1
@@ -130,21 +130,21 @@ season,team,source_name,net_rank,quad1_wins,quad1_losses,quad2_wins,quad2_losses
 2026,William & Mary Tribe,William & Mary,129,0,1,2,2
 2026,Winthrop Eagles,Winthrop,130,0,4,1,2
 2026,Utah Utes,Utah,131,1,13,2,6
-2026,Duquesne Dukes,Duquesne,132,0,6,2,3
-2026,Rutgers Scarlet Knights,Rutgers,133,0,12,2,6
-2026,Memphis Tigers,Memphis,134,0,6,2,6
-2026,Navy Midshipmen,Navy,135,0,1,0,2
-2026,Maryland Terrapins,Maryland,136,1,14,3,4
-2026,North Texas Mean Green,North Texas,137,0,3,2,4
-2026,East Tennessee State Buccaneers,ETSU,138,0,2,0,0
-2026,Penn State Nittany Lions,Penn St.,139,2,10,0,6
-2026,Kent St.,Kent St.,140,0,2,0,2
-2026,Toledo,Toledo,141,0,3,1,2
+2026,Duquesne Dukes,Duquesne,132,0,7,2,3
+2026,Rutgers Scarlet Knights,Rutgers,133,0,13,2,5
+2026,Toledo,Toledo,134,0,3,1,2
+2026,Memphis Tigers,Memphis,135,0,6,2,6
+2026,North Texas Mean Green,North Texas,136,0,4,2,4
+2026,Navy Midshipmen,Navy,137,0,1,0,2
+2026,Maryland Terrapins,Maryland,138,1,15,3,3
+2026,Penn State Nittany Lions,Penn St.,139,2,11,0,5
+2026,East Tennessee State Buccaneers,ETSU,140,0,2,0,0
+2026,Kent St.,Kent St.,141,0,2,1,3
 2026,UC Santa Barbara Gauchos,UC Santa Barbara,142,0,1,1,3
-2026,Cornell Big Red,Cornell,143,0,2,1,2
-2026,St. Bonaventure,St. Bonaventure,144,0,4,3,3
-2026,Washington State Cougars,Washington St.,145,0,4,0,10
-2026,Idaho Vandals,Idaho,146,0,0,0,4
+2026,St. Bonaventure,St. Bonaventure,143,0,4,3,4
+2026,Cornell Big Red,Cornell,144,0,2,1,2
+2026,Idaho Vandals,Idaho,145,0,0,0,3
+2026,Washington State Cougars,Washington St.,146,0,4,0,10
 2026,Portland State Vikings,Portland St.,147,0,1,0,3
 2026,Robert Morris,Robert Morris,148,0,1,1,0
 2026,Northern Colo.,Northern Colo.,149,0,1,1,1
@@ -154,58 +154,58 @@ season,team,source_name,net_rank,quad1_wins,quad1_losses,quad2_wins,quad2_losses
 2026,Fresno St.,Fresno St.,153,0,7,0,8
 2026,Arkansas St.,Arkansas St.,154,0,2,0,2
 2026,Valparaiso,Valparaiso,155,0,4,2,6
-2026,Boston College,Boston College,156,0,9,1,5
-2026,Bowling Green,Bowling Green,157,0,1,1,3
+2026,Bowling Green,Bowling Green,156,0,1,1,4
+2026,Boston College,Boston College,157,0,8,1,6
 2026,Towson,Towson,158,0,3,0,3
 2026,Western Ky.,Western Ky.,159,0,2,2,2
-2026,UT Arlington,UT Arlington,160,0,2,1,3
-2026,Middle Tenn.,Middle Tenn.,161,0,2,0,4
-2026,Col. of Charleston,Col. of Charleston,162,0,1,2,3
-2026,Austin Peay,Austin Peay,163,0,1,0,3
-2026,Richmond,Richmond,164,1,2,0,5
-2026,Central Ark.,Central Ark.,165,0,4,0,0
-2026,Kennesaw St.,Kennesaw St.,166,0,1,0,3
+2026,UT Arlington,UT Arlington,160,0,2,1,4
+2026,Kennesaw St.,Kennesaw St.,161,0,1,0,3
+2026,Middle Tenn.,Middle Tenn.,162,0,2,0,4
+2026,Col. of Charleston,Col. of Charleston,163,0,1,2,3
+2026,Austin Peay,Austin Peay,164,0,1,0,3
+2026,Richmond,Richmond,165,1,2,0,5
+2026,Central Ark.,Central Ark.,166,0,4,0,0
 2026,Temple,Temple,167,0,2,2,3
 2026,Monmouth,Monmouth,168,0,1,0,4
 2026,Georgia Tech,Georgia Tech,169,1,10,0,5
-2026,Oregon St.,Oregon St.,170,1,4,1,4
-2026,Marshall,Marshall,171,0,1,0,3
-2026,Utah Tech,Utah Tech,172,0,3,0,5
-2026,Cal St. Fullerton,Cal St. Fullerton,173,0,3,1,3
-2026,Tennessee State Tigers,Tennessee St.,174,0,2,1,0
-2026,Fordham,Fordham,175,0,3,2,3
-2026,Charlotte,Charlotte,176,0,4,0,5
-2026,Oakland,Oakland,177,0,6,0,1
+2026,Charlotte,Charlotte,170,0,4,0,5
+2026,Oregon St.,Oregon St.,171,1,4,1,4
+2026,Marshall,Marshall,172,0,1,1,3
+2026,Tennessee State Tigers,Tennessee St.,173,0,2,1,0
+2026,Fordham,Fordham,174,0,3,2,3
+2026,Oakland,Oakland,175,0,6,0,1
+2026,Utah Tech,Utah Tech,176,0,3,0,6
+2026,Cal St. Fullerton,Cal St. Fullerton,177,0,3,1,3
 2026,UC Davis,UC Davis,178,1,0,0,5
 2026,LMU (CA),LMU (CA),179,0,4,1,3
 2026,Merrimack,Merrimack,180,0,2,0,1
-2026,CSUN,CSUN,181,0,2,1,3
-2026,Mercer,Mercer,182,0,3,0,1
-2026,Marist,Marist,183,0,0,0,1
-2026,Siena,Siena,184,0,1,0,0
-2026,Northern Ky.,Northern Ky.,185,0,1,0,1
-2026,Columbia,Columbia,186,0,3,0,1
-2026,Furman,Furman,187,0,1,0,2
-2026,South Alabama,South Alabama,188,0,0,0,2
-2026,New Mexico St.,New Mexico St.,189,0,1,1,2
+2026,Marist,Marist,181,0,0,0,1
+2026,Siena,Siena,182,0,1,0,0
+2026,Mercer,Mercer,183,0,3,0,1
+2026,Northern Ky.,Northern Ky.,184,0,1,0,1
+2026,Columbia,Columbia,185,0,3,0,1
+2026,Furman,Furman,186,0,1,0,2
+2026,CSUN,CSUN,187,0,2,1,3
+2026,South Alabama,South Alabama,188,0,0,1,2
+2026,New Mexico St.,New Mexico St.,189,0,1,1,1
 2026,Queens (NC),Queens (NC),190,0,5,0,1
 2026,A&M-Corpus Christi,A&M-Corpus Christi,191,0,4,1,4
 2026,App State,App State,192,0,1,2,0
 2026,Lipscomb,Lipscomb,193,0,4,0,0
 2026,Montana,Montana,194,0,3,1,1
-2026,Buffalo,Buffalo,195,0,2,1,3
+2026,Buffalo,Buffalo,195,0,2,1,4
 2026,FIU,FIU,196,0,2,0,3
-2026,Massachusetts,Massachusetts,197,0,2,2,1
-2026,LIU,LIU,198,0,2,0,2
-2026,Drake,Drake,199,0,2,2,7
-2026,Campbell,Campbell,200,0,4,2,3
-2026,UMBC,UMBC,201,0,2,0,2
-2026,Howard,Howard,202,0,2,1,2
+2026,LIU,LIU,197,0,2,0,2
+2026,Drake,Drake,198,0,2,2,7
+2026,Campbell,Campbell,199,0,4,2,3
+2026,Massachusetts,Massachusetts,200,0,2,2,1
+2026,Howard,Howard,201,0,2,1,2
+2026,UMBC,UMBC,202,0,2,0,2
 2026,Weber St.,Weber St.,203,0,1,0,5
 2026,Eastern Wash.,Eastern Wash.,204,0,2,1,3
-2026,Missouri St.,Missouri St.,205,0,1,0,3
-2026,UT Martin,UT Martin,206,0,1,2,1
-2026,Louisiana Tech,Louisiana Tech,207,0,1,1,1
+2026,Louisiana Tech,Louisiana Tech,205,0,1,1,1
+2026,Missouri St.,Missouri St.,206,0,1,0,3
+2026,UT Martin,UT Martin,207,0,1,2,1
 2026,Tulane,Tulane,208,0,2,2,4
 2026,James Madison,James Madison,209,0,2,1,1
 2026,South Dakota St.,South Dakota St.,210,0,2,0,5
@@ -217,29 +217,29 @@ season,team,source_name,net_rank,quad1_wins,quad1_losses,quad2_wins,quad2_losses
 2026,Jacksonville St.,Jacksonville St.,216,0,0,0,2
 2026,Samford,Samford,217,0,2,0,1
 2026,Green Bay,Green Bay,218,0,1,0,4
-2026,Youngstown St.,Youngstown St.,219,1,0,0,2
+2026,Youngstown St.,Youngstown St.,219,1,0,0,3
 2026,Ga. Southern,Ga. Southern,220,0,1,0,0
-2026,Detroit Mercy,Detroit Mercy,221,0,1,1,3
+2026,Detroit Mercy,Detroit Mercy,221,0,1,1,4
 2026,Portland,Portland,222,1,4,0,6
 2026,Elon,Elon,223,0,2,2,1
 2026,Vermont,Vermont,224,0,0,0,1
 2026,Southeast Mo. St.,Southeast Mo. St.,225,0,3,0,0
 2026,Cal Poly,Cal Poly,226,0,1,3,4
-2026,Colgate,Colgate,227,0,3,0,1
-2026,Western Caro.,Western Caro.,228,0,5,0,0
-2026,Coastal Carolina,Coastal Carolina,229,0,1,2,1
+2026,Colgate,Colgate,227,0,3,0,0
+2026,Coastal Carolina,Coastal Carolina,228,0,1,2,1
+2026,Western Caro.,Western Caro.,229,0,5,0,0
 2026,Tarleton St.,Tarleton St.,230,0,3,0,4
-2026,Ohio Bobcats,Ohio,231,0,3,0,3
+2026,Ohio Bobcats,Ohio,231,0,3,0,4
 2026,Stony Brook,Stony Brook,232,0,1,0,3
 2026,Saint Peter's,Saint Peter's,233,0,2,0,1
-2026,San Diego,San Diego,234,0,4,1,4
-2026,Idaho St.,Idaho St.,235,0,2,0,4
-2026,Texas St.,Texas St.,236,0,0,0,1
-2026,Eastern Mich.,Eastern Mich.,237,1,2,0,5
+2026,San Diego,San Diego,234,0,4,1,5
+2026,Texas St.,Texas St.,235,0,0,0,1
+2026,Idaho St.,Idaho St.,236,0,2,0,3
+2026,Eastern Mich.,Eastern Mich.,237,1,2,0,6
 2026,Iona,Iona,238,0,1,0,1
 2026,UNC Asheville,UNC Asheville,239,0,2,0,6
-2026,Denver,Denver,240,0,3,3,3
-2026,Fairfield,Fairfield,241,0,1,0,0
+2026,Fairfield,Fairfield,240,0,1,0,0
+2026,Denver,Denver,241,0,3,3,3
 2026,Charleston So.,Charleston So.,242,0,2,0,3
 2026,San Jose St.,San Jose St.,243,0,8,2,9
 2026,Rice,Rice,244,0,2,1,4
@@ -254,7 +254,7 @@ season,team,source_name,net_rank,quad1_wins,quad1_losses,quad2_wins,quad2_losses
 2026,Purdue Fort Wayne,Purdue Fort Wayne,253,0,3,1,2
 2026,Milwaukee,Milwaukee,254,0,4,0,2
 2026,Old Dominion,Old Dominion,255,0,2,0,4
-2026,American,American,256,0,3,0,3
+2026,American,American,256,0,3,0,2
 2026,Long Beach St.,Long Beach St.,257,0,2,1,3
 2026,Omaha,Omaha,258,0,0,0,5
 2026,SIUE,SIUE,259,0,1,0,0
@@ -262,7 +262,7 @@ season,team,source_name,net_rank,quad1_wins,quad1_losses,quad2_wins,quad2_losses
 2026,Bethune-Cookman,Bethune-Cookman,261,0,8,0,0
 2026,Lindenwood,Lindenwood,262,0,3,0,0
 2026,Dartmouth,Dartmouth,263,0,2,0,3
-2026,Boston University Terriers,Boston U.,264,0,1,1,1
+2026,Boston University Terriers,Boston U.,264,0,1,0,0
 2026,Morehead St.,Morehead St.,265,0,3,0,1
 2026,Longwood,Longwood,266,0,2,0,3
 2026,East Carolina,East Carolina,267,0,3,1,4
@@ -273,45 +273,45 @@ season,team,source_name,net_rank,quad1_wins,quad1_losses,quad2_wins,quad2_losses
 2026,Southern Utah,Southern Utah,272,0,3,0,2
 2026,UC Riverside,UC Riverside,273,0,3,0,5
 2026,Pepperdine,Pepperdine,274,0,6,0,2
-2026,Mercyhurst,Mercyhurst,275,0,3,0,2
-2026,Lehigh,Lehigh,276,0,2,0,2
+2026,Southern U.,Southern U.,275,0,5,0,2
+2026,Lehigh,Lehigh,276,0,2,0,1
 2026,N.C. A&T,N.C. A&T,277,0,0,0,4
-2026,Southern U.,Southern U.,278,0,5,0,2
-2026,Loyola Chicago,Loyola Chicago,279,1,4,0,6
-2026,Central Mich.,Central Mich.,280,0,4,0,3
+2026,Mercyhurst,Mercyhurst,278,0,3,0,2
+2026,Central Mich.,Central Mich.,279,0,4,0,3
+2026,Loyola Chicago,Loyola Chicago,280,1,4,0,6
 2026,Mount St. Mary's,Mount St. Mary's,281,0,3,0,0
 2026,UIW,UIW,282,0,3,1,4
-2026,Western Mich.,Western Mich.,283,0,4,0,2
+2026,Western Mich.,Western Mich.,283,0,4,0,3
 2026,South Dakota,South Dakota,284,0,1,0,5
-2026,Bellarmine,Bellarmine,285,0,2,0,3
-2026,Northeastern,Northeastern,286,0,1,0,3
+2026,Northeastern,Northeastern,285,0,1,0,3
+2026,Bellarmine,Bellarmine,286,0,2,0,3
 2026,Delaware,Delaware,287,0,1,1,2
 2026,Chattanooga,Chattanooga,288,0,2,0,1
 2026,Central Conn. St.,Central Conn. St.,289,0,1,1,0
 2026,Le Moyne,Le Moyne,290,0,1,0,1
 2026,Eastern Ky.,Eastern Ky.,291,0,1,0,3
 2026,UNC Greensboro,UNC Greensboro,292,0,1,0,2
-2026,Sacred Heart,Sacred Heart,293,0,1,0,1
-2026,Houston Christian,Houston Christian,294,0,2,0,4
+2026,Houston Christian,Houston Christian,293,0,2,0,4
+2026,Sacred Heart,Sacred Heart,294,0,1,0,1
 2026,Southeastern La.,Southeastern La.,295,0,1,0,7
 2026,Brown,Brown,296,0,1,0,2
 2026,Jacksonville,Jacksonville,297,0,4,0,1
 2026,West Ga.,West Ga.,298,0,3,1,0
-2026,Ball St.,Ball St.,299,0,2,0,2
+2026,Ball St.,Ball St.,299,0,2,0,3
 2026,Northwestern St.,Northwestern St.,300,0,4,0,4
 2026,Wagner,Wagner,301,0,2,0,1
 2026,USC Upstate,USC Upstate,302,0,3,0,4
 2026,East Texas A&M,East Texas A&M,303,0,4,0,4
 2026,Grambling,Grambling,304,0,2,0,1
-2026,Evansville,Evansville,305,0,3,0,10
-2026,Alabama A&M,Alabama A&M,306,0,2,0,1
+2026,Prairie View,Prairie View,305,0,3,0,2
+2026,Evansville,Evansville,306,0,3,0,10
 2026,Georgia St.,Georgia St.,307,0,2,0,0
 2026,Tennessee Tech,Tennessee Tech,308,0,2,0,0
 2026,Little Rock,Little Rock,309,0,1,0,3
-2026,Prairie View,Prairie View,310,0,3,0,2
-2026,Florida A&M Rattlers,Florida A&M,311,0,4,0,0
-2026,Oral Roberts,Oral Roberts,312,0,3,0,4
-2026,Louisiana,Louisiana,313,0,3,0,1
+2026,Alabama A&M,Alabama A&M,310,0,2,0,1
+2026,Oral Roberts,Oral Roberts,311,0,3,0,4
+2026,Louisiana,Louisiana,312,0,3,0,1
+2026,Florida A&M Rattlers,Florida A&M,313,0,4,0,0
 2026,Stetson,Stetson,314,0,3,0,1
 2026,Northern Ariz.,Northern Ariz.,315,0,2,0,2
 2026,Ark.-Pine Bluff,Ark.-Pine Bluff,316,0,6,1,1
@@ -321,34 +321,34 @@ season,team,source_name,net_rank,quad1_wins,quad1_losses,quad2_wins,quad2_losses
 2026,Eastern Ill.,Eastern Ill.,320,0,3,0,1
 2026,UMass Lowell,UMass Lowell,321,0,3,0,1
 2026,Texas Southern,Texas Southern,322,0,4,0,1
-2026,Lafayette,Lafayette,323,0,2,0,2
+2026,Lafayette,Lafayette,323,0,2,0,1
 2026,Alabama St.,Alabama St.,324,0,4,1,3
 2026,New Haven,New Haven,325,0,3,0,0
 2026,UAlbany,UAlbany,326,0,0,0,4
-2026,NJIT,NJIT,327,0,3,0,2
-2026,Loyola Maryland,Loyola Maryland,328,0,1,0,3
+2026,NJIT,NJIT,327,0,3,0,1
+2026,Loyola Maryland,Loyola Maryland,328,0,1,0,2
 2026,Manhattan,Manhattan,329,0,1,0,2
 2026,CSU Bakersfield,CSU Bakersfield,330,0,2,0,4
-2026,Holy Cross,Holy Cross,331,0,1,0,3
+2026,Holy Cross,Holy Cross,331,0,1,0,2
 2026,Stonehill,Stonehill,332,0,1,0,2
-2026,Bucknell,Bucknell,333,0,3,0,3
+2026,Bucknell,Bucknell,333,0,3,0,1
 2026,FDU,FDU,334,0,2,0,2
-2026,NIU,NIU,335,0,5,0,1
-2026,Army West Point,Army West Point,336,0,1,0,2
+2026,NIU,NIU,335,0,5,0,2
+2026,Army West Point,Army West Point,336,0,1,0,1
 2026,North Florida,North Florida,337,0,5,0,0
 2026,North Ala.,North Ala.,338,0,1,1,1
 2026,Maine,Maine,339,0,1,0,2
 2026,Chicago St.,Chicago St.,340,0,3,0,4
 2026,Niagara,Niagara,341,0,2,0,1
-2026,Canisius,Canisius,342,0,2,0,1
-2026,UTSA,UTSA,343,0,3,0,4
+2026,UTSA,UTSA,342,0,3,0,4
+2026,Canisius,Canisius,343,0,2,0,1
 2026,N.C. Central,N.C. Central,344,0,5,0,0
 2026,Southern Ind.,Southern Ind.,345,0,0,0,1
 2026,The Citadel,The Citadel,346,0,0,0,2
-2026,New Hampshire,New Hampshire,347,0,3,0,2
-2026,Jackson St.,Jackson St.,348,0,7,0,0
+2026,Jackson St.,Jackson St.,347,0,7,0,0
+2026,New Hampshire,New Hampshire,348,0,3,0,2
 2026,Alcorn,Alcorn,349,0,4,0,3
-2026,Air Force,Air Force,350,0,7,0,10
+2026,Air Force,Air Force,350,0,7,0,9
 2026,UMES,UMES,351,0,5,0,1
 2026,Morgan St.,Morgan St.,352,0,1,0,3
 2026,Saint Francis,Saint Francis,353,0,3,0,2
@@ -361,6 +361,6 @@ season,team,source_name,net_rank,quad1_wins,quad1_losses,quad2_wins,quad2_losses
 2026,Binghamton,Binghamton,360,0,0,0,3
 2026,Gardner-Webb,Gardner-Webb,361,0,3,0,6
 2026,Delaware St.,Delaware St.,362,0,1,0,3
-2026,Coppin St.,Coppin St.,363,0,3,0,4
+2026,Coppin St.,Coppin St.,363,0,3,0,3
 2026,Western Ill.,Western Ill.,364,0,1,0,1
 2026,Mississippi Val.,Mississippi Val.,365,0,4,0,4
