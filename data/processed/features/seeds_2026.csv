@@ -6,11 +6,11 @@ season,team,seed
 2026,UConn Huskies,2
 2026,Houston Cougars,2
 2026,Michigan State Spartans,2
-2026,Illinois Fighting Illini,2
-2026,Iowa State Cyclones,3
+2026,Iowa State Cyclones,2
+2026,Illinois Fighting Illini,3
+2026,Purdue Boilermakers,3
 2026,Nebraska Cornhuskers,3
 2026,Gonzaga Bulldogs,3
-2026,Purdue Boilermakers,3
 2026,Alabama Crimson Tide,4
 2026,Virginia Cavaliers,4
 2026,Kansas Jayhawks,4
@@ -18,18 +18,18 @@ season,team,seed
 2026,Texas Tech Red Raiders,5
 2026,Arkansas Razorbacks,5
 2026,St. John's Red Storm,5
+2026,Wisconsin Badgers,6
 2026,Tennessee Volunteers,6
 2026,North Carolina Tar Heels,6
-2026,Wisconsin Badgers,6
 2026,Louisville Cardinals,6
 2026,BYU Cougars,6
-2026,Kentucky Wildcats,7
 2026,Miami Hurricanes,7
+2026,Kentucky Wildcats,7
 2026,Saint Mary's Gaels,7
 2026,Clemson Tigers,7
-2026,Villanova Wildcats,8
-2026,Georgia Bulldogs,8
 2026,UCLA Bruins,8
+2026,Georgia Bulldogs,8
+2026,Villanova Wildcats,8
 2026,Utah State Aggies,8
 2026,Ohio State Buckeyes,9
 2026,TCU Horned Frogs,9
@@ -41,16 +41,16 @@ season,team,seed
 2026,Santa Clara Broncos,10
 2026,Missouri Tigers,11
 2026,Miami (OH) RedHawks,11
-2026,SMU Mustangs,11
-2026,Oklahoma,11
+2026,San Diego State,11
 2026,VCU Rams,11
+2026,SMU Mustangs,11
 2026,Texas Longhorns,11
-2026,New Mexico,11
+2026,Oklahoma,11
 2026,Auburn,11
 2026,Indiana,11
 2026,Stanford,11
 2026,Tulsa,11
-2026,San Diego State,11
+2026,New Mexico,11
 2026,South Florida Bulls,11
 2026,Akron Zips,12
 2026,Yale Bulldogs,12
@@ -79,13 +79,13 @@ season,team,seed
 2026,Queens Royals,16
 2026,UMBC Retrievers,16
 2026,LIU Sharks,16
-2026,Lehigh,16
 2026,Howard,16
-2026,Southern,16
-2026,Florida A&M,16
-2026,Prairie View A&M Panthers,16
-2026,Vermont,16
+2026,Lehigh,16
 2026,Alabama A&M,16
+2026,Florida A&M,16
+2026,Southern,16
+2026,Vermont,16
+2026,Prairie View A&M Panthers,16
 2026,Bethune-Cookman Wildcats,16
 2026,Boston University Terriers,16
 2026,Norfolk State Spartans,16
