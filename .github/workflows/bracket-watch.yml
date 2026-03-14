@@ -88,17 +88,28 @@ jobs:
             year=$(date +%Y)
           fi
           mkdir -p data/brackets
+
+          # Disable fail-on-error so we can inspect the exit code ourselves.
+          # Exit 0 = bracket found, 1 = not yet available, 2 = hard error.
+          set +e
           python scripts/fetch_official_bracket.py \
             --year "$year" \
             --out "data/brackets/official_${year}.csv"
+          exit_code=$?
+          set -e
 
-          # Script exits 0 if bracket found, 1 if not yet available
-          if [ $? -eq 0 ] && [ -f "data/brackets/official_${year}.csv" ]; then
-            echo "bracket_found=true"                          >> "$GITHUB_OUTPUT"
+          if [ "$exit_code" -eq 0 ] && [ -f "data/brackets/official_${year}.csv" ]; then
+            echo "bracket_found=true"                              >> "$GITHUB_OUTPUT"
             echo "bracket_file=data/brackets/official_${year}.csv" >> "$GITHUB_OUTPUT"
-          else
+          elif [ "$exit_code" -eq 1 ]; then
+            echo "Bracket not yet released — will retry next run." >&2
             echo "bracket_found=false" >> "$GITHUB_OUTPUT"
             echo "bracket_file="       >> "$GITHUB_OUTPUT"
+          else
+            echo "Hard error fetching bracket (exit $exit_code) — failing step." >&2
+            echo "bracket_found=false" >> "$GITHUB_OUTPUT"
+            echo "bracket_file="       >> "$GITHUB_OUTPUT"
+            exit "$exit_code"
           fi
 
       # Pass through from already_done path when bracket was pre-existing

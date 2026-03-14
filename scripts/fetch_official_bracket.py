@@ -48,24 +48,33 @@ HEADERS = {
 }
 
 
-def fetch_bracket_data(year: int) -> dict | None:
+def fetch_bracket_data(year: int) -> tuple["dict | None", int]:
     """
-    Hit the ESPN bracket API and return the raw JSON payload, or None if
-    the bracket is not yet available (pre-Selection Sunday).
+    Hit the ESPN bracket API and return (data, exit_hint) where exit_hint is:
+      0  — data retrieved successfully
+      1  — bracket not yet available (404 or TBD teams); expected pre-Selection Sunday
+      2  — unexpected network / parse error
     """
     params = {"seasontype": 3, "year": year}
     try:
         r = requests.get(ESPN_BRACKET_URL, params=params, headers=HEADERS, timeout=15)
+        if r.status_code == 404:
+            print(
+                f"Bracket not yet available for {year} (ESPN returned 404). "
+                "This is expected before Selection Sunday.",
+                file=sys.stderr,
+            )
+            return None, 1
         r.raise_for_status()
         data = r.json()
     except requests.RequestException as exc:
         print(f"Network error fetching bracket: {exc}", file=sys.stderr)
-        return None
+        return None, 2
     except json.JSONDecodeError as exc:
         print(f"JSON parse error: {exc}", file=sys.stderr)
-        return None
+        return None, 2
 
-    return data
+    return data, 0
 
 
 def extract_teams(data: dict) -> list[dict]:
@@ -147,11 +156,14 @@ def main() -> int:
     out_path = Path(args.out) if args.out else Path(f"data/brackets/official_{year}.csv")
 
     print(f"Fetching {year} NCAA tournament bracket from ESPN...")
-    data = fetch_bracket_data(year)
+    data, exit_hint = fetch_bracket_data(year)
 
     if data is None:
-        print("Failed to retrieve bracket data (network/parse error).", file=sys.stderr)
-        return 2
+        if exit_hint == 1:
+            print("Bracket not yet released — will retry next scheduled run.", file=sys.stderr)
+        else:
+            print("Failed to retrieve bracket data (network/parse error).", file=sys.stderr)
+        return exit_hint
 
     teams = extract_teams(data)
 
