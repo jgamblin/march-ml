@@ -255,6 +255,7 @@ results/*.csv
 
 # Keep the canonical CI sim output committed (updated every run)
 !results/sim_results.json
+!results/tournament_results.json
 
 # Scratch planning / analysis docs
 ADVANCED_ANALYSIS_TOOLS.md
