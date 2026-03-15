@@ -165,9 +165,67 @@ def normalize_bracket_records(records):
         raise ValueError('No teams were found in the bracket input')
     if len(teams) != len(set(teams)):
         raise ValueError('Bracket input contains duplicate team names')
-    if len(teams) & (len(teams) - 1) != 0:
-        raise ValueError('Bracket size must be a power of two (e.g. 4, 8, 16, 32, 64)')
+    if len(teams) != 68 and (len(teams) & (len(teams) - 1) != 0):
+        raise ValueError('Bracket size must be a power of two (e.g. 4, 8, 16, 32, 64) or 68 (First Four)')
     return teams, normalized
+
+
+def extract_first_four_pairs(bracket_records):
+    """Identify the 4 First Four play-in game pairs from a 68-team bracket.
+
+    Pairs are identified by two teams sharing the same slot number.
+    Returns a list of 4 dicts: {slot, teamA, teamB, seedA, seedB, region}.
+    """
+    from collections import defaultdict as _dd
+    slot_map = _dd(list)
+    for r in bracket_records:
+        slot_map[r['slot']].append(r)
+
+    pairs = []
+    for slot in sorted(slot_map.keys()):
+        occupants = slot_map[slot]
+        if len(occupants) == 2:
+            a, b = occupants
+            pairs.append({
+                'slot': slot,
+                'teamA': a['team'],
+                'teamB': b['team'],
+                'seedA': a.get('seed'),
+                'seedB': b.get('seed'),
+                'region': a.get('region'),
+            })
+        elif len(occupants) > 2:
+            raise ValueError(f'Slot {slot} has {len(occupants)} teams (max 2 for First Four)')
+
+    if len(pairs) != 4:
+        raise ValueError(
+            f'68-team bracket must have exactly 4 First Four (duplicate-slot) pairs; found {len(pairs)}'
+        )
+    return pairs
+
+
+def build_64_from_68(bracket_records, ff_winners):
+    """Substitute First Four winners into their slots and return 64-team ordered list.
+
+    bracket_records: all 68 bracket records sorted by slot.
+    ff_winners: dict {slot: winner_team_name} for the 4 First Four slots.
+    """
+    from collections import Counter as _C
+    slot_counts = _C(r['slot'] for r in bracket_records)
+    ff_slots = {s for s, c in slot_counts.items() if c == 2}
+
+    result = []
+    visited = set()
+    for r in sorted(bracket_records, key=lambda x: x['slot']):
+        s = r['slot']
+        if s in ff_slots:
+            if s not in visited:
+                result.append(ff_winners[s])
+                visited.add(s)
+            # Skip second entry for this slot — winner already added
+        else:
+            result.append(r['team'])
+    return result
 
 
 def load_bracket(bracket_file):
@@ -567,6 +625,7 @@ def predict_prob_with_seed_routing(
 
 def round_label(team_count):
     labels = {
+        68: 'first_four',
         64: 'round_of_64',
         32: 'round_of_32',
         16: 'sweet_16',
@@ -991,8 +1050,16 @@ def main():
         ]
         bracket_source = 'generated_seeded' if any(r['seed'] for r in bracket_records) else 'generated_top64'
 
-    if len(teams) & (len(teams) - 1) != 0:
-        raise ValueError('Bracket size must be power of two (e.g., 64)')
+    if len(teams) not in (4, 8, 16, 32, 64, 68):
+        raise ValueError('Bracket size must be power of two (e.g., 64) or 68 (First Four)')
+
+    # ── First Four: extract pairs if 68-team bracket ──────────────────────────
+    first_four_pairs = []
+    if len(teams) == 68:
+        first_four_pairs = extract_first_four_pairs(bracket_records)
+        print(f'First Four detected: {len(first_four_pairs)} play-in games')
+        for p in first_four_pairs:
+            print(f'  Slot {p["slot"]}: {p["teamA"]} (#{p["seedA"]}) vs {p["teamB"]} (#{p["seedB"]})')
 
     team_overrides = {record['team']: record for record in bracket_records}
 
@@ -1007,9 +1074,7 @@ def main():
     }
 
     # Pre-compute win probabilities for every possible matchup among bracket teams.
-    # This makes one batch predict_proba call per model (64*63/2 = 2016 rows) instead
-    # of a separate call for each of the ~63,000 individual game predictions, cutting
-    # sklearn validation overhead by ~30x and reducing simulation time ~10x.
+    # For 68-team brackets this includes the 4 First Four matchups automatically.
     n_pairs = len(teams) * (len(teams) - 1) // 2
     print(f'Pre-computing {n_pairs} matchup probabilities...')
     prob_lookup = precompute_matchup_probs(
@@ -1021,8 +1086,24 @@ def main():
     sims = args.sims
     champions = Counter()
     round_counts = {team: Counter() for team in teams}
+
     for i in range(sims):
-        champ, reaches = simulate_once_precomputed(teams, prob_lookup)
+        if first_four_pairs:
+            # Resolve the 4 First Four play-in games, then build the 64-team bracket.
+            ff_winners_this_sim = {}
+            for pair in first_four_pairs:
+                tA, tB = pair['teamA'], pair['teamB']
+                p_a = prob_lookup.get((tA, tB), 0.5)
+                winner = tA if np.random.rand() < p_a else tB
+                ff_winners_this_sim[pair['slot']] = winner
+                # Both teams "appeared" in First Four
+                round_counts[tA]['first_four'] += 1
+                round_counts[tB]['first_four'] += 1
+            sim_64 = build_64_from_68(bracket_records, ff_winners_this_sim)
+        else:
+            sim_64 = teams
+
+        champ, reaches = simulate_once_precomputed(sim_64, prob_lookup)
         champions[champ] += 1
         for team, labels in reaches.items():
             for label in labels:
@@ -1036,6 +1117,22 @@ def main():
         for team, counts in round_counts.items()
     }
     sorted_champs = sorted(champion_probs.items(), key=lambda x: x[1], reverse=True)
+
+    # Build First Four output: win probabilities for each play-in game
+    first_four_output = []
+    for pair in first_four_pairs:
+        tA, tB = pair['teamA'], pair['teamB']
+        p_a = prob_lookup.get((tA, tB), 0.5)
+        first_four_output.append({
+            'slot':    pair['slot'],
+            'teamA':   tA,
+            'teamB':   tB,
+            'seedA':   pair['seedA'],
+            'seedB':   pair['seedB'],
+            'region':  pair['region'],
+            'prob_a':  round(p_a, 4),
+            'prob_b':  round(1.0 - p_a, 4),
+        })
 
     # Determine model version string
     model_components = []
@@ -1056,6 +1153,7 @@ def main():
         'teams': teams,
         'bracket_source': bracket_source,
         'bracket': bracket_records,
+        'first_four': first_four_output,
         'champion_probs': sorted_champs,
         'round_probs': round_probs,
         'model_metadata': {
