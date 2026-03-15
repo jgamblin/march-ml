@@ -15,6 +15,18 @@ pip install --no-user -r requirements.txt
 
 Virtual environment is at `.venv/`. Always run scripts from the **repo root**, not from within `scripts/`. Prefix commands with `PIP_NO_USER=1` if pip complains about `--user` inside the venv.
 
+## Tests
+
+```bash
+# Run all tests (requires data/processed/features/tournament_teams.csv and trained models)
+pytest tests/test_pipeline.py -v
+
+# Run a single test by name
+pytest tests/test_pipeline.py -v -k "test_seed_prior_1_vs_16"
+```
+
+Tests use real data artifacts — run `--mode features` and `--mode train` first. Tests that need missing artifacts automatically call `pytest.skip`.
+
 ## Key Commands
 
 All pipeline stages are orchestrated through `run_pipeline.py` with a `--mode` flag:
@@ -37,6 +49,12 @@ python scripts/run_pipeline.py --mode validate --sim_out results/sim_5000.json
 # Pool optimizer (strategies: chalk | balanced | contrarian)
 python scripts/run_pipeline.py --mode optimize --sim_out results/sim_5000.json \
   --strategy balanced --num_entries 10
+
+# Generate charts from simulation output
+python scripts/generate_charts.py --sim results/sim_2026_5000.json
+
+# View results (auto-detects latest sim)
+python show_results.py
 ```
 
 ### New Training Flags
@@ -109,7 +127,9 @@ Core features in `BASE_FEATURES` (defined in `train_baseline.py`):
 - Schedule strength: `sos_win_pct`, `opp_avg_margin`, `adj_margin` (2-iteration SOS to break circular dependency)
 - Tournament seed: `seed` (extracted from `home_rank`/`away_rank` in cbbpy game CSVs for NCAA tourney games)
 
-Optional features (used when present): `conf_avg_adj_margin`, `conf_avg_win_pct`, `conf_strength_tier`, `weighted_last10_margin`, `win_streak`, `margin_trend_slope`, `last5_momentum`
+Optional numeric features (included when >50% coverage): `net_rank`, `pom_rank`, `luck_percentile`. (`quad1_wins` is defined but not currently active.)
+
+Engineered matchup features added by `build_match_dataset`: `seed_matchup_prior`, `seed_close_match`, `adj_when_close`, `adj_when_far`, `bart_em_when_close`, `bart_em_when_far`, `tempo_mismatch`. All raw features enter the training matrix as `diff_<feature>` (team_A minus team_B).
 
 **Do not add `home_edge` to features** — it is perfectly collinear with `neutral_site` in tournament data (all games are neutral-site).
 
@@ -121,8 +141,9 @@ cbbpy stores the NCAA tournament seed in `home_rank`/`away_rank` columns for tou
 
 - **Label orientation**: each matchup row is oriented so `team_A` = higher `adj_margin` team. This prevents systematic label bias (cbbpy assigns better teams as "home" in tournament records).
 - **Evaluation**: true Leave-One-Season-Out (LOSO) with 1000-sample bootstrap CI. **Also run rolling CV** (strictly forward-looking: train on seasons 1..k-1, test on k) — this is the deployment-relevant metric. Never use forward-chaining holdout without augmented data.
-- **Current accuracy (March 2026)**: Rolling CV **74.6%** (95% CI: [69.0%, 79.5%]) · LOSO **78.4%** (95% CI: [74.3%, 82.6%]). LOSO is ~2pp optimistic for 2015–2025 because BartTorvik year-end JSON includes tournament game results; 2026 production predictions are clean (pre-tournament data only).
+- **Current accuracy (March 2026)**: LOSO **79.1%** (95% CI: [76.1%, 82.1%], BSS=0.719) · Rolling CV **~75%**. LOSO is ~2pp optimistic for 2015–2025 because BartTorvik year-end JSON includes tournament game results; 2026 production predictions are clean (pre-tournament data only).
 - **Baselines to beat**: `lower_seed` = 69.8%, `win_pct_sign` = 54.5%, `always_team_a` = 52.4%
+- **Ensemble weights**: LR=20%, XGB=80% (log-loss optimal, written to `models/ensemble_weights.json` by `optimize_ensemble_weights.py`).
 - **Calibration**: XGBoost uses isotonic regression (≥3000 rows) or sigmoid/Platt scaling (fallback). LR always uses sigmoid. The 3000-row threshold means: tournament-only training (~670 rows) → sigmoid; `--include_regular_season` augmentation (~33K rows) → isotonic. Do **not** lower this threshold — isotonic regression on ≤1000 rows is prone to overfitting the calibration curve.
 - `model_features.joblib` stores the feature list used at training time — simulation must use the same features
 - `training_summary.json` records metadata including `loso_per_season`, `baselines`, and `feature_columns`
@@ -169,10 +190,18 @@ If the cbbpy API goes down and `scrape_with_cbbpy.py` cannot fetch game data, a 
 
 During inference (simulation), `simulate_bracket.py` reads `data/processed/features/tournament_teams.csv` for 2026 team stats. If this file was manually populated, the simulation will run normally but accuracy depends entirely on the quality of the manually entered stats. Log a clear warning if `games_dir` contains no processed game CSVs for the current season so the user knows they're in fallback mode.
 
-
+### Scoring Profiles
 
 Defined in `pool_scorer.py` as `SCORING_PROFILES`. Built-in: `espn`, `cbs`, `simple`. Pass `--profile espn` (default) or `--profile cbs` to scoring/optimizer scripts.
 
 ## GitHub Actions
 
-`.github/workflows/scrape-and-save.yml` — runs weekly (Monday 06:00 UTC) or on `workflow_dispatch`. Executes `--mode scrape` and uploads `data/processed/` as an artifact. Python 3.11.
+Three workflows keep the repo self-updating:
+
+| Workflow | Trigger | What it does |
+|---|---|---|
+| `update-data.yml` | Every 6 hours + manual | Scrape → features → train → 5000-sim → commit results |
+| `bracket-watch.yml` | Every 15 min on Selection Sunday + manual | Polls ESPN for bracket; triggers 10 000-sim run when found |
+| `scrape-and-save.yml` | Manual only (legacy) | Raw data artifact only, no retrain |
+
+The `update-data.yml` job has `permissions: contents: write` and pushes results back to `main` after each run. Auto-commit messages include `[skip ci]` to prevent recursive triggers. `data/raw/` (cbbpy pickle files) is cached with a weekly-rotating key to minimize scraping API calls.

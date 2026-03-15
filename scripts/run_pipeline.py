@@ -141,6 +141,15 @@ def run_simulation(sims=1000, season=None, bracket_file=None, out_path="results/
     run_command(cmd)
 
 
+def run_bracket_visual(sim_out="results/sim_results.json", out_path=None):
+    season = sim_out.replace("results/sim_", "").replace(".json", "").split("_")[0]
+    if out_path is None:
+        out_path = f"results/charts/bracket_{season}.png"
+    cmd = [sys.executable, "scripts/generate_bracket_visual.py",
+           "--sim", sim_out, "--out", out_path]
+    run_command(cmd)
+
+
 def run_validate(sim_out=None, allow_nd=False):
     cmd = [sys.executable, "scripts/validate_artifacts.py"]
     if sim_out:
@@ -193,7 +202,7 @@ def main():
     p.add_argument("--interactions", action="store_true", help="enable interaction features in training (off by default)")
     p.add_argument("--include_regular_season", action="store_true", help="include regular-season games in training at reduced weight (expands dataset ~100x)")
     p.add_argument("--regular_season_weight", type=float, default=0.3, help="sample weight for regular-season rows (default 0.3)")
-    p.add_argument("--sims", type=int, default=1000)
+    p.add_argument("--sims", type=int, default=5000)
     p.add_argument("--season", type=int, default=None, help="season for bracket simulation")
     p.add_argument("--bracket_file", default=None, help="optional bracket file (.txt, .csv, or .json)")
     p.add_argument("--sim_out", default="results/sim_results.json")
@@ -234,6 +243,7 @@ def main():
             min_games=args.min_games,
             allow_nd=args.allow_nd,
         )
+        run_bracket_visual(sim_out=args.sim_out)
     if args.mode in {"validate", "full"}:
         run_validate(sim_out=args.sim_out if args.mode == "full" else args.sim_out, allow_nd=args.allow_nd)
     if args.mode == "optimize":
