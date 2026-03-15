@@ -122,12 +122,13 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', 'Segoe 
 .half.right .rcol:first-child .rname { right: -1px; }
 
 /* ── First Four section ─────────────────────────────────────────────── */
-.ff-section { background: #fff; border-bottom: 1px solid #e4e6ed; padding: 8px 16px; display: none; }
+.ff-section { background: #fff; border-top: 1px solid #e4e6ed; padding: 14px 16px 18px; display: none; }
 .ff-section.show { display: block; }
-.ff-section-hdr { font-size: 9px; font-weight: 700; color: #5D688C; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px; }
-.ff-games { display: flex; gap: 12px; flex-wrap: wrap; }
-.ff-game { border: 1px solid #d8dae8; border-radius: 6px; overflow: hidden; min-width: 200px; }
-.ff-game-hdr { background: #252940; color: #8E9ABF; font-size: 8px; text-transform: uppercase; letter-spacing: .5px; padding: 2px 7px; }
+.ff-section-hdr { font-size: 10px; font-weight: 700; color: #5D688C; text-transform: uppercase; letter-spacing: 1.5px; text-align: center; margin-bottom: 12px; }
+.ff-section-hdr small { display: block; font-size: 9px; color: #A1A2A6; font-weight: 400; letter-spacing: .5px; margin-top: 2px; }
+.ff-games { display: flex; gap: 14px; flex-wrap: wrap; justify-content: center; }
+.ff-game { border: 1px solid #d8dae8; border-radius: 8px; overflow: hidden; min-width: 200px; flex: 0 0 200px; }
+.ff-game-region { text-align: center; font-size: 8px; color: #A1A2A6; text-transform: uppercase; letter-spacing: 1px; padding: 4px 0 2px; background: #fff; }
 .ff-game .tb { width: 100%; border: none; border-bottom: 1px solid #eef0f6; }
 .ff-game .tb:last-child { border-bottom: none; }
 
@@ -155,11 +156,6 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', 'Segoe 
   <span class="prob" id="champ-prob"></span>
 </div>
 
-<div id="ff-section" class="ff-section">
-  <div class="ff-section-hdr">🏀 First Four — Play-In Games</div>
-  <div id="ff-games" class="ff-games"></div>
-</div>
-
 <div class="notif" id="notif"></div>
 
 <div class="legend">
@@ -174,6 +170,14 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', 'Segoe 
 
 <div class="bscroll">
   <div id="bracket-root">Loading bracket…</div>
+</div>
+
+<div id="ff-section" class="ff-section">
+  <div class="ff-section-hdr">
+    🏀 First Four® — Play-In Games
+    <small>3/17–3/18</small>
+  </div>
+  <div id="ff-games" class="ff-games"></div>
 </div>
 
 <script>
@@ -483,9 +487,9 @@ async function main() {
         return isPick ? 'wrong' : 'eliminated';
       };
       return `<div class="ff-game">
-        <div class="ff-game-hdr">${g.region || 'First Four'} · Slot ${g.slot}</div>
         ${tbHTML(g.teamA, g.seedA, g.prob_a, mkState(g.teamA))}
         ${tbHTML(g.teamB, g.seedB, g.prob_b, mkState(g.teamB))}
+        <div class="ff-game-region">${g.region || 'First Four'}</div>
       </div>`;
     }).join('');
   }
