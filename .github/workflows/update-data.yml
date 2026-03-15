@@ -137,7 +137,7 @@ jobs:
             --regular_season_weight 0.3
 
       # ── 7. Simulate ────────────────────────────────────────────────────────
-      #   Default: 1000 sims for scheduled/push runs (~2-3 min on Actions).
+      #   Default: 5000 sims for scheduled/push runs (~5-6 min on Actions).
       #   Override via workflow_dispatch sims input for deeper analysis.
       #   With official bracket: use committed bracket file.
       #   Without bracket: adj_margin-based team selection (pre-bracket estimate).
@@ -148,7 +148,7 @@ jobs:
           python scripts/run_pipeline.py \
             --mode simulate \
             --bracket_file "${{ inputs.bracket_file }}" \
-            --sims ${{ inputs.sims || '1000' }}
+            --sims ${{ inputs.sims || '5000' }}
 
       - name: Simulate (adj_margin selection, no bracket)
         if: inputs.bracket_file == ''
@@ -156,7 +156,7 @@ jobs:
         run: |
           python scripts/run_pipeline.py \
             --mode simulate \
-            --sims ${{ inputs.sims || '1000' }}
+            --sims ${{ inputs.sims || '5000' }}
 
       # ── 8. Generate charts ─────────────────────────────────────────────────
       - name: Find latest sim output
@@ -169,6 +169,12 @@ jobs:
         if: steps.latest_sim.outputs.path != ''
         run: |
           python scripts/generate_charts.py \
+            --sim "${{ steps.latest_sim.outputs.path }}"
+
+      - name: Generate bracket visual
+        if: steps.latest_sim.outputs.path != ''
+        run: |
+          python scripts/generate_bracket_visual.py \
             --sim "${{ steps.latest_sim.outputs.path }}"
 
       # ── 9. Commit results back to main ─────────────────────────────────────
