@@ -40,14 +40,15 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', 'Segoe 
 /* ── Bracket scroll ────────────────────────────────────────────────── */
 .bscroll { overflow-x: auto; padding: 10px 12px 20px; -webkit-overflow-scrolling: touch; }
 .bracket { display: flex; align-items: flex-start; width: max-content; }
+.half    { display: flex; flex-direction: row; align-items: flex-start; }
 
 /* ── Round columns ─────────────────────────────────────────────────── */
-/* Each column: header + East section (448px) + divider + West section (448px) */
 .rcol { display: flex; flex-direction: column; flex-shrink: 0; }
 .col-hdr { font-size: 9px; font-weight: 700; color: #888; text-transform: uppercase; letter-spacing: .5px; text-align: center; height: 18px; line-height: 18px; background: #fff; border-bottom: 1px solid #e8e8e8; white-space: nowrap; }
 
 /* ── Region sections ───────────────────────────────────────────────── */
-.rsec { height: 448px; display: flex; flex-direction: column; justify-content: space-around; position: relative; }
+/* 640px = 8 R64 matchup-slots × 80px each — gives ~24px breathing room per pair */
+.rsec { height: 640px; display: flex; flex-direction: column; justify-content: space-around; position: relative; }
 .rname { position: absolute; font-size: 9px; font-weight: 700; color: #bbb; text-transform: uppercase; letter-spacing: 1px; writing-mode: vertical-rl; top: 50%; transform: translateY(-50%) rotate(180deg); pointer-events: none; }
 .half:not(.right) .rname { left: 2px; }
 .half.right .rname { right: 2px; }
@@ -96,7 +97,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', 'Segoe 
 
 /* FF columns: two teams, one per region-half, each centered in 448px */
 .ff-col { display: flex; flex-direction: column; flex-shrink: 0; width: 170px; }
-.ff-sec { height: 448px; display: flex; flex-direction: column; justify-content: center; align-items: center; }
+.ff-sec { height: 640px; display: flex; flex-direction: column; justify-content: center; align-items: center; }
 
 /* Championship column */
 .champ-col { display: flex; flex-direction: column; align-items: center; flex-shrink: 0; width: 184px; }
@@ -118,7 +119,17 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', 'Segoe 
 .half:not(.right) .rcol:first-child .rname { left: -1px; }
 .half.right .rcol:first-child .rname { right: -1px; }
 
-/* ── Notification bar ───────────────────────────────────────────────── */
+/* ── First Four section ─────────────────────────────────────────────── */
+.ff-section { background: #fff; border-bottom: 1px solid #e8e8e8; padding: 8px 16px; display: none; }
+.ff-section.show { display: block; }
+.ff-section-hdr { font-size: 9px; font-weight: 700; color: #888; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px; }
+.ff-games { display: flex; gap: 12px; flex-wrap: wrap; }
+.ff-game { border: 1px solid #ddd; border-radius: 6px; overflow: hidden; min-width: 200px; }
+.ff-game-hdr { background: #1a1a2e; color: #aaa; font-size: 8px; text-transform: uppercase; letter-spacing: .5px; padding: 2px 7px; }
+.ff-game .tb { width: 100%; border: none; border-bottom: 1px solid #eee; }
+.ff-game .tb:last-child { border-bottom: none; }
+
+
 .notif { background: #fff3cd; border-bottom: 1px solid #f5a623; padding: 6px 16px; font-size: 11px; color: #7a4f00; display: none; }
 .notif.show { display: block; }
 </style>
@@ -139,6 +150,11 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', 'Segoe 
   <span class="lbl">Predicted Champion</span>
   <span class="team" id="champ-team">Loading…</span>
   <span class="prob" id="champ-prob"></span>
+</div>
+
+<div id="ff-section" class="ff-section">
+  <div class="ff-section-hdr">🏀 First Four — Play-In Games</div>
+  <div id="ff-games" class="ff-games"></div>
 </div>
 
 <div class="notif" id="notif"></div>
@@ -377,7 +393,7 @@ function renderBracket(allRounds, seedMap, simData) {
         ${tbHTML(champB, seedMap[champB], chG.pB, cStateB, 'finalist')}
         <div style="height:12px"></div>
         <div class="champ-sublbl">Champion</div>
-        ${tbHTML(winner, seedMap[winner], 1.0, wState, 'champion-box')}
+        ${tbHTML(winner, seedMap[winner], 0, wState, 'champion-box')}
         <div class="champion-crown">${chG.actual ? '★ Champion' : 'Predicted'}</div>
       </div>
       <div class="champ-spacer"></div>
@@ -417,10 +433,10 @@ async function main() {
 
   // Scoreboard
   const { correct, played, total } = computeScore(allRounds);
-  const remaining = total - played;
+  const totalGames = 63 + ffGames.length;  // 63 bracket + up to 4 First Four
   document.getElementById('sc-right').textContent = played > 0 ? correct : '—';
   document.getElementById('sc-pct').textContent   = played > 0 ? `${Math.round(correct / played * 100)}%` : '—';
-  document.getElementById('sc-rem').textContent   = remaining;
+  document.getElementById('sc-rem').textContent   = totalGames - played;
 
   // Champion banner
   const topChamp = simData.champion_probs[0];
@@ -442,6 +458,31 @@ async function main() {
     const notif = document.getElementById('notif');
     notif.textContent = '⏳ Tournament hasn\'t started yet — showing pre-tournament predictions. Percentages are win probability for each game.';
     notif.classList.add('show');
+  }
+
+  // ── First Four section ─────────────────────────────────────────────
+  const ffGames = simData.first_four || [];
+  if (ffGames.length) {
+    const ffResults = (results && results.first_four) || [];
+    const ffEl = document.getElementById('ff-section');
+    const ffContainer = document.getElementById('ff-games');
+    ffEl.classList.add('show');
+
+    ffContainer.innerHTML = ffGames.map((g, i) => {
+      const actual   = ffResults[i] || null;
+      const predicted = g.prob_a >= g.prob_b ? g.teamA : g.teamB;
+      const mkState = (team) => {
+        const isPick = predicted === team;
+        if (!actual) return isPick ? 'predicted' : '';
+        if (actual === team) return isPick ? 'correct' : 'surprise';
+        return isPick ? 'wrong' : 'eliminated';
+      };
+      return `<div class="ff-game">
+        <div class="ff-game-hdr">${g.region || 'First Four'} · Slot ${g.slot}</div>
+        ${tbHTML(g.teamA, g.seedA, g.prob_a, mkState(g.teamA))}
+        ${tbHTML(g.teamB, g.seedB, g.prob_b, mkState(g.teamB))}
+      </div>`;
+    }).join('');
   }
 
   // Render bracket
