@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>march-ml · 2026 NCAA Tournament Predictions</title>
+<meta property="og:title" content="march-ml · 2026 NCAA Tournament">
+<meta property="og:description" content="ML bracket predictions with per-game win probabilities · @jgamblin">
+<style>
+/* ── Reset ─────────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', 'Segoe UI', sans-serif; background: #f0f2f5; color: #1a1a2e; }
+
+/* ── Header ────────────────────────────────────────────────────────── */
+.site-header { background: #1a1a2e; color: #fff; padding: 10px 18px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; }
+.site-title { font-size: 17px; font-weight: 700; }
+.site-title em { color: #f0b820; font-style: normal; }
+.scoreboard { display: flex; gap: 8px; align-items: center; }
+.sp { background: rgba(255,255,255,.1); border-radius: 20px; padding: 4px 12px; text-align: center; min-width: 64px; }
+.sp .n { display: block; font-size: 19px; font-weight: 700; color: #f0b820; line-height: 1.15; }
+.sp .l { font-size: 9px; color: #999; text-transform: uppercase; letter-spacing: .5px; }
+.updated { font-size: 10px; color: #666; }
+
+/* ── Champion bar ──────────────────────────────────────────────────── */
+.champ-bar { background: linear-gradient(90deg,#1a1a2e,#2d2d50 50%,#1a1a2e); padding: 7px 16px; display: flex; gap: 10px; align-items: center; justify-content: center; border-bottom: 2px solid #f0b820; flex-wrap: wrap; }
+.champ-bar .lbl { font-size: 9px; color: #aaa; text-transform: uppercase; letter-spacing: 1px; }
+.champ-bar .team { font-size: 15px; font-weight: 700; color: #f0b820; }
+.champ-bar .prob { font-size: 11px; color: #ccc; }
+
+/* ── Legend ────────────────────────────────────────────────────────── */
+.legend { display: flex; gap: 14px; align-items: center; flex-wrap: wrap; padding: 5px 16px; background: #fff; border-bottom: 1px solid #e8e8e8; font-size: 10px; color: #555; }
+.li { display: flex; gap: 4px; align-items: center; }
+.lb { width: 11px; height: 11px; border-radius: 2px; border: 1px solid; flex-shrink: 0; }
+.lb.predicted { background: #e8f0fe; border-color: #1a73e8; }
+.lb.correct   { background: #e6f4ea; border-color: #34a853; }
+.lb.wrong     { background: #fce8e6; border-color: #ea4335; }
+.lb.surprise  { background: #fff3cd; border-color: #f5a623; }
+.lb.elim      { background: #f5f5f5; border-color: #ccc; opacity: .5; }
+
+/* ── Bracket scroll ────────────────────────────────────────────────── */
+.bscroll { overflow-x: auto; padding: 10px 12px 20px; -webkit-overflow-scrolling: touch; }
+.bracket { display: flex; align-items: flex-start; width: max-content; }
+
+/* ── Round columns ─────────────────────────────────────────────────── */
+/* Each column: header + East section (448px) + divider + West section (448px) */
+.rcol { display: flex; flex-direction: column; flex-shrink: 0; }
+.col-hdr { font-size: 9px; font-weight: 700; color: #888; text-transform: uppercase; letter-spacing: .5px; text-align: center; height: 18px; line-height: 18px; background: #fff; border-bottom: 1px solid #e8e8e8; white-space: nowrap; }
+
+/* ── Region sections ───────────────────────────────────────────────── */
+.rsec { height: 448px; display: flex; flex-direction: column; justify-content: space-around; position: relative; }
+.rname { position: absolute; font-size: 9px; font-weight: 700; color: #bbb; text-transform: uppercase; letter-spacing: 1px; writing-mode: vertical-rl; top: 50%; transform: translateY(-50%) rotate(180deg); pointer-events: none; }
+.half:not(.right) .rname { left: 2px; }
+.half.right .rname { right: 2px; }
+.rdiv { height: 1px; background: #ddd; flex-shrink: 0; margin: 0 4px; }
+
+/* ── Matchup ────────────────────────────────────────────────────────── */
+.matchup { display: flex; flex-direction: column; position: relative; }
+
+/* Connector line: vertical bar on the "inner" side of each matchup */
+.half:not(.right) .matchup { margin-right: 8px; }
+.half:not(.right) .matchup::after { content: ''; position: absolute; right: -8px; top: 14px; bottom: 14px; width: 1px; background: #ccc; }
+
+.half.right .matchup { margin-left: 8px; }
+.half.right .matchup::after { content: ''; position: absolute; left: -8px; top: 14px; bottom: 14px; width: 1px; background: #ccc; }
+
+/* Horizontal nub connecting team box center to the vertical bar */
+.half:not(.right) .tb::before { content: ''; position: absolute; right: -8px; top: 50%; width: 8px; height: 1px; background: #ccc; }
+.half.right .tb::before { content: ''; position: absolute; left: -8px; top: 50%; width: 8px; height: 1px; background: #ccc; }
+
+/* ── Team box ───────────────────────────────────────────────────────── */
+.tb { width: 152px; height: 28px; border: 1px solid #d8d8d8; background: #fff; display: flex; align-items: center; padding: 0 5px; gap: 3px; font-size: 10.5px; overflow: hidden; white-space: nowrap; cursor: default; position: relative; }
+.tb + .tb { border-top: none; }
+.sd { font-size: 9.5px; font-weight: 700; color: #999; min-width: 13px; flex-shrink: 0; }
+.nm { flex: 1; overflow: hidden; text-overflow: ellipsis; }
+.pc { font-size: 9.5px; font-weight: 600; color: #1a73e8; flex-shrink: 0; }
+.ic { font-size: 10px; font-weight: 700; flex-shrink: 0; width: 12px; text-align: center; }
+
+/* States */
+.tb.predicted  { background: #e8f0fe; border-color: #1a73e8; }
+.tb.predicted .sd, .tb.predicted .pc { color: #1a73e8; }
+
+.tb.correct    { background: #e6f4ea; border-color: #34a853; }
+.tb.correct .sd, .tb.correct .pc { color: #34a853; }
+
+.tb.wrong      { background: #fce8e6; border-color: #ea4335; }
+.tb.wrong .sd, .tb.wrong .pc { color: #ea4335; }
+.tb.wrong .nm  { text-decoration: line-through; opacity: .65; }
+
+.tb.surprise   { background: #fff3cd; border-color: #f5a623; }
+.tb.surprise .sd, .tb.surprise .pc { color: #c87800; }
+
+.tb.eliminated { opacity: .28; background: #f8f8f8; }
+
+/* ── Center: Final Four + Championship ─────────────────────────────── */
+.center { display: flex; flex-direction: row; flex-shrink: 0; }
+
+/* FF columns: two teams, one per region-half, each centered in 448px */
+.ff-col { display: flex; flex-direction: column; flex-shrink: 0; width: 170px; }
+.ff-sec { height: 448px; display: flex; flex-direction: column; justify-content: center; align-items: center; }
+
+/* Championship column */
+.champ-col { display: flex; flex-direction: column; align-items: center; flex-shrink: 0; width: 184px; }
+.champ-spacer { flex: 1; }
+.champ-sec { display: flex; flex-direction: column; align-items: center; gap: 6px; padding-bottom: 8px; }
+.champ-sublbl { font-size: 9px; font-weight: 700; color: #aaa; text-transform: uppercase; letter-spacing: .5px; text-align: center; margin-bottom: 2px; }
+.champ-vs { font-size: 9px; color: #bbb; text-align: center; padding: 2px 0; }
+
+.tb.finalist { width: 162px; background: #d2e3fc; border-color: #1a73e8; border-width: 2px; font-weight: 600; }
+.tb.finalist.correct { background: #e6f4ea; border-color: #34a853; }
+.tb.finalist.wrong   { background: #fce8e6; border-color: #ea4335; }
+.tb.finalist.surprise { background: #fff3cd; border-color: #f5a623; }
+
+.tb.champion-box { width: 162px; height: 32px; background: #fff8e1; border-color: #f0b820; border-width: 2px; font-size: 11px; font-weight: 700; }
+.tb.champion-box .sd, .tb.champion-box .pc { color: #c87800; }
+.champion-crown { font-size: 10px; font-weight: 700; color: #c87800; text-transform: uppercase; letter-spacing: .8px; text-align: center; margin-top: 4px; }
+
+/* ── Region labels on R64 column edges ─────────────────────────────── */
+.half:not(.right) .rcol:first-child .rname { left: -1px; }
+.half.right .rcol:first-child .rname { right: -1px; }
+
+/* ── Notification bar ───────────────────────────────────────────────── */
+.notif { background: #fff3cd; border-bottom: 1px solid #f5a623; padding: 6px 16px; font-size: 11px; color: #7a4f00; display: none; }
+.notif.show { display: block; }
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="site-title">march<em>-ml</em> · 2026 NCAA Tournament</div>
+  <div class="scoreboard">
+    <div class="sp"><span class="n" id="sc-right">—</span><span class="l">Correct</span></div>
+    <div class="sp"><span class="n" id="sc-pct">—</span><span class="l">Accuracy</span></div>
+    <div class="sp"><span class="n" id="sc-rem">63</span><span class="l">Remaining</span></div>
+  </div>
+  <div class="updated" id="updated-ts"></div>
+</header>
+
+<div class="champ-bar">
+  <span class="lbl">Predicted Champion</span>
+  <span class="team" id="champ-team">Loading…</span>
+  <span class="prob" id="champ-prob"></span>
+</div>
+
+<div class="notif" id="notif"></div>
+
+<div class="legend">
+  <strong style="color:#444">Legend:</strong>
+  <div class="li"><div class="lb predicted"></div> Our pick (game not yet played)</div>
+  <div class="li"><div class="lb correct"></div> Correct ✓</div>
+  <div class="li"><div class="lb wrong"></div> Our pick — wrong ✗</div>
+  <div class="li"><div class="lb surprise"></div> Upset winner (advancing)</div>
+  <div class="li"><div class="lb elim"></div> Eliminated</div>
+  <div class="li" style="margin-left:auto; color:#888;">% = win prob for that game · <a href="https://github.com/jgamblin/march-ml" style="color:#1a73e8">github</a></div>
+</div>
+
+<div class="bscroll">
+  <div id="bracket-root">Loading bracket…</div>
+</div>
+
+<script>
+// ── Constants ────────────────────────────────────────────────────────────────
+const REGION_NAMES = ['EAST', 'WEST', 'SOUTH', 'MIDWEST'];
+
+// key in round_probs to use when predicting the winner of each round
+const ADVANCE_KEY = {
+  round_of_64: 'round_of_32',
+  round_of_32: 'sweet_16',
+  sweet_16:    'elite_8',
+  elite_8:     'final_4',
+  final_4:     'title_game',
+  champion:    'champion'
+};
+
+const ROUND_LABEL = {
+  round_of_64: 'R64', round_of_32: 'R32', sweet_16: 'S16',
+  elite_8: 'E8', final_4: 'F4', champion: 'Championship'
+};
+
+// ── Helpers ──────────────────────────────────────────────────────────────────
+function trim(name, n = 15) {
+  if (!name || name.length <= n) return name || '';
+  const words = name.split(' ');
+  for (let k = words.length; k > 0; k--) {
+    const s = words.slice(0, k).join(' ');
+    if (s.length <= n) return s;
+  }
+  return name.slice(0, n);
+}
+
+function pairProbs(a, b, rp, key) {
+  const pa = (rp[a] || {})[key] || 0;
+  const pb = (rp[b] || {})[key] || 0;
+  const tot = pa + pb;
+  if (tot === 0) return [0.5, 0.5];
+  return [pa / tot, pb / tot];
+}
+
+// ── Bracket computation ───────────────────────────────────────────────────────
+function computeBracket(simData, results) {
+  const slots  = [...simData.bracket].sort((a, b) => a.slot - b.slot);
+  const rp     = simData.round_probs;
+  const rounds = ['round_of_64','round_of_32','sweet_16','elite_8','final_4','champion'];
+
+  let current = slots.map(s => s.team); // 64 → 32 → … → 1
+  const allRounds = [];
+
+  for (const rkey of rounds) {
+    const advanceTo  = ADVANCE_KEY[rkey];
+    const actuals    = (results && results[rkey]) || [];
+    const roundGames = [];
+    const nextSlots  = [];
+
+    for (let i = 0; i < current.length; i += 2) {
+      const a = current[i], b = current[i + 1];
+      const gi = i / 2;
+      const [pA, pB]   = pairProbs(a, b, rp, advanceTo);
+      const predicted   = pA >= pB ? a : b;
+      const actual      = actuals[gi] || null;
+      roundGames.push({ a, b, pA, pB, predicted, actual, round: rkey });
+      nextSlots.push(actual || predicted);
+    }
+
+    allRounds.push({ key: rkey, games: roundGames });
+    current = nextSlots;
+  }
+
+  return allRounds;
+}
+
+// ── Score ─────────────────────────────────────────────────────────────────────
+function computeScore(allRounds) {
+  let correct = 0, played = 0;
+  for (const rnd of allRounds) {
+    for (const g of rnd.games) {
+      if (g.actual) { played++; if (g.actual === g.predicted) correct++; }
+    }
+  }
+  return { correct, played, total: 63 };
+}
+
+// ── Team state ────────────────────────────────────────────────────────────────
+// Returns: 'predicted' | 'correct' | 'wrong' | 'surprise' | 'eliminated' | ''
+function teamState(game, isA) {
+  const team      = isA ? game.a : game.b;
+  const isPredicted = game.predicted === team;
+
+  if (!game.actual) return isPredicted ? 'predicted' : '';
+
+  const won = game.actual === team;
+  if (won)  return isPredicted ? 'correct'  : 'surprise';
+  else      return isPredicted ? 'wrong'    : 'eliminated';
+}
+
+// ── Team box HTML ─────────────────────────────────────────────────────────────
+function tbHTML(team, seed, prob, state, extra = '') {
+  const cls   = ['tb', state, extra].filter(Boolean).join(' ');
+  const icon  = state === 'correct'  ? '<span class="ic" style="color:#34a853">✓</span>'
+              : state === 'wrong'    ? '<span class="ic" style="color:#ea4335">✗</span>'
+              : state === 'surprise' ? '<span class="ic" style="color:#f5a623">✓</span>'
+              : '<span class="ic"></span>';
+  const pctStr = prob > 0 ? `<span class="pc">${Math.round(prob * 100)}%</span>` : '';
+  return `<div class="${cls}" title="${team}">
+    <span class="sd">${seed || '?'}</span>
+    <span class="nm">${trim(team)}</span>
+    ${pctStr}${icon}
+  </div>`;
+}
+
+// ── Round column ──────────────────────────────────────────────────────────────
+// gamesPerRegion for each round: R64=8, R32=4, S16=2, E8=1
+const GPR = { round_of_64: 8, round_of_32: 4, sweet_16: 2, elite_8: 1 };
+
+function renderRcol(roundData, seedMap, rkey, regionIdx) {
+  const n     = GPR[rkey];
+  const start = regionIdx * n;
+  const games = roundData.games.slice(start, start + n);
+
+  let html = '';
+  for (const g of games) {
+    html += `<div class="matchup">
+      ${tbHTML(g.a, seedMap[g.a], g.pA, teamState(g, true))}
+      ${tbHTML(g.b, seedMap[g.b], g.pB, teamState(g, false))}
+    </div>`;
+  }
+  return html;
+}
+
+// ── Full bracket render ───────────────────────────────────────────────────────
+function renderBracket(allRounds, seedMap, simData) {
+  const byKey  = Object.fromEntries(allRounds.map(r => [r.key, r]));
+  const r64    = byKey['round_of_64'];
+  const r32    = byKey['round_of_32'];
+  const s16    = byKey['sweet_16'];
+  const e8     = byKey['elite_8'];
+  const ff     = byKey['final_4'];
+  const champ  = byKey['champion'];
+
+  // Region names from bracket if available, else defaults
+  const slots  = [...simData.bracket].sort((a, b) => a.slot - b.slot);
+  const names  = REGION_NAMES; // fallback — official bracket will set real names
+
+  // Helper: one region section (top=East/South, bot=West/Midwest)
+  function rsec(roundData, rkey, regionIdx, regionName) {
+    return `<div class="rsec">
+      <span class="rname">${regionName}</span>
+      ${renderRcol(roundData, seedMap, rkey, regionIdx)}
+    </div>`;
+  }
+
+  // Left half: East (ri=0) top, West (ri=1) bottom; columns L→R: R64→E8
+  const leftCols = ['round_of_64','round_of_32','sweet_16','elite_8'].map(rkey => {
+    const rd = byKey[rkey];
+    return `<div class="rcol">
+      <div class="col-hdr">${ROUND_LABEL[rkey]}</div>
+      ${rsec(rd, rkey, 0, names[0])}
+      <div class="rdiv"></div>
+      ${rsec(rd, rkey, 1, names[1])}
+    </div>`;
+  }).join('');
+
+  // Right half: South (ri=2) top, Midwest (ri=3) bottom; columns L→R: E8→R64
+  const rightCols = ['elite_8','sweet_16','round_of_32','round_of_64'].map(rkey => {
+    const rd = byKey[rkey];
+    return `<div class="rcol">
+      <div class="col-hdr">${ROUND_LABEL[rkey]}</div>
+      ${rsec(rd, rkey, 2, names[2])}
+      <div class="rdiv"></div>
+      ${rsec(rd, rkey, 3, names[3])}
+    </div>`;
+  }).join('');
+
+  // ── Center ─────────────────────────────────────────────────────────────────
+  // FF left: East winner (game 0) vs West winner (game 1), each in their 448px half
+  const ffL0 = ff.games[0]; // East vs West
+  const ffL1 = ff.games[1]; // South vs Midwest
+  const chG  = champ.games[0];
+
+  function ffTeamBox(game, isA, extra = '') {
+    const team  = isA ? game.a : game.b;
+    const prob  = isA ? game.pA : game.pB;
+    const state = teamState(game, isA);
+    return tbHTML(team, seedMap[team], prob, state, `finalist ${extra}`);
+  }
+
+  const leftFF = `
+    <div class="ff-col">
+      <div class="col-hdr">F4</div>
+      <div class="ff-sec">${ffTeamBox(ffL0, true)}</div>
+      <div class="rdiv"></div>
+      <div class="ff-sec">${ffTeamBox(ffL0, false)}</div>
+    </div>`;
+
+  const rightFF = `
+    <div class="ff-col">
+      <div class="col-hdr">F4</div>
+      <div class="ff-sec">${ffTeamBox(ffL1, true)}</div>
+      <div class="rdiv"></div>
+      <div class="ff-sec">${ffTeamBox(ffL1, false)}</div>
+    </div>`;
+
+  // Championship
+  const champA = chG.a, champB = chG.b;
+  const cStateA = teamState(chG, true), cStateB = teamState(chG, false);
+  const winner  = chG.actual || chG.predicted;
+  const wState  = chG.actual
+    ? (chG.actual === chG.predicted ? 'correct' : 'surprise')
+    : 'predicted';
+
+  const champCol = `
+    <div class="champ-col">
+      <div class="col-hdr">Championship</div>
+      <div class="champ-spacer"></div>
+      <div class="champ-sec">
+        <div class="champ-sublbl">Championship Game</div>
+        ${tbHTML(champA, seedMap[champA], chG.pA, cStateA, 'finalist')}
+        <div class="champ-vs">vs</div>
+        ${tbHTML(champB, seedMap[champB], chG.pB, cStateB, 'finalist')}
+        <div style="height:12px"></div>
+        <div class="champ-sublbl">Champion</div>
+        ${tbHTML(winner, seedMap[winner], 1.0, wState, 'champion-box')}
+        <div class="champion-crown">${chG.actual ? '★ Champion' : 'Predicted'}</div>
+      </div>
+      <div class="champ-spacer"></div>
+    </div>`;
+
+  return `
+    <div class="bracket">
+      <div class="half left">${leftCols}</div>
+      <div class="center">${leftFF}${champCol}${rightFF}</div>
+      <div class="half right">${rightCols}</div>
+    </div>`;
+}
+
+// ── Main ──────────────────────────────────────────────────────────────────────
+async function main() {
+  let simData, results = null;
+
+  try {
+    simData = await fetch('results/sim_results.json').then(r => {
+      if (!r.ok) throw new Error(`sim_results.json: ${r.status}`);
+      return r.json();
+    });
+  } catch (e) {
+    document.getElementById('bracket-root').textContent = `Error loading sim data: ${e.message}`;
+    return;
+  }
+
+  try {
+    results = await fetch('results/tournament_results.json').then(r => r.ok ? r.json() : null);
+  } catch (_) { /* no results yet — fine */ }
+
+  // Seed map
+  const seedMap = Object.fromEntries(simData.bracket.map(b => [b.team, b.seed || '?']));
+
+  // Compute bracket state
+  const allRounds = computeBracket(simData, results);
+
+  // Scoreboard
+  const { correct, played, total } = computeScore(allRounds);
+  const remaining = total - played;
+  document.getElementById('sc-right').textContent = played > 0 ? correct : '—';
+  document.getElementById('sc-pct').textContent   = played > 0 ? `${Math.round(correct / played * 100)}%` : '—';
+  document.getElementById('sc-rem').textContent   = remaining;
+
+  // Champion banner
+  const topChamp = simData.champion_probs[0];
+  document.getElementById('champ-team').textContent = topChamp[0];
+  document.getElementById('champ-prob').textContent = `${Math.round(topChamp[1] * 100)}% championship probability`;
+
+  // Last updated
+  if (results?.last_updated) {
+    const d = new Date(results.last_updated);
+    document.getElementById('updated-ts').textContent =
+      `Results as of ${d.toLocaleDateString()} ${d.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}`;
+  } else {
+    document.getElementById('updated-ts').textContent =
+      `Sim: ${simData.sims?.toLocaleString() || '?'} runs · ${simData.generated_at ? new Date(simData.generated_at).toLocaleDateString() : ''}`;
+  }
+
+  // Notification if no results yet
+  if (!played) {
+    const notif = document.getElementById('notif');
+    notif.textContent = '⏳ Tournament hasn\'t started yet — showing pre-tournament predictions. Percentages are win probability for each game.';
+    notif.classList.add('show');
+  }
+
+  // Render bracket
+  document.getElementById('bracket-root').innerHTML = renderBracket(allRounds, seedMap, simData);
+}
+
+main().catch(e => {
+  document.getElementById('bracket-root').textContent = `Failed to load: ${e.message}`;
+  console.error(e);
+});
+</script>
+</body>
+</html>
