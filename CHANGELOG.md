@@ -2,6 +2,45 @@
 
 All notable changes to the **march-ml** project are documented here.
 
+## [Sprint 2026-03-16] Selection Sunday — Official Bracket, Live Tracker & CI Hardening
+
+### Official 2026 bracket integration
+- Scraped official 68-team bracket from ESPN API on Selection Sunday (March 16, 2026)
+- Written to `data/brackets/official_2026.csv` with region, seed, and slot columns
+- First Four: UMBC/Howard (MW 16), Miami OH/SMU (MW 11), Texas/NC State (W 11), Prairie View/Lehigh (S 16)
+- All simulations now use `--bracket_file data/brackets/official_2026.csv --official_bracket`
+
+### Reproducible predictions — fixed random seed
+- Added `--seed` argument to `simulate_bracket.py` and `run_pipeline.py`
+- `update-data.yml` workflow passes `--seed 2026` to every simulate call
+- Champion predictions no longer flip between runs; current canonical pick: **Michigan Wolverines 24.7%**
+
+### GitHub Pages live bracket tracker
+- New `web/index.html` — interactive bracket tracker with navy/steel-blue theme
+- Shows predicted win probabilities per team per round, with First Four section below the bracket
+- Actual results overlay: correct/wrong/upset coloring from `results/tournament_results.json`
+- New `.github/workflows/pages.yml` — deploys `web/` + `results/` to GitHub Pages on every push
+- Live URL: **https://jgamblin.github.io/march-ml/**
+- Local dev: `cd web && ln -sf ../results results && python3 -m http.server 8000`
+
+### First Four layout
+- FF games displayed in a 4-card row below the main bracket (matching NCAA.com layout)
+- Region label shown below each card; cards are centered and styled consistently
+
+### CI fixes
+- **`optimize_ensemble_weights.py`**: added `impute_net_rank_from_efficiency()` call before `build_match_dataset()` — fixes `net_rank` dropping to 3.7% coverage and causing feature mismatch
+- **Nested LOSO timeout**: `nested_loso_eval()` (O(n²) in model fits, ~hours on 66K rows) now gated behind `--nested_loso` flag (default: False) to prevent CI timeouts
+- **Python badge**: corrected from 3.14 → 3.11 (CI uses Python 3.11.14)
+
+### Current model metrics (March 16, 2026)
+- LOSO accuracy: **79.1%** (95% CI: 76.1%–82.1%, BSS=0.719)
+- Rolling CV accuracy: **75.6%** (95% CI: 72.4%–79.1%, BSS=0.675)
+- Ensemble: LR=20%, XGB=80% (log-loss optimal)
+- Features: 19 (added `net_rank`, `pom_rank`, `luck_percentile`, `seed_close_match`, interaction terms)
+- Training rows: ~66,000 (tournament + regular-season augmentation at weight 0.3)
+
+---
+
 ## [Sprint 2026-03] Data Science Audit — 14 Methodology Fixes
 
 Full audit of the modeling pipeline surfaced and fixed 14 data science issues.

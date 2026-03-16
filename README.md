@@ -2,17 +2,30 @@
 
 A machine-learning bracket predictor for the NCAA men's tournament. It scrapes historical game data, builds pre-tournament team efficiency profiles (including [BartTorvik T-Rank](https://barttorvik.com) ratings), trains a calibrated LR + XGBoost ensemble, and runs Monte Carlo simulations to estimate every team's championship odds.
 
-[![Python 3.14](https://img.shields.io/badge/python-3.14-blue.svg)](https://www.python.org/)
+[![Python 3.11](https://img.shields.io/badge/python-3.11-blue.svg)](https://www.python.org/)
 [![scikit-learn](https://img.shields.io/badge/scikit--learn-1.8-orange.svg)](https://scikit-learn.org/)
 [![XGBoost](https://img.shields.io/badge/XGBoost-3.2-red.svg)](https://xgboost.readthedocs.io/)
+[![GitHub Pages](https://img.shields.io/badge/Live%20Bracket-GitHub%20Pages-blue)](https://jgamblin.github.io/march-ml/)
 
 Data updates automatically every 6 hours via GitHub Actions. The bracket and championship odds below are live.
+
+🏆 **[View the live interactive bracket tracker →](https://jgamblin.github.io/march-ml/)**
 
 ---
 
 ## 2026 Championship Odds
 
-> ⚠️ **Pre-Selection-Sunday projection** — bracket generated from top-64 teams by efficiency rating. Odds will update automatically once the official bracket is announced on March 15, and every 6 hours thereafter.
+> ✅ **Official 2026 bracket is live** — all 68 teams seeded and placed. Simulations run with `--seed 2026` for reproducible results. Odds refresh every 6 hours via GitHub Actions.
+
+### Current top contenders (5,000 simulations)
+
+| Team | Championship odds |
+|------|-----------------|
+| Michigan Wolverines | **24.7%** |
+| Duke Blue Devils | 22.9% |
+| Arizona Wildcats | 19.3% |
+| Gonzaga Bulldogs | 5.4% |
+| Florida Gators | 5.1% |
 
 ### Road to the Championship
 
@@ -32,10 +45,14 @@ The model is evaluated with leave-one-season-out (LOSO) cross-validation — eac
 
 | Metric | Value |
 |--------|-------|
-| **LOSO accuracy (2015–2025)** | **~79%** |
+| **LOSO accuracy (2015–2025)** | **79.1%** (95% CI: 76.1%–82.1%) |
+| **Rolling CV accuracy** (deployment metric) | **75.6%** (95% CI: 72.4%–79.1%) |
+| Brier Skill Score (LOSO) | 0.719 |
+| Lower-seed baseline | 70.1% |
 | Seasons of historical data | 2015–2026 |
 | Tournament games in training | ~670 |
-| Features | 16 |
+| Features | 19 |
+| Ensemble | LR 20% + XGBoost 80% |
 | Key data sources | cbbpy + BartTorvik T-Rank |
 
 > Note: LOSO numbers for historical seasons may be slightly optimistic (~2pp) because BartTorvik's year-end ratings include post-tournament game results. The 2026 production predictions have no such leakage — all data was collected before the tournament began.
@@ -54,9 +71,11 @@ The model computes a head-to-head **matchup diff** for each pair of teams across
 |----------|---------|
 | Efficiency | BartTorvik `adj_em` (net efficiency), `barthag` (Pythagorean win prob) |
 | Schedule strength | `adj_margin` (Massey 2-iter), `sos_win_pct` |
-| Season stats | `win_pct`, `luck` (deviation from expected wins) |
+| Season stats | `win_pct`, `luck` (deviation from expected wins), `luck_percentile` |
+| Rankings | `net_rank` (imputed from barthag for pre-NET seasons), `pom_rank` |
 | Tempo | `adj_t` (possessions/40 min); `tempo_mismatch` |
-| Tournament | `seed`, `seed_matchup_prior` (40-yr historical seed win rates) |
+| Tournament | `seed`, `seed_matchup_prior` (40-yr historical seed win rates), `seed_close_match` |
+| Interaction | `adj_when_close/far`, `bart_em_when_close/far` (efficiency × seed proximity) |
 | Context | `neutral_site`, `is_tournament` |
 
 Each feature in training is the **difference** between team A and team B. Matchups are oriented so team A always has the higher efficiency rating — this prevents label bias from cbbpy's home/away assignment.
@@ -129,14 +148,14 @@ python scripts/run_pipeline.py --mode train --include_regular_season
 ### Simulate bracket
 
 ```bash
-# With official bracket (recommended after Selection Sunday)
+# With official bracket (recommended — official 2026 bracket is live)
 python scripts/run_pipeline.py --mode simulate --sims 5000 \
   --bracket_file data/brackets/official_2026.csv --official_bracket \
-  --sim_out results/sim_2026_official.json
+  --seed 2026 --sim_out results/sim_results.json
 
-# Projection using top-64 by adj_margin (pre-Selection Sunday)
+# Projection using top-64 by adj_margin (pre-Selection Sunday only)
 python scripts/run_pipeline.py --mode simulate --sims 5000 \
-  --sim_out results/sim_2026_5000.json
+  --seed 2026 --sim_out results/sim_2026_5000.json
 ```
 
 ### Pool optimizer
@@ -169,12 +188,13 @@ python show_results.py results/sim_2026_5000.json
 data/
   processed/          scraped game CSVs and box scores (games_YYYY.csv, boxscores_YYYY.csv)
   processed/features/ engineered feature CSVs (tournament_teams.csv, seeds_all.csv, …)
-  brackets/           bracket input files (official_2024.csv, template_64.csv)
+  brackets/           bracket input files (official_2026.csv, template_64.csv)
   mappings/           D-I normalization and conference mapping inputs
 
 models/               trained model artifacts + training_summary.json
-results/              simulation outputs (sim_*.json) and charts/
+results/              simulation outputs (sim_*.json), charts/, and tournament_results.json
 scripts/              all pipeline scripts (see table below)
+web/                  GitHub Pages static app (index.html — live bracket tracker)
 ```
 
 ### Script reference
@@ -204,8 +224,9 @@ Three workflows keep the repo self-updating:
 
 | Workflow | Trigger | What it does |
 |---|---|---|
-| **update-data.yml** | Every 6 hours + manual | Scrape → features → train → 5000-sim → commit results |
+| **update-data.yml** | Every 6 hours + manual | Scrape → features → train → 5000-sim (seed 2026) → commit results |
 | **bracket-watch.yml** | Every 15 min on Selection Sunday + manual | Polls ESPN for bracket; triggers 10 000-sim run when found |
+| **pages.yml** | Push to `main` (web/** or results/*.json) | Builds and deploys GitHub Pages bracket tracker |
 | **scrape-and-save.yml** | Manual only (legacy) | Raw data artifact only, no retrain |
 
 ### How results get committed back
