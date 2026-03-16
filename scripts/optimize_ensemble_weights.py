@@ -20,6 +20,7 @@ from train_baseline import (
     build_match_dataset,
     build_lr_model,
     build_xgb_model,
+    impute_net_rank_from_efficiency,
     load_features,
     HAS_XGB,
 )
@@ -188,6 +189,8 @@ def main():
     parser.add_argument("--include_regular_season", action="store_true", default=True)
     parser.add_argument("--regular_season_weight", type=float, default=0.3)
     parser.add_argument("--step", type=float, default=0.05, help="grid search step size")
+    parser.add_argument("--nested_loso", action="store_true", default=False,
+                        help="Run nested LOSO diagnostic (slow: ~360 model fits on full dataset)")
     args = parser.parse_args()
 
     print("\n=== LOSO Ensemble Weight Optimization ===\n")
@@ -197,6 +200,7 @@ def main():
         features_path = features_path.with_name("teams.csv")
 
     feats = load_features(features_path)
+    feats = impute_net_rank_from_efficiency(feats)
     X, y, meta, weights = build_match_dataset(
         args.games_dir, feats, "ncaa_tourney",
         include_regular_season=args.include_regular_season,
@@ -242,6 +246,10 @@ def main():
     print(f"  simulate_bracket.py will use LR={chosen['lr_weight']:.0%} / XGB={chosen['xgb_weight']:.0%} automatically")
 
     # ── Nested LOSO (unbiased diagnostic) ──────────────────────────────────────
+    if not args.nested_loso:
+        print("\n(Skipping nested LOSO — pass --nested_loso to enable; warning: very slow on large datasets)")
+        return
+
     print("\n=== Nested LOSO (unbiased) — diagnostic only, does NOT change saved weights ===\n")
     print("Running nested LOSO (inner weight optimization + outer evaluation)...")
     nested = nested_loso_eval(X, y, meta, weights=weights, step=args.step)
