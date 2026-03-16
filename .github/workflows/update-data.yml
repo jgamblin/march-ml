@@ -1,23 +1,18 @@
 name: Update Data, Retrain & Simulate
 
-# Runs after each tournament game day to refresh results, retrain the model,
-# and publish new simulation results. Timed at 04:30 UTC (12:30am ET) so all
-# games — including late West Coast tip-offs — are finished before the run.
+# Runs every 30 minutes during active game windows so the site updates
+# as each game finishes. Timed to UTC equivalents of ET game hours.
+# Games run ET (UTC-4). Windows are intentionally broad to catch late OT.
 #
-# 2026 tournament schedule (all dates ET → run UTC next day at 04:30):
-#   First Four:   Mar 17–18  → run Mar 18–19
-#   Round of 64:  Mar 19–20  → run Mar 20–21
-#   Round of 32:  Mar 21–22  → run Mar 22–23
-#   Sweet 16:     Mar 26–27  → run Mar 27–28
-#   Elite 8:      Mar 28–29  → run Mar 29–30
-#   Final Four:   Apr 4      → run Apr 5
-#   Championship: Apr 6      → run Apr 7
+# 2026 tournament game windows:
+#   First Four (Mar 17–18):        ~6pm–midnight ET  = 22:00–04:00 UTC
+#   Round of 64/32 (Mar 19–22):    noon–midnight ET  = 16:00–04:00 UTC
+#   Sweet 16 / Elite 8 (Mar 26–29):~6pm–midnight ET  = 22:00–04:00 UTC
+#   Final Four (Apr 4):            ~6pm–midnight ET  = 22:00–04:00 UTC
+#   Championship (Apr 6):          ~9pm–midnight ET  = 01:00–04:00 UTC (Apr 7)
 #
-# Data strategy:
-#   - Completed seasons (2015–2025, excl. 2020 COVID) are cached in repo; scraped once ever.
-#   - Current season (2026): normal runs do an incremental scrape from 2026-03-15 (Selection Sunday)
-#     using get_games_range(), merging into the existing games_2026.csv. Takes ~5 sec vs ~3 min.
-#   - Manual trigger with full_rescrape=true re-fetches all seasons including 2015-2019 history.
+# concurrency: cancel-in-progress: true prevents queue buildup if a run
+# takes longer than 30 min (retrain on fresh data is ~6 min normally).
 
 concurrency:
   group: pipeline
@@ -29,12 +24,24 @@ on:
       - main
 
   schedule:
-    # After First Four + R64 + R32 game days (Mar 17–22 games → run Mar 18–23)
-    - cron: '30 4 18-23 3 *'
-    # After S16 + E8 game days (Mar 26–29 games → run Mar 27–30)
-    - cron: '30 4 27-30 3 *'
-    # After Final Four (Apr 4) and Championship (Apr 6)
-    - cron: '30 4 5,7 4 *'
+    # First Four: Mar 17–18 ET (~6pm–midnight)
+    - cron: '0,30 22-23 17,18 3 *'   # 6–11pm ET (22:00–23:30 UTC)
+    - cron: '0,30 0-4   18,19 3 *'   # 8pm–midnight ET continuation
+
+    # Round of 64 & 32: Mar 19–22 ET (noon–midnight, most games)
+    - cron: '0,30 16-23 19-22 3 *'   # noon–8pm ET (16:00–23:30 UTC)
+    - cron: '0,30 0-4   20-23 3 *'   # 8pm–midnight ET continuation
+
+    # Sweet 16 & Elite 8: Mar 26–29 ET (~6pm–midnight, 2–4 games/day)
+    - cron: '0,30 22-23 26-29 3 *'   # 6–11pm ET
+    - cron: '0,30 0-4   27-30 3 *'   # continuation
+
+    # Final Four: Apr 4 ET (~6pm–midnight, 2 games)
+    - cron: '0,30 22-23 4 4 *'
+    - cron: '0,30 0-4   5 4 *'
+
+    # Championship: Apr 6 ET (~9pm–midnight, 1 game)
+    - cron: '0,30 1-4   7 4 *'
 
   workflow_dispatch:
     inputs:
