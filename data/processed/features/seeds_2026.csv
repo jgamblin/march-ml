@@ -11,7 +11,7 @@ season,team,seed
 2026,Illinois Fighting Illini,3
 2026,Gonzaga Bulldogs,3
 2026,Virginia Cavaliers,3
-2026,Nebraska Cornhuskers,3
+2026,Nebraska Cornhuskers,4
 2026,Vanderbilt Commodores,4
 2026,Alabama Crimson Tide,4
 2026,Kansas Jayhawks,4
@@ -33,19 +33,19 @@ season,team,seed
 2026,Villanova Wildcats,8
 2026,Ohio State Buckeyes,8
 2026,TCU Horned Frogs,9
+2026,Stanford,9
 2026,Iowa Hawkeyes,9
 2026,Saint Louis Billikens,9
 2026,UCF Knights,10
 2026,Texas A&M Aggies,10
-2026,Stanford,10
 2026,NC State Wolfpack,10
 2026,Santa Clara Broncos,10
 2026,Missouri Tigers,11
 2026,Miami (OH) RedHawks,11
 2026,VCU Rams,11
 2026,Auburn,11
-2026,Texas Longhorns,11
 2026,SMU Mustangs,11
+2026,Texas Longhorns,11
 2026,Oklahoma,11
 2026,San Diego State,11
 2026,Oklahoma State,11
@@ -56,8 +56,8 @@ season,team,seed
 2026,Akron Zips,12
 2026,Northern Iowa Panthers,12
 2026,High Point Panthers,12
-2026,Hofstra Pride,13
 2026,California Baptist,13
+2026,Hofstra Pride,13
 2026,Hawaii,13
 2026,North Dakota State Bison,13
 2026,Pennsylvania,14
