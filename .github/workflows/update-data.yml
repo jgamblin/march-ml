@@ -1,8 +1,17 @@
 name: Update Data, Retrain & Simulate
 
-# Runs every 6 hours to refresh game data, retrain the model, and publish
-# new simulation results. Can also be triggered manually or called by
-# the bracket-watch workflow (with an official bracket file).
+# Runs after each tournament game day to refresh results, retrain the model,
+# and publish new simulation results. Timed at 04:30 UTC (12:30am ET) so all
+# games — including late West Coast tip-offs — are finished before the run.
+#
+# 2026 tournament schedule (all dates ET → run UTC next day at 04:30):
+#   First Four:   Mar 17–18  → run Mar 18–19
+#   Round of 64:  Mar 19–20  → run Mar 20–21
+#   Round of 32:  Mar 21–22  → run Mar 22–23
+#   Sweet 16:     Mar 26–27  → run Mar 27–28
+#   Elite 8:      Mar 28–29  → run Mar 29–30
+#   Final Four:   Apr 4      → run Apr 5
+#   Championship: Apr 6      → run Apr 7
 #
 # Data strategy:
 #   - Completed seasons (2015–2025, excl. 2020 COVID) are cached in repo; scraped once ever.
@@ -20,7 +29,12 @@ on:
       - main
 
   schedule:
-    - cron: '0 */6 * * *'  # every 6 hours
+    # After First Four + R64 + R32 game days (Mar 17–22 games → run Mar 18–23)
+    - cron: '30 4 18-23 3 *'
+    # After S16 + E8 game days (Mar 26–29 games → run Mar 27–30)
+    - cron: '30 4 27-30 3 *'
+    # After Final Four (Apr 4) and Championship (Apr 6)
+    - cron: '30 4 5,7 4 *'
 
   workflow_dispatch:
     inputs:
