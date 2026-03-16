@@ -130,7 +130,7 @@ def run_ensemble_optimize(include_regular_season=True, regular_season_weight=0.3
     run_command(cmd)
 
 
-def run_simulation(sims=1000, season=None, bracket_file=None, out_path="results/sim_results.json", min_games=10, allow_nd=False):
+def run_simulation(sims=1000, season=None, bracket_file=None, out_path="results/sim_results.json", min_games=10, allow_nd=False, seed=None):
     cmd = [sys.executable, "scripts/simulate_bracket.py", "--sims", str(sims), "--out", out_path, "--min_games", str(min_games)]
     if season is not None:
         cmd.extend(["--season", str(season)])
@@ -138,6 +138,8 @@ def run_simulation(sims=1000, season=None, bracket_file=None, out_path="results/
         cmd.extend(["--bracket_file", bracket_file])
     if allow_nd:
         cmd.append("--allow_nd")
+    if seed is not None:
+        cmd.extend(["--seed", str(seed)])
     run_command(cmd)
 
 
@@ -208,6 +210,7 @@ def main():
     p.add_argument("--sim_out", default="results/sim_results.json")
     p.add_argument("--min_games", type=int, default=10)
     p.add_argument("--allow_nd", action="store_true")
+    p.add_argument("--seed", type=int, default=None, help="random seed for reproducible simulations")
     # Optimizer arguments
     p.add_argument("--profile", default="espn", choices=["espn", "cbs", "simple"], help="pool scoring profile")
     p.add_argument("--strategy", default="balanced", choices=["chalk", "balanced", "contrarian"], help="optimization strategy")
@@ -242,6 +245,7 @@ def main():
             out_path=args.sim_out,
             min_games=args.min_games,
             allow_nd=args.allow_nd,
+            seed=args.seed,
         )
         run_bracket_visual(sim_out=args.sim_out)
     if args.mode in {"validate", "full"}:

@@ -989,7 +989,13 @@ def main():
     p.add_argument('--xgb_weight', type=float, default=None, help='ensemble weight for XGBoost (default: read from models/ensemble_weights.json or 0.5)')
     p.add_argument('--temperature', type=float, default=1.0,
                    help='probability temperature scaling: T>1 = more chaos/contrarian (toward 0.5), T<1 = more chalk (toward 0/1). Default=1.0 (no scaling)')
+    p.add_argument('--seed', type=int, default=None,
+                   help='random seed for reproducible simulations (recommended: set to a fixed value so re-runs produce identical results)')
     args = p.parse_args()
+
+    if args.seed is not None:
+        import numpy as np
+        np.random.seed(args.seed)
 
     ensure_dir(Path(args.out).parent)
 
