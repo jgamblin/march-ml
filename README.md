@@ -29,11 +29,11 @@ Data updates automatically every 6 hours via GitHub Actions. The bracket and cha
 
 ### Road to the Championship
 
-![Round-by-round probabilities](results/charts/round_probs_2026.png)
+![Round-by-round probabilities](https://jgamblin.github.io/march-ml/results/charts/round_probs_2026.png)
 
 ### Championship favorites
 
-![2026 Champion Probabilities](results/charts/champion_probs_2026.png)
+![2026 Champion Probabilities](https://jgamblin.github.io/march-ml/results/charts/champion_probs_2026.png)
 
 > Charts and odds refresh automatically via GitHub Actions after each data update. Run `python show_results.py` locally for a full breakdown including the path-to-championship table.
 
@@ -59,7 +59,7 @@ The model is evaluated with leave-one-season-out (LOSO) cross-validation — eac
 
 ### Feature importance
 
-![SHAP importance](results/charts/shap_importance.png)
+![SHAP importance](https://jgamblin.github.io/march-ml/results/charts/shap_importance.png)
 
 ---
 

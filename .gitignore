@@ -251,7 +251,7 @@ results/*.json
 results/*.csv
 
 # Keep committed: chart PNGs referenced by README
-!results/charts/
+results/charts/
 
 # Keep the canonical CI sim output committed (updated every run)
 !results/sim_results.json

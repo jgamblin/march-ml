@@ -28,6 +28,22 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
 
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Generate charts
+        run: |
+          latest=$(ls -t results/sim_*.json 2>/dev/null | head -1)
+          if [ -n "$latest" ]; then
+            python scripts/generate_charts.py --sim "$latest"
+            python scripts/generate_bracket_visual.py --sim "$latest"
+          fi
+
       - name: Stage site files
         run: |
           mkdir -p _site
