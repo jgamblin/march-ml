@@ -7,6 +7,12 @@ on:
       - 'web/**'
       - 'results/sim_results.json'
       - 'results/tournament_results.json'
+  # Re-deploy after every successful data update (auto-commits use [skip ci]
+  # which would suppress push triggers, so we use workflow_run instead).
+  workflow_run:
+    workflows: ["Update Data, Retrain & Simulate"]
+    types: [completed]
+    branches: [main]
   workflow_dispatch:
 
 permissions:
