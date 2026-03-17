@@ -103,8 +103,8 @@ def _normalize_bracket_records(records: List[Any]) -> Dict[str, Any]:
     normalized = sorted(normalized, key=lambda x: x["slot"])
     teams = [r["team"] for r in normalized]
     
-    # Validate bracket size is power of 2
-    if len(teams) & (len(teams) - 1) != 0:
+    # Validate bracket size is power of 2, or 68 (First Four)
+    if len(teams) != 68 and (len(teams) & (len(teams) - 1) != 0):
         raise ValueError(f"Bracket size {len(teams)} is not a power of 2")
     
     # Build region and seed lookup

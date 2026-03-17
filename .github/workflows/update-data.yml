@@ -159,27 +159,28 @@ jobs:
 
       # ── 7. Simulate ────────────────────────────────────────────────────────
       #   Default: 5000 sims for scheduled/push runs (~5-6 min on Actions).
-      #   Override via workflow_dispatch sims input for deeper analysis.
-      #   With official bracket: use committed bracket file.
-      #   Without bracket: adj_margin-based team selection (pre-bracket estimate).
-      - name: Simulate (with official bracket)
-        if: inputs.bracket_file != ''
+      #   Always use the committed official bracket file if it exists.
+      #   Override bracket via workflow_dispatch bracket_file input if needed.
+      - name: Simulate
         timeout-minutes: 20
         run: |
-          python scripts/run_pipeline.py \
-            --mode simulate \
-            --bracket_file "${{ inputs.bracket_file }}" \
-            --sims ${{ inputs.sims || '5000' }} \
-            --seed 2026
-
-      - name: Simulate (adj_margin selection, no bracket)
-        if: inputs.bracket_file == ''
-        timeout-minutes: 20
-        run: |
-          python scripts/run_pipeline.py \
-            --mode simulate \
-            --sims ${{ inputs.sims || '5000' }} \
-            --seed 2026
+          BRACKET_FILE="${{ inputs.bracket_file }}"
+          if [ -z "$BRACKET_FILE" ] && [ -f "data/brackets/official_2026.csv" ]; then
+            BRACKET_FILE="data/brackets/official_2026.csv"
+          fi
+          if [ -n "$BRACKET_FILE" ]; then
+            python scripts/run_pipeline.py \
+              --mode simulate \
+              --bracket_file "$BRACKET_FILE" \
+              --official_bracket \
+              --sims ${{ inputs.sims || '5000' }} \
+              --seed 2026
+          else
+            python scripts/run_pipeline.py \
+              --mode simulate \
+              --sims ${{ inputs.sims || '5000' }} \
+              --seed 2026
+          fi
 
       # ── 8. Generate charts ─────────────────────────────────────────────────
       - name: Find latest sim output
