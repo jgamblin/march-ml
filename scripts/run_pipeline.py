@@ -130,12 +130,14 @@ def run_ensemble_optimize(include_regular_season=True, regular_season_weight=0.3
     run_command(cmd)
 
 
-def run_simulation(sims=1000, season=None, bracket_file=None, out_path="results/sim_results.json", min_games=10, allow_nd=False, seed=None):
+def run_simulation(sims=1000, season=None, bracket_file=None, official_bracket=False, out_path="results/sim_results.json", min_games=10, allow_nd=False, seed=None):
     cmd = [sys.executable, "scripts/simulate_bracket.py", "--sims", str(sims), "--out", out_path, "--min_games", str(min_games)]
     if season is not None:
         cmd.extend(["--season", str(season)])
     if bracket_file:
         cmd.extend(["--bracket_file", bracket_file])
+    if official_bracket:
+        cmd.append("--official_bracket")
     if allow_nd:
         cmd.append("--allow_nd")
     if seed is not None:
@@ -207,6 +209,7 @@ def main():
     p.add_argument("--sims", type=int, default=5000)
     p.add_argument("--season", type=int, default=None, help="season for bracket simulation")
     p.add_argument("--bracket_file", default=None, help="optional bracket file (.txt, .csv, or .json)")
+    p.add_argument("--official_bracket", action="store_true", help="parse bracket as official NCAA format (slot/seed/region metadata)")
     p.add_argument("--sim_out", default="results/sim_results.json")
     p.add_argument("--min_games", type=int, default=10)
     p.add_argument("--allow_nd", action="store_true")
@@ -242,6 +245,7 @@ def main():
             sims=args.sims,
             season=args.season,
             bracket_file=args.bracket_file,
+            official_bracket=args.official_bracket,
             out_path=args.sim_out,
             min_games=args.min_games,
             allow_nd=args.allow_nd,
