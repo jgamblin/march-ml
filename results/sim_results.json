@@ -1,6 +1,6 @@
 {
   "schema_version": "2025-03-09",
-  "generated_at": "2026-03-17T10:06:43.780932Z",
+  "generated_at": "2026-03-17T10:17:56.921606Z",
   "season": 2026,
   "sims": 5000,
   "teams": [
@@ -88,12 +88,6 @@
       "region": "Midwest"
     },
     {
-      "slot": 2,
-      "team": "Howard Bison",
-      "seed": 16,
-      "region": "Midwest"
-    },
-    {
       "slot": 3,
       "team": "Georgia Bulldogs",
       "seed": 8,
@@ -133,12 +127,6 @@
       "slot": 9,
       "team": "Tennessee Volunteers",
       "seed": 6,
-      "region": "Midwest"
-    },
-    {
-      "slot": 10,
-      "team": "Miami OH RedHawks",
-      "seed": 11,
       "region": "Midwest"
     },
     {
@@ -335,12 +323,6 @@
     },
     {
       "slot": 42,
-      "team": "Texas Longhorns",
-      "seed": 11,
-      "region": "West"
-    },
-    {
-      "slot": 42,
       "team": "NC State Wolfpack",
       "seed": 11,
       "region": "West"
@@ -385,12 +367,6 @@
       "slot": 49,
       "team": "Florida Gators",
       "seed": 1,
-      "region": "South"
-    },
-    {
-      "slot": 50,
-      "team": "Prairie View A&M Panthers",
-      "seed": 16,
       "region": "South"
     },
     {

@@ -1126,6 +1126,7 @@ def main():
 
     # Build First Four output: win probabilities for each play-in game
     first_four_output = []
+    ff_predicted_winners = {}  # slot -> predicted winner team record
     for pair in first_four_pairs:
         tA, tB = pair['teamA'], pair['teamB']
         p_a = prob_lookup.get((tA, tB), 0.5)
@@ -1139,6 +1140,30 @@ def main():
             'prob_a':  round(p_a, 4),
             'prob_b':  round(1.0 - p_a, 4),
         })
+        # Track predicted winner for collapsing to 64-team bracket
+        predicted_winner = tA if p_a >= 0.5 else tB
+        ff_predicted_winners[pair['slot']] = predicted_winner
+
+    # Build a clean 64-team bracket for the web UI by resolving each FF slot
+    # to its predicted winner. This prevents the JS from mispairing teams when
+    # two entries share the same slot number (FF duplicate-slot pattern).
+    bracket_64 = []
+    seen_ff_slots = set()
+    for r in sorted(bracket_records, key=lambda x: x['slot']):
+        slot = r['slot']
+        if slot in ff_predicted_winners:
+            if slot not in seen_ff_slots:
+                winner_name = ff_predicted_winners[slot]
+                # Use the record of whichever FF team is the predicted winner
+                winner_record = next(
+                    (rec for rec in bracket_records if rec['team'] == winner_name),
+                    r
+                )
+                bracket_64.append(winner_record)
+                seen_ff_slots.add(slot)
+            # Skip second entry for this FF slot
+        else:
+            bracket_64.append(r)
 
     # Determine model version string
     model_components = []
@@ -1158,7 +1183,7 @@ def main():
         'sims': sims,
         'teams': teams,
         'bracket_source': bracket_source,
-        'bracket': bracket_records,
+        'bracket': bracket_64,
         'first_four': first_four_output,
         'champion_probs': sorted_champs,
         'round_probs': round_probs,
