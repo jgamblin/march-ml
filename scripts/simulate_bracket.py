@@ -34,6 +34,17 @@ def ensure_dir(path):
     os.makedirs(path, exist_ok=True)
 
 
+def _team_key(name: str) -> str:
+    """Normalize a team name for dict lookups.
+
+    Strips parenthetical suffixes like '(OH)' so that 'Miami (OH) RedHawks'
+    and 'Miami OH RedHawks' resolve to the same key.
+    """
+    import re
+    name = re.sub(r'\(([^)]+)\)', r'\1', name)  # (OH) → OH
+    return ' '.join(name.split()).lower()         # collapse whitespace, lowercase
+
+
 def apply_temperature(p: float, temperature: float) -> float:
     """Scale win probability via logit transform.
     T > 1: more chaos (probs toward 0.5). T < 1: more chalk (probs toward 0/1)."""
@@ -815,8 +826,8 @@ def simulate_once_fast(
             home = teams[i]
             away = teams[i + 1]
             # Fast dict-based lookup
-            home_key = (season, home.strip().lower())
-            away_key = (season, away.strip().lower())
+            home_key = (season, _team_key(home))
+            away_key = (season, _team_key(away))
             home_row = team_feats_dict.get(home_key)
             away_row = team_feats_dict.get(away_key)
             
@@ -895,8 +906,8 @@ def precompute_matchup_probs(
     for i in range(len(teams)):
         for j in range(i + 1, len(teams)):
             team_i, team_j = teams[i], teams[j]
-            hk = (season, team_i.strip().lower())
-            ak = (season, team_j.strip().lower())
+            hk = (season, _team_key(team_i))
+            ak = (season, _team_key(team_j))
             hr = team_feats_dict.get(hk)
             ar = team_feats_dict.get(ak)
 
@@ -1019,7 +1030,7 @@ def main():
     # Convert team features to dict for faster lookups and to avoid frequent DataFrame operations
     team_feats_dict = {}
     for _, row in team_feats.iterrows():
-        key = (int(row['season']), str(row['team']).strip().lower())
+        key = (int(row['season']), _team_key(str(row['team'])))
         team_feats_dict[key] = row.to_dict()
 
     if args.bracket_file:
