@@ -251,13 +251,22 @@ function computeBracket(simData, results) {
 }
 
 // ── Score ─────────────────────────────────────────────────────────────────────
-function computeScore(allRounds) {
+// ffGames: simData.first_four array; ffResults: results.first_four array
+function computeScore(allRounds, ffGames = [], ffResults = []) {
   let correct = 0, played = 0;
   for (const rnd of allRounds) {
     for (const g of rnd.games) {
       if (g.actual) { played++; if (g.actual === g.predicted) correct++; }
     }
   }
+  // Count First Four games
+  ffGames.forEach((g, i) => {
+    const actual = ffResults[i] || null;
+    if (!actual) return;
+    played++;
+    const predicted = g.prob_a >= g.prob_b ? g.teamA : g.teamB;
+    if (actual === predicted) correct++;
+  });
   return { correct, played, total: 63 };
 }
 
@@ -442,7 +451,8 @@ async function main() {
   const ffGames = simData.first_four || [];
 
   // Scoreboard
-  const { correct, played, total } = computeScore(allRounds);
+  const ffResults = (results && results.first_four) || [];
+  const { correct, played, total } = computeScore(allRounds, ffGames, ffResults);
   const totalGames = 63 + ffGames.length;  // 63 bracket + up to 4 First Four
   document.getElementById('sc-right').textContent = played > 0 ? correct : '—';
   document.getElementById('sc-pct').textContent   = played > 0 ? `${Math.round(correct / played * 100)}%` : '—';
@@ -472,7 +482,6 @@ async function main() {
 
   // ── First Four section ─────────────────────────────────────────────
   if (ffGames.length) {
-    const ffResults = (results && results.first_four) || [];
     const ffEl = document.getElementById('ff-section');
     const ffContainer = document.getElementById('ff-games');
     ffEl.classList.add('show');
