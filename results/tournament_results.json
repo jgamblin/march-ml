@@ -1,5 +1,5 @@
 {
-  "last_updated": "2026-03-21T20:50:34.838074Z",
+  "last_updated": "2026-03-21T21:15:44.573263Z",
   "first_four": [
     "Howard Bison",
     "Miami OH RedHawks",
@@ -27,7 +27,7 @@
     "Utah State Aggies",
     "High Point Panthers",
     "Arkansas Razorbacks",
-    "Texas Longhorns",
+    null,
     "Gonzaga Bulldogs",
     "Miami Hurricanes",
     "Purdue Boilermakers",
@@ -40,7 +40,15 @@
     "Texas A&M Aggies",
     "Houston Cougars"
   ],
-  "round_of_32": [],
+  "round_of_32": [
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    "Michigan State Spartans"
+  ],
   "sweet_16": [],
   "elite_8": [],
   "final_4": [],
