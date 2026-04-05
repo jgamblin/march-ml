@@ -157,6 +157,17 @@ def build_results(sim_path: Path, games_csv: Path, season: int) -> dict:
     #   matchups are built from actual winners of the previous round. ─────────
     current = [t['team'] for t in bracket]  # 64 teams in slot order
 
+    # Replace First Four placeholder teams with their actual winners so that
+    # round_of_64 expected matchups use the correct opponent names.
+    for g in ff_games:
+        actual_winner = ff_results.get(g['slot'])
+        if not actual_winner:
+            continue
+        # The slot of a First Four game IS the bracket slot of the winner
+        idx = next((i for i, t in enumerate(bracket) if t['slot'] == g['slot']), None)
+        if idx is not None:
+            current[idx] = actual_winner
+
     for rnd_key in ROUND_KEYS:
         n_games = len(current) // 2
 
