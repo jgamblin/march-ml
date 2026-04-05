@@ -1,5 +1,5 @@
 {
-  "last_updated": "2026-04-05T05:26:43.140267Z",
+  "last_updated": "2026-04-05T17:30:32.912934Z",
   "first_four": [
     "Howard Bison",
     "Miami OH RedHawks",
@@ -41,31 +41,42 @@
     "Houston Cougars"
   ],
   "round_of_32": [
-    null,
+    "Michigan Wolverines",
     "Alabama Crimson Tide",
     "Tennessee Volunteers",
     "Iowa State Cyclones",
-    null,
+    "Duke Blue Devils",
     "St. John's Red Storm",
     "Michigan State Spartans",
     "UConn Huskies",
-    null,
-    null,
-    null,
+    "Arizona Wildcats",
+    "Arkansas Razorbacks",
+    "Texas Longhorns",
     "Purdue Boilermakers",
-    null,
-    "Nebraska Cornhuskers"
+    "Iowa Hawkeyes",
+    "Nebraska Cornhuskers",
+    "Illinois Fighting Illini",
+    "Houston Cougars"
   ],
   "sweet_16": [
-    null,
-    null,
-    "Duke Blue Devils"
+    "Michigan Wolverines",
+    "Tennessee Volunteers",
+    "Duke Blue Devils",
+    "UConn Huskies",
+    "Arizona Wildcats",
+    "Purdue Boilermakers",
+    "Iowa Hawkeyes",
+    "Illinois Fighting Illini"
   ],
   "elite_8": [
-    "Michigan Wolverines"
+    "Michigan Wolverines",
+    "UConn Huskies",
+    "Arizona Wildcats",
+    "Illinois Fighting Illini"
   ],
-  "final_4": [],
-  "champion": [
-    "Michigan Wolverines"
-  ]
+  "final_4": [
+    "Michigan Wolverines",
+    "UConn Huskies"
+  ],
+  "champion": []
 }
