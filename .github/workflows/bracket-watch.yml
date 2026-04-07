@@ -4,20 +4,22 @@ name: Bracket Watch (Selection Sunday)
 # When a bracket is detected, it commits the bracket CSV and triggers a full
 # simulation run via update-data.yml.
 #
-# Schedule covers Selection Sunday + surrounding hours (all times UTC):
+# !! MOTHBALLED FOR 2026 SEASON !!
+# Re-enable the schedule block each year by updating the cron dates for the
+# new Selection Sunday (typically the second Sunday of March).
+#
+# 2026 schedule was:
 #   March 14 evening  - pre-announcement buzz
 #   March 15 all day  - Selection Sunday (bracket revealed ~6 PM ET = 23:00 UTC)
 #   March 16 morning  - catch any stragglers / retry on transient failures
 #
-# Adjust the cron years by updating the 'on.schedule' block each season.
-# You can also fire manually via workflow_dispatch for testing.
+# To re-enable for 2027: uncomment the 'schedule:' block and update the dates.
 
 on:
-  schedule:
-    # Every 15 minutes: March 14 (UTC evening) through March 16 (UTC morning)
-    - cron: '*/15 20-23 14 3 *'   # March 14  20:00–23:45 UTC
-    - cron: '*/15 * 15 3 *'        # March 15  all day UTC
-    - cron: '*/15 0-8 16 3 *'      # March 16  00:00–08:45 UTC
+  # schedule:  # DISABLED — re-enable and update dates for Selection Sunday 2027
+  #   - cron: '*/15 20-23 ?? 3 *'   # Day-before evening  20:00–23:45 UTC
+  #   - cron: '*/15 * ?? 3 *'        # Selection Sunday all day UTC
+  #   - cron: '*/15 0-8 ?? 3 *'      # Day-after morning  00:00–08:45 UTC
 
   workflow_dispatch:
     inputs:

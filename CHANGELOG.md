@@ -2,6 +2,28 @@
 
 All notable changes to the **march-ml** project are documented here.
 
+## [v2026] Season Wrap-Up — Michigan Wolverines 2026 NCAA Champions 🏆
+
+**Final Results (April 6, 2026)**
+
+- 🏆 **Champion: Michigan Wolverines** defeated UConn Huskies 69-63 in the National Championship
+- ✅ Model correctly predicted Michigan as the #1 championship favorite (24.7% pre-tournament)
+- Final Four: Michigan Wolverines, UConn Huskies, Arizona Wildcats, Illinois Fighting Illini
+- All 67 tournament games recorded (FF 4/4 · R64 32/32 · R32 16/16 · S16 8/8 · E8 4/4 · F4 2/2 · Champion 1/1)
+
+**Model Performance**
+- LOSO Accuracy: **79.5%** (BSS: 0.726, 95% CI [76.6%, 82.4%])
+- Rolling CV Accuracy: **75.6%** (BSS: 0.679, 95% CI [72.2%, 78.9%]) — deployment-honest metric
+- Lower-seed baseline: 70.1% · Ensemble: LR 20% / XGB 80%
+- 19 features including BartTorvik efficiency, luck percentile, NET rank, and schedule strength
+
+**End-of-season maintenance**
+- Tagged `v2026` release on GitHub
+- Disabled `bracket-watch.yml` schedule (hardcoded March 2026 dates — update for 2027)
+- Live tracker archived at https://jgamblin.github.io/march-ml/
+
+---
+
 ## [Sprint 2026-03-16] Selection Sunday — Official Bracket, Live Tracker & CI Hardening
 
 ### Official 2026 bracket integration
