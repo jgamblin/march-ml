@@ -25,7 +25,7 @@ import pandas as pd
 try:
     import cbbpy.mens_scraper as s
 except Exception as e:
-    print("cbbpy is required. Install with `pip install cbbpy==2.1.3`", file=sys.stderr)
+    print("cbbpy is required. Install with `pip install -r requirements.txt`", file=sys.stderr)
     raise
 
 
